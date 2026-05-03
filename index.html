@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Odds — Enter a ticker. Get the odds.</title>
+<meta name="description" content="Algorithmically generated stock probability reports. Entertainment only.">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a14;
+    --surface: #0f0f1e;
+    --border: #1a1a30;
+    --border-hover: #333;
+    --text: #f0f0f0;
+    --text-dim: #888;
+    --text-muted: #555;
+    --text-ghost: #333;
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.1);
+    --green-border: rgba(34,197,94,0.2);
+    --green-hover: #16a34a;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --red-dim: rgba(239,68,68,0.1);
+    --red-border: rgba(239,68,68,0.2);
+    --mono: 'Space Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 480px;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.5s ease;
+  }
+
+  .app.centered { justify-content: center; min-height: 100vh; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 36px; }
+  .header .tag {
+    font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 10px; font-family: var(--mono);
+  }
+  .header h1 {
+    font-size: 48px; font-weight: 700; letter-spacing: -0.04em;
+    color: var(--text); transition: font-size 0.4s ease; line-height: 1.1;
+  }
+  .header h1.small { font-size: 26px; }
+  .header .sub {
+    color: var(--text-muted); font-size: 14px; margin-top: 8px; line-height: 1.5;
+  }
+
+  /* Input */
+  .input-row {
+    display: flex; width: 100%; max-width: 400px; margin-bottom: 20px;
+    animation: fadeUp 0.5s ease;
+  }
+  .input-row input {
+    flex: 1; padding: 14px 18px; font-size: 18px;
+    font-family: var(--mono); font-weight: 700;
+    background: var(--surface); border: 1px solid var(--border);
+    border-right: none; border-radius: 8px 0 0 8px;
+    color: var(--text); outline: none; letter-spacing: 0.1em;
+    caret-color: var(--green);
+  }
+  .input-row input::placeholder { color: var(--text-ghost); }
+  .input-row button {
+    padding: 14px 28px; font-size: 14px; font-weight: 600;
+    font-family: var(--sans); background: var(--text); color: var(--bg);
+    border: none; border-radius: 0 8px 8px 0; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.02em;
+  }
+  .input-row button:disabled {
+    background: #222; color: var(--text-muted); cursor: default;
+  }
+  .input-row button:active { transform: scale(0.97); }
+
+  /* Popular chips */
+  .popular { text-align: center; margin-bottom: 8px; animation: fadeUp 0.5s ease 0.1s both; }
+  .popular .label {
+    font-size: 10px; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.15em; margin-bottom: 10px; font-family: var(--mono);
+  }
+  .chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .chip {
+    padding: 7px 14px; font-size: 12px; font-weight: 600;
+    font-family: var(--mono); background: transparent; color: #666;
+    border: 1px solid var(--border); border-radius: 6px;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.06em;
+  }
+  .chip:hover { border-color: var(--border-hover); color: #ccc; }
+  .chip:active { transform: scale(0.95); }
+
+  .free-badge {
+    text-align: center; margin-top: 24px; font-size: 11px;
+    color: var(--green); font-family: var(--mono);
+    letter-spacing: 0.05em; opacity: 0.7;
+    animation: fadeUp 0.5s ease 0.2s both;
+  }
+
+  /* Processing */
+  .processing {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 20px; margin-top: 20px; animation: fadeUp 0.4s ease;
+  }
+  .processing .ticker-big {
+    font-size: 32px; font-family: var(--mono); font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+  .step-list { display: flex; flex-direction: column; gap: 10px; min-width: 240px; }
+  .step {
+    display: flex; align-items: center; gap: 10px;
+    opacity: 0.15; transition: opacity 0.3s ease;
+  }
+  .step.active { opacity: 1; }
+  .step-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #222; transition: all 0.3s;
+  }
+  .step.done .step-dot { background: var(--green); }
+  .step.current .step-dot { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+  .step span {
+    font-size: 13px; color: var(--text-ghost);
+    font-family: var(--mono); transition: color 0.3s;
+  }
+  .step.active span { color: #999; }
+
+  /* Paywall */
+  .paywall {
+    width: 100%; max-width: 380px; text-align: center;
+    margin-top: 20px; animation: fadeUp 0.4s ease;
+  }
+  .paywall-card {
+    background: var(--surface); border-radius: 12px;
+    padding: 32px 28px; border: 1px solid var(--border);
+  }
+  .paywall .ticker-big {
+    font-size: 28px; font-family: var(--mono); font-weight: 700;
+    letter-spacing: 0.08em; margin-bottom: 6px;
+  }
+  .paywall .unlock-text { font-size: 13px; color: #666; margin-bottom: 24px; }
+  .paywall .price {
+    font-size: 36px; font-weight: 700; font-family: var(--mono);
+    margin-bottom: 4px;
+  }
+  .paywall .price-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 28px; }
+  .pay-btn {
+    width: 100%; padding: 14px 0; font-size: 15px; font-weight: 600;
+    font-family: var(--sans); background: var(--green); color: var(--bg);
+    border: none; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.02em; margin-bottom: 12px;
+  }
+  .pay-btn:hover { background: var(--green-hover); }
+  .pay-btn:active { transform: scale(0.97); }
+  .cancel-btn {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 12px; cursor: pointer; padding: 8px 0;
+    font-family: var(--sans);
+  }
+  .paywall .stripe-note {
+    margin-top: 16px; font-size: 10px; color: var(--text-ghost);
+    font-family: var(--mono); line-height: 1.6;
+  }
+
+  /* Result */
+  .result { width: 100%; max-width: 420px; animation: fadeUp 0.6s ease; }
+
+  .result-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px;
+  }
+  .result-ticker {
+    font-size: 34px; font-family: var(--mono); font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+  .result-price {
+    font-size: 13px; color: #666; margin-top: 2px; font-family: var(--mono);
+  }
+  .direction-badge {
+    padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 700;
+    font-family: var(--mono); letter-spacing: 0.08em;
+  }
+  .direction-badge.long {
+    background: var(--green-dim); color: var(--green); border: 1px solid var(--green-border);
+  }
+  .direction-badge.short {
+    background: var(--red-dim); color: var(--red); border: 1px solid var(--red-border);
+  }
+
+  /* Gauge */
+  .gauge-wrap { display: flex; justify-content: center; margin-bottom: 28px; }
+  .gauge-text { font-family: var(--mono); font-weight: 700; }
+  .gauge-label {
+    font-family: var(--sans); fill: #666; font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  /* Stats grid */
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+    background: #151525; border-radius: 10px; overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--surface); padding: 14px 16px;
+  }
+  .stat-label {
+    font-size: 10px; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 4px; font-family: var(--mono);
+  }
+  .stat-value {
+    font-size: 19px; font-weight: 700; font-family: var(--mono); color: #eee;
+  }
+
+  /* Chart */
+  .chart-card {
+    background: var(--surface); border-radius: 10px; padding: 18px 20px 14px;
+    border: 1px solid #151525; margin-bottom: 24px;
+  }
+  .chart-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px;
+  }
+  .chart-title {
+    font-size: 10px; color: #444; text-transform: uppercase;
+    letter-spacing: 0.12em; font-family: var(--mono);
+  }
+  .chart-legend {
+    display: flex; gap: 14px;
+  }
+  .chart-legend-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 10px; color: #666; font-family: var(--mono);
+  }
+  .chart-legend-dot {
+    width: 12px; height: 3px; border-radius: 2px;
+  }
+  .chart-legend-dot.dashed {
+    background: none !important;
+    border-top: 2px dashed;
+  }
+  .chart-area {
+    position: relative; width: 100%; height: 160px;
+  }
+  .chart-area canvas {
+    width: 100%; height: 100%; display: block;
+  }
+  .chart-prices {
+    display: flex; justify-content: space-between; margin-top: 8px;
+    font-size: 10px; color: #555; font-family: var(--mono);
+  }
+
+  /* Breakdown */
+  .breakdown {
+    background: var(--surface); border-radius: 10px; padding: 18px 20px;
+    border: 1px solid #151525; margin-bottom: 24px;
+  }
+  .breakdown .section-label {
+    font-size: 10px; color: #444; text-transform: uppercase;
+    letter-spacing: 0.12em; margin-bottom: 14px; font-family: var(--mono);
+  }
+  .bar-row {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+  }
+  .bar-label {
+    width: 90px; font-size: 11px; color: #777; text-transform: uppercase;
+    letter-spacing: 0.05em; font-family: var(--sans); text-align: right;
+    flex-shrink: 0;
+  }
+  .bar-track {
+    flex: 1; height: 5px; background: #1a1a2e; border-radius: 3px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%; border-radius: 3px; width: 0%;
+    transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .bar-val {
+    width: 28px; font-size: 12px; color: #bbb;
+    font-family: var(--mono); text-align: right;
+  }
+
+  /* Share */
+  .share-card {
+    background: var(--surface); border-radius: 10px; padding: 16px 20px;
+    border: 1px solid #151525; margin-bottom: 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .share-title { font-size: 13px; font-weight: 600; color: #ccc; margin-bottom: 2px; }
+  .share-sub { font-size: 11px; color: var(--text-muted); }
+  .share-handle {
+    padding: 7px 14px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    font-family: var(--mono); background: var(--green-dim); color: var(--green);
+    border: 1px solid var(--green-border); cursor: pointer;
+  }
+
+  /* Disclaimer */
+  .disclaimer {
+    text-align: center; font-size: 10px; color: var(--text-ghost);
+    line-height: 1.6; margin-bottom: 20px;
+    font-family: var(--mono); letter-spacing: 0.02em;
+  }
+
+  /* Reset button */
+  .reset-wrap { display: flex; justify-content: center; }
+  .reset-btn {
+    padding: 12px 32px; font-size: 13px; font-weight: 600;
+    font-family: var(--sans); background: transparent; color: #666;
+    border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.04em;
+  }
+  .reset-btn:hover { border-color: var(--text); color: var(--text); }
+  .reset-btn:active { transform: scale(0.97); }
+
+  /* Phase visibility */
+  .phase { display: none; width: 100%; }
+  .phase.visible { display: flex; flex-direction: column; align-items: center; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 480px) {
+    .header h1 { font-size: 38px; }
+    .result-ticker { font-size: 28px; }
+    .chips { gap: 6px; }
+    .chip { padding: 6px 10px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app centered" id="app">
+  <!-- Header (always visible) -->
+  <div class="header">
+    <div class="tag">entertainment only · not financial advice</div>
+    <h1 id="title">Stock Odds</h1>
+    <p class="sub" id="subtitle">Enter any ticker. Get the odds.</p>
+  </div>
+
+  <!-- INPUT PHASE -->
+  <div class="phase visible" id="phase-input">
+    <div class="input-row">
+      <input type="text" id="ticker-input" placeholder="AAPL" maxlength="6" autofocus>
+      <button id="analyze-btn" disabled>Analyze</button>
+    </div>
+    <div class="popular">
+      <div class="label">Popular</div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="free-badge" id="free-badge">First lookup is free</div>
+  </div>
+
+  <!-- PAYWALL PHASE -->
+  <div class="phase" id="phase-paywall">
+    <div class="paywall">
+      <div class="paywall-card">
+        <div class="ticker-big" id="paywall-ticker"></div>
+        <div class="unlock-text">Unlock the odds for this ticker</div>
+        <div class="price">$1</div>
+        <div class="price-sub">One-time · instant results</div>
+        <button class="pay-btn" id="pay-btn">Pay & Reveal</button>
+        <button class="cancel-btn" id="cancel-btn">Cancel</button>
+      </div>
+      <div class="stripe-note">Secured by Stripe · Entertainment only</div>
+    </div>
+  </div>
+
+  <!-- PROCESSING PHASE -->
+  <div class="phase" id="phase-processing">
+    <div class="processing">
+      <div class="ticker-big" id="processing-ticker"></div>
+      <div class="step-list" id="step-list"></div>
+    </div>
+  </div>
+
+  <!-- RESULT PHASE -->
+  <div class="phase" id="phase-result">
+    <div class="result">
+      <div class="result-header">
+        <div>
+          <div class="result-ticker" id="result-ticker"></div>
+          <div class="result-price" id="result-price"></div>
+        </div>
+        <div class="direction-badge" id="result-direction"></div>
+      </div>
+
+      <div class="gauge-wrap">
+        <svg width="150" height="150" viewBox="0 0 150 150" id="gauge-svg">
+          <circle cx="75" cy="75" r="67" fill="none" stroke="#1a1a2e" stroke-width="8"/>
+          <circle cx="75" cy="75" r="67" fill="none" stroke-width="8"
+            stroke-linecap="round" id="gauge-ring"
+            transform="rotate(-90 75 75)"/>
+          <text x="75" y="71" text-anchor="middle" dominant-baseline="middle"
+            fill="#f0f0f0" font-size="39" class="gauge-text" id="gauge-value">0%</text>
+          <text x="75" y="97" text-anchor="middle" class="gauge-label">PROBABILITY</text>
+        </svg>
+      </div>
+
+      <div class="stats-grid" id="stats-grid"></div>
+
+      <div class="breakdown">
+        <div class="section-label">Breakdown</div>
+        <div id="bars"></div>
+      </div>
+
+      <div class="chart-card" id="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Price Trajectory</div>
+          <div class="chart-legend">
+            <div class="chart-legend-item">
+              <div class="chart-legend-dot" style="background:#666"></div>
+              History
+            </div>
+            <div class="chart-legend-item">
+              <div class="chart-legend-dot dashed" id="proj-legend-dot" style="border-color:#22c55e"></div>
+              <span id="proj-legend-text">Projected</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-area">
+          <canvas id="price-chart"></canvas>
+        </div>
+        <div class="chart-prices">
+          <span id="chart-start-price"></span>
+          <span id="chart-now-label">Now</span>
+          <span id="chart-end-price"></span>
+        </div>
+      </div>
+
+      <div class="share-card">
+        <div>
+          <div class="share-title">Share your odds</div>
+          <div class="share-sub">Screenshot & post your result</div>
+        </div>
+        <div class="share-handle">@stockodds</div>
+      </div>
+
+      <div class="disclaimer">
+        This is a game of probabilities, not financial advice.
+        <br>Markets are unpredictable. Play responsibly.
+      </div>
+
+      <div class="reset-wrap">
+        <button class="reset-btn" id="reset-btn">Try another ticker</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- Engine ---
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+function seededRandom(seed) {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function generateAnalysis(ticker) {
+  const t = ticker.toUpperCase().trim();
+  const base = hashCode(t + "2026-05-02");
+  const sc = (o) => Math.round(40 + seededRandom(base + o) * 55);
+
+  const scores = {
+    fundamental: sc(1), catalyst: sc(2), sentiment: sc(3), risk: sc(4), insider: sc(5)
+  };
+
+  const overall = Math.round(
+    scores.fundamental * 0.25 + scores.catalyst * 0.2 +
+    scores.sentiment * 0.15 + scores.risk * 0.25 + scores.insider * 0.15
+  );
+
+  const direction = seededRandom(base + 10) > 0.45 ? "LONG" : "SHORT";
+  const currentPrice = Math.round((20 + seededRandom(base + 20) * 280) * 100) / 100;
+  const movePercent = 5 + seededRandom(base + 30) * 25;
+  const targetPrice = direction === "LONG"
+    ? Math.round(currentPrice * (1 + movePercent / 100) * 100) / 100
+    : Math.round(currentPrice * (1 - movePercent / 100) * 100) / 100;
+
+  const horizons = ["1–2 months", "2–3 months", "3–4 months", "4–6 months"];
+  const horizon = horizons[Math.floor(seededRandom(base + 40) * horizons.length)];
+  const probability = Math.min(92, Math.max(51, overall + Math.round((seededRandom(base + 50) - 0.5) * 10)));
+
+  return { ticker: t, direction, probability, overall, currentPrice, targetPrice, horizon, scores };
+}
+
+// --- State ---
+let lookupCount = 0;
+let currentTicker = "";
+
+// --- DOM ---
+const $ = (id) => document.getElementById(id);
+const app = $("app");
+const title = $("title");
+const subtitle = $("subtitle");
+const tickerInput = $("ticker-input");
+const analyzeBtn = $("analyze-btn");
+const freeBadge = $("free-badge");
+const phases = {
+  input: $("phase-input"),
+  paywall: $("phase-paywall"),
+  processing: $("phase-processing"),
+  result: $("phase-result")
+};
+
+function showPhase(name) {
+  Object.values(phases).forEach(p => p.classList.remove("visible"));
+  phases[name].classList.add("visible");
+
+  if (name === "input") {
+    app.classList.add("centered");
+    title.classList.remove("small");
+    subtitle.style.display = "";
+  } else {
+    app.classList.remove("centered");
+    title.classList.add("small");
+    subtitle.style.display = "none";
+  }
+}
+
+// --- Popular chips ---
+const popular = ["AAPL", "TSLA", "NVDA", "AMZN", "GOOG", "META"];
+const chipsEl = $("chips");
+popular.forEach(t => {
+  const btn = document.createElement("button");
+  btn.className = "chip";
+  btn.textContent = t;
+  btn.onclick = () => { currentTicker = t; tickerInput.value = t; runAnalysis(); };
+  chipsEl.appendChild(btn);
+});
+
+// --- Input handling ---
+tickerInput.addEventListener("input", () => {
+  tickerInput.value = tickerInput.value.toUpperCase();
+  analyzeBtn.disabled = !tickerInput.value.trim();
+});
+tickerInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { currentTicker = tickerInput.value.trim(); runAnalysis(); }
+});
+analyzeBtn.addEventListener("click", () => {
+  currentTicker = tickerInput.value.trim();
+  runAnalysis();
+});
+
+// --- Analysis flow ---
+function runAnalysis() {
+  if (!currentTicker) return;
+
+  if (lookupCount >= 1) {
+    $("paywall-ticker").textContent = currentTicker;
+    showPhase("paywall");
+    return;
+  }
+  startProcessing();
+}
+
+const stepLabels = [
+  "Scanning fundamentals", "Evaluating catalysts", "Reading sentiment",
+  "Assessing risk profile", "Checking insider signals", "Computing probability"
+];
+
+function startProcessing() {
+  showPhase("processing");
+  $("processing-ticker").textContent = currentTicker;
+
+  // Build step list
+  const stepList = $("step-list");
+  stepList.innerHTML = "";
+  stepLabels.forEach((label, i) => {
+    const div = document.createElement("div");
+    div.className = "step";
+    div.id = "step-" + i;
+    div.innerHTML = `<div class="step-dot"></div><span>${label}</span>`;
+    stepList.appendChild(div);
+  });
+
+  let step = -1;
+  function advance() {
+    if (step >= 0) {
+      $("step-" + step).classList.remove("current");
+      $("step-" + step).classList.add("done");
+    }
+    step++;
+    if (step < stepLabels.length) {
+      $("step-" + step).classList.add("active", "current");
+      setTimeout(advance, 450);
+    } else {
+      setTimeout(() => showResult(generateAnalysis(currentTicker)), 400);
+    }
+  }
+  setTimeout(advance, 100);
+}
+
+// --- Color helper ---
+function scoreColor(v) {
+  return v >= 75 ? "var(--green)" : v >= 55 ? "var(--yellow)" : "var(--red)";
+}
+
+// --- Result ---
+function showResult(data) {
+  lookupCount++;
+  showPhase("result");
+
+  $("result-ticker").textContent = data.ticker;
+  $("result-price").textContent = "$" + data.currentPrice.toFixed(2);
+
+  const dirEl = $("result-direction");
+  dirEl.textContent = data.direction;
+  dirEl.className = "direction-badge " + (data.direction === "LONG" ? "long" : "short");
+
+  // Animate gauge
+  const ring = $("gauge-ring");
+  const circumference = 2 * Math.PI * 67;
+  ring.setAttribute("stroke-dasharray", circumference);
+  ring.setAttribute("stroke-dashoffset", circumference);
+  ring.setAttribute("stroke", scoreColor(data.probability));
+
+  const gaugeVal = $("gauge-value");
+  let current = 0;
+  const target = data.probability;
+  const start = performance.now();
+  function animateGauge(now) {
+    const progress = Math.min((now - start) / 1200, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    current = Math.round(eased * target);
+    gaugeVal.textContent = current + "%";
+    ring.setAttribute("stroke-dashoffset", circumference - (current / 100) * circumference);
+    ring.setAttribute("stroke", scoreColor(current));
+    if (progress < 1) requestAnimationFrame(animateGauge);
+  }
+  requestAnimationFrame(animateGauge);
+
+  // Stats grid
+  const move = Math.abs(Math.round(((data.targetPrice - data.currentPrice) / data.currentPrice) * 100));
+  const statsData = [
+    { label: "Target", value: "$" + data.targetPrice.toFixed(2) },
+    { label: "Horizon", value: data.horizon },
+    { label: "Move", value: (data.direction === "LONG" ? "+" : "-") + move + "%" },
+    { label: "Confidence", value: data.overall + "/100" }
+  ];
+  const grid = $("stats-grid");
+  grid.innerHTML = "";
+  statsData.forEach(s => {
+    grid.innerHTML += `<div class="stat">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-value">${s.value}</div>
+    </div>`;
+  });
+
+  // Bars
+  const barData = [
+    { label: "Fundamental", value: data.scores.fundamental },
+    { label: "Catalyst", value: data.scores.catalyst },
+    { label: "Sentiment", value: data.scores.sentiment },
+    { label: "Risk", value: data.scores.risk },
+    { label: "Insider", value: data.scores.insider }
+  ];
+  const barsEl = $("bars");
+  barsEl.innerHTML = "";
+  barData.forEach((b, i) => {
+    const row = document.createElement("div");
+    row.className = "bar-row";
+    row.innerHTML = `
+      <span class="bar-label">${b.label}</span>
+      <div class="bar-track"><div class="bar-fill" id="bar-${i}" style="background:${scoreColor(b.value)}"></div></div>
+      <span class="bar-val">${b.value}</span>`;
+    barsEl.appendChild(row);
+    setTimeout(() => {
+      document.getElementById("bar-" + i).style.width = b.value + "%";
+    }, 100 + i * 100);
+  });
+
+  // --- Chart ---
+  drawChart(data);
+}
+
+function generatePriceHistory(data) {
+  const base = hashCode(data.ticker + "hist");
+  const points = 60; // ~3 months of daily-ish data
+  const history = [];
+  let price = data.currentPrice * (0.85 + seededRandom(base + 100) * 0.2);
+
+  for (let i = 0; i < points; i++) {
+    const volatility = 0.015 + seededRandom(base + 200 + i) * 0.015;
+    const drift = (data.currentPrice - price) / (points - i) * 0.3;
+    const change = drift + (seededRandom(base + 300 + i) - 0.48) * price * volatility;
+    price += change;
+    price = Math.max(price * 0.5, price);
+    history.push(price);
+  }
+  // ensure last point matches current price
+  history.push(data.currentPrice);
+  return history;
+}
+
+function generateProjection(data) {
+  const base = hashCode(data.ticker + "proj");
+  const points = 30;
+  const projection = [data.currentPrice];
+  let price = data.currentPrice;
+  const target = data.targetPrice;
+
+  for (let i = 1; i <= points; i++) {
+    const progress = i / points;
+    const ideal = data.currentPrice + (target - data.currentPrice) * progress;
+    const noise = (seededRandom(base + 500 + i) - 0.5) * Math.abs(target - data.currentPrice) * 0.08;
+    price = ideal + noise * (1 - progress * 0.5);
+    projection.push(price);
+  }
+  return projection;
+}
+
+function drawChart(data) {
+  const canvas = $("price-chart");
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  const W = rect.width;
+  const H = rect.height;
+
+  const history = generatePriceHistory(data);
+  const projection = generateProjection(data);
+  const all = [...history, ...projection];
+  const min = Math.min(...all) * 0.98;
+  const max = Math.max(...all) * 1.02;
+  const totalPoints = all.length;
+
+  const toX = (i) => (i / (totalPoints - 1)) * W;
+  const toY = (v) => H - ((v - min) / (max - min)) * (H - 16) - 8;
+
+  const splitIndex = history.length - 1;
+
+  // Grid lines
+  ctx.strokeStyle = "#1a1a2e";
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) {
+    const y = 8 + (i / 3) * (H - 16);
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+
+  // "Now" vertical line
+  const nowX = toX(splitIndex);
+  ctx.strokeStyle = "#2a2a40";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(nowX, 0);
+  ctx.lineTo(nowX, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Animate the chart drawing
+  let animProgress = 0;
+  const animDuration = 1200;
+  const animStart = performance.now();
+
+  function animateChart(now) {
+    animProgress = Math.min((now - animStart) / animDuration, 1);
+    const eased = 1 - Math.pow(1 - animProgress, 3);
+
+    // Clear
+    ctx.clearRect(0, 0, W, H);
+
+    // Redraw grid
+    ctx.strokeStyle = "#1a1a2e";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+    for (let i = 0; i < 4; i++) {
+      const y = 8 + (i / 3) * (H - 16);
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+
+    // Now line
+    ctx.strokeStyle = "#2a2a40";
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(nowX, 0);
+    ctx.lineTo(nowX, H);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // History line (solid gray)
+    const histDrawCount = Math.floor(eased * history.length);
+    if (histDrawCount > 1) {
+      ctx.strokeStyle = "#666";
+      ctx.lineWidth = 2;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(toX(0), toY(history[0]));
+      for (let i = 1; i < histDrawCount; i++) {
+        ctx.lineTo(toX(i), toY(history[i]));
+      }
+      ctx.stroke();
+    }
+
+    // Projection line (dashed, colored)
+    if (eased > 0.5) {
+      const projProgress = (eased - 0.5) / 0.5;
+      const projDrawCount = Math.floor(projProgress * projection.length);
+      const projColor = data.direction === "LONG" ? "#22c55e" : "#ef4444";
+
+      if (projDrawCount > 1) {
+        // Projection fill (gradient under curve)
+        const startX = toX(splitIndex);
+        ctx.beginPath();
+        ctx.moveTo(startX, toY(projection[0]));
+        for (let i = 1; i < projDrawCount; i++) {
+          ctx.lineTo(toX(splitIndex + i), toY(projection[i]));
+        }
+        const lastProjX = toX(splitIndex + projDrawCount - 1);
+        ctx.lineTo(lastProjX, H);
+        ctx.lineTo(startX, H);
+        ctx.closePath();
+        const grad = ctx.createLinearGradient(0, 0, 0, H);
+        grad.addColorStop(0, data.direction === "LONG" ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)");
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Projection line
+        ctx.strokeStyle = projColor;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(startX, toY(projection[0]));
+        for (let i = 1; i < projDrawCount; i++) {
+          ctx.lineTo(toX(splitIndex + i), toY(projection[i]));
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Target dot at end
+        if (projDrawCount >= projection.length) {
+          const endX = toX(totalPoints - 1);
+          const endY = toY(projection[projection.length - 1]);
+          ctx.beginPath();
+          ctx.arc(endX, endY, 4, 0, Math.PI * 2);
+          ctx.fillStyle = projColor;
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(endX, endY, 7, 0, Math.PI * 2);
+          ctx.strokeStyle = projColor;
+          ctx.lineWidth = 1.5;
+          ctx.globalAlpha = 0.3;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+
+    // Current price dot
+    if (histDrawCount >= history.length) {
+      ctx.beginPath();
+      ctx.arc(nowX, toY(data.currentPrice), 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#f0f0f0";
+      ctx.fill();
+    }
+
+    if (animProgress < 1) requestAnimationFrame(animateChart);
+  }
+
+  requestAnimationFrame(animateChart);
+
+  // Update labels
+  const startPrice = history[0];
+  $("chart-start-price").textContent = "$" + startPrice.toFixed(0);
+  $("chart-end-price").textContent = "$" + data.targetPrice.toFixed(0);
+
+  const projColor = data.direction === "LONG" ? "#22c55e" : "#ef4444";
+  $("proj-legend-dot").style.borderColor = projColor;
+}
+
+// --- Paywall ---
+$("pay-btn").addEventListener("click", () => {
+  // In production: trigger Stripe checkout
+  // For demo: unlock and run
+  lookupCount = 0; // Reset for demo
+  startProcessing();
+});
+$("cancel-btn").addEventListener("click", reset);
+
+// --- Reset ---
+$("reset-btn").addEventListener("click", reset);
+
+function reset() {
+  currentTicker = "";
+  tickerInput.value = "";
+  analyzeBtn.disabled = true;
+  freeBadge.style.display = lookupCount >= 1 ? "none" : "";
+  showPhase("input");
+  setTimeout(() => tickerInput.focus(), 100);
+}
+</script>
+
+</body>
+</html>
