@@ -907,12 +907,27 @@ function drawChart(data) {
   $("proj-legend-dot").style.borderColor = projColor;
 }
 
+// --- Check for Stripe return ---
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get("paid") === "true") {
+  // User just paid — restore their ticker and unlock
+  const savedTicker = sessionStorage.getItem("stockodds_ticker");
+  if (savedTicker) {
+    currentTicker = savedTicker;
+    sessionStorage.removeItem("stockodds_ticker");
+    lookupCount = 0; // Allow this lookup
+    startProcessing();
+  }
+  // Clean URL
+  window.history.replaceState({}, "", window.location.pathname);
+}
+
 // --- Paywall ---
 $("pay-btn").addEventListener("click", () => {
-  // In production: trigger Stripe checkout
-  // For demo: unlock and run
-  lookupCount = 0; // Reset for demo
-  startProcessing();
+  // Save the ticker so we can restore it after Stripe redirect
+  sessionStorage.setItem("stockodds_ticker", currentTicker);
+  // Redirect to Stripe checkout
+  window.location.href = "https://buy.stripe.com/test_cNiaEWayc7OAaPCd2sa7C00";
 });
 $("cancel-btn").addEventListener("click", reset);
 
