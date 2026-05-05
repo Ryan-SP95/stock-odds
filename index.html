@@ -560,6 +560,11 @@
           <span id="chart-now-label">Now</span>
           <span id="chart-end-price"></span>
         </div>
+        <div class="chart-prices" style="margin-top:2px;color:#333">
+          <span id="chart-start-time">3mo ago</span>
+          <span></span>
+          <span id="chart-end-time"></span>
+        </div>
       </div>
 
       <div class="share-card">
@@ -1053,6 +1058,19 @@ function drawChart(data) {
   const startPrice = history[0];
   $("chart-start-price").textContent = "$" + startPrice.toFixed(0);
   $("chart-end-price").textContent = "$" + data.targetPrice.toFixed(0);
+
+  // Set time labels based on horizon
+  const horizonMap = {
+    "1-2 months": "+1–2mo",
+    "1–2 months": "+1–2mo",
+    "2-3 months": "+2–3mo",
+    "2–3 months": "+2–3mo",
+    "3-4 months": "+3–4mo",
+    "3–4 months": "+3–4mo",
+    "4-6 months": "+4–6mo",
+    "4–6 months": "+4–6mo",
+  };
+  $("chart-end-time").textContent = horizonMap[data.horizon] || "+3mo";
 
   const projColor = data.direction === "LONG" ? "#22c55e" : "#ef4444";
   $("proj-legend-dot").style.borderColor = projColor;
