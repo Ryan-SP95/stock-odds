@@ -691,7 +691,7 @@ analyzeBtn.addEventListener("click", () => {
 function runAnalysis() {
   if (!currentTicker) return;
 
-  if (lookupCount >= 1) {
+  if (lookupCount >= 1 && !testMode) {
     $("paywall-ticker").textContent = currentTicker;
     showPhase("paywall");
     return;
@@ -1066,6 +1066,14 @@ function drawChart(data) {
 
 // --- Check for Stripe return ---
 const urlParams = new URLSearchParams(window.location.search);
+
+// Secret test mode — add ?testmode=stockodds2026 to URL to bypass paywall
+const testMode = urlParams.get("testmode") === "stockodds2026";
+if (testMode) {
+  lookupCount = 0; // Reset paywall
+  console.log("Test mode active — paywall bypassed");
+}
+
 if (urlParams.get("paid") === "true") {
   // User just paid — restore their ticker and unlock
   const savedTicker = sessionStorage.getItem("stockodds_ticker");
