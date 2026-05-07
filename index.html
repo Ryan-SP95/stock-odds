@@ -280,7 +280,7 @@
     display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
   }
   .bar-label {
-    width: 90px; font-size: 11px; color: #777; text-transform: uppercase;
+    width: 110px; font-size: 11px; color: #777; text-transform: uppercase;
     letter-spacing: 0.05em; font-family: var(--sans); text-align: right;
     flex-shrink: 0;
   }
@@ -466,7 +466,7 @@
       <div class="label">Popular</div>
       <div class="chips" id="chips"></div>
     </div>
-    <div class="free-badge" id="free-badge">100% free · limited pulls due to cost</div>
+    <div class="free-badge" id="free-badge">100% free · limited lookups due to cost of API pulls</div>
   </div>
 
   <!-- PAYWALL PHASE -->
@@ -521,7 +521,7 @@
             transform="rotate(-90 75 75)"/>
           <text x="75" y="71" text-anchor="middle" dominant-baseline="middle"
             fill="#f0f0f0" font-size="39" class="gauge-text" id="gauge-value">0%</text>
-          <text x="75" y="97" text-anchor="middle" class="gauge-label">PROBABILITY</text>
+          <text x="75" y="97" text-anchor="middle" class="gauge-label">THE ODDS</text>
         </svg>
       </div>
 
@@ -534,7 +534,7 @@
       <div class="stats-grid" id="stats-grid"></div>
 
       <div class="breakdown">
-        <div class="section-label">AI-Scored Breakdown</div>
+        <div class="section-label">How We Scored It</div>
         <div id="bars"></div>
       </div>
 
@@ -814,10 +814,10 @@ function showResult(data) {
   // Stats grid
   const move = Math.abs(Math.round(((data.targetPrice - data.currentPrice) / data.currentPrice) * 100));
   const statsData = [
-    { label: "Target", value: "$" + data.targetPrice.toFixed(2) },
-    { label: "Horizon", value: data.horizon },
-    { label: "Move", value: (data.direction === "LONG" ? "+" : "-") + move + "%" },
-    { label: "Confidence", value: data.overall + "/100" }
+    { label: "Target Price", sub: "where it could go", value: "$" + data.targetPrice.toFixed(2) },
+    { label: "Time Frame", sub: "when this could happen", value: data.horizon },
+    { label: "Potential Move", sub: "from current price", value: (data.direction === "LONG" ? "+" : "-") + move + "%" },
+    { label: "Overall Score", sub: "out of 100", value: data.overall + "/100" }
   ];
   const grid = $("stats-grid");
   grid.innerHTML = "";
@@ -825,16 +825,17 @@ function showResult(data) {
     grid.innerHTML += `<div class="stat">
       <div class="stat-label">${s.label}</div>
       <div class="stat-value">${s.value}</div>
+      <div style="font-size:9px;color:#444;margin-top:2px;font-family:var(--mono)">${s.sub}</div>
     </div>`;
   });
 
   // Bars
   const barData = [
-    { label: "Fundamental", value: data.scores.fundamental },
-    { label: "Catalyst", value: data.scores.catalyst },
-    { label: "Sentiment", value: data.scores.sentiment },
-    { label: "Risk", value: data.scores.risk },
-    { label: "Insider", value: data.scores.insider }
+    { label: "Financial Health", value: data.scores.fundamental },
+    { label: "Upcoming Events", value: data.scores.catalyst },
+    { label: "Market Buzz", value: data.scores.sentiment },
+    { label: "Risk Level", value: data.scores.risk },
+    { label: "Insider Signals", value: data.scores.insider }
   ];
   const barsEl = $("bars");
   barsEl.innerHTML = "";
@@ -1125,3 +1126,4 @@ $("error-retry-btn").addEventListener("click", reset);
 
 </body>
 </html>
+
