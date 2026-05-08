@@ -386,6 +386,55 @@
   .agree-btn:hover { opacity: 0.9; }
   .agree-btn:active { transform: scale(0.97); }
 
+  /* How It Works overlay */
+  .how-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(10,10,20,0.95);
+    display: none; justify-content: center; align-items: flex-start;
+    z-index: 999; padding: 20px; overflow-y: auto;
+  }
+  .how-overlay.visible { display: flex; }
+  .how-card {
+    width: 100%; max-width: 480px; background: var(--surface);
+    border-radius: 12px; padding: 32px 28px; border: 1px solid var(--border);
+    animation: fadeUp 0.4s ease; margin: 40px 0;
+  }
+  .how-card h2 {
+    font-size: 22px; font-weight: 700; margin-bottom: 6px;
+    letter-spacing: -0.02em;
+  }
+  .how-card .how-tagline {
+    font-size: 11px; color: var(--green); font-family: var(--mono);
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 24px;
+  }
+  .how-card h3 {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    margin: 20px 0 8px 0;
+  }
+  .how-card p {
+    font-size: 13px; color: #999; line-height: 1.7; margin-bottom: 12px;
+  }
+  .how-card .how-score-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid #1a1a2e;
+    font-size: 12px; color: #888;
+  }
+  .how-card .how-score-row:last-child { border-bottom: none; }
+  .how-card .how-score-label { font-family: var(--mono); color: #aaa; }
+  .how-card .how-score-detail { color: #666; text-align: right; max-width: 60%; }
+  .how-close {
+    width: 100%; padding: 14px 0; font-size: 15px; font-weight: 600;
+    font-family: var(--sans); background: var(--text); color: var(--bg);
+    border: none; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.02em; margin-top: 24px;
+  }
+  .how-close:hover { opacity: 0.9; }
+  .how-link {
+    font-size: 11px; color: #555; font-family: var(--mono);
+    cursor: pointer; transition: color 0.2s; letter-spacing: 0.05em;
+  }
+  .how-link:hover { color: #ccc; }
+
   /* Rationale */
   .rationale-card {
     background: var(--surface); border-radius: 10px; padding: 14px 18px;
@@ -448,12 +497,57 @@
   </div>
 </div>
 
+<!-- HOW IT WORKS OVERLAY -->
+<div class="how-overlay" id="how-overlay">
+  <div class="how-card">
+    <h2>How It Works</h2>
+    <div class="how-tagline">Full transparency · Open methodology</div>
+
+    <p>The Odds Algo pulls real market data and runs it through an AI scoring engine. Every score is based on specific, measurable factors — not guesswork. Here's exactly how each category is scored.</p>
+
+    <h3>Financial Health — 25% of total</h3>
+    <p>Scored using real data from the company's market profile. Three factors, 100 points max:</p>
+    <div class="how-score-row">
+      <span class="how-score-label">Market Cap</span>
+      <span class="how-score-detail">Larger companies score higher (up to 40pts)</span>
+    </div>
+    <div class="how-score-row">
+      <span class="how-score-label">Beta</span>
+      <span class="how-score-detail">Lower volatility scores higher (up to 30pts)</span>
+    </div>
+    <div class="how-score-row">
+      <span class="how-score-label">52-Week Position</span>
+      <span class="how-score-detail">Mid-range is healthiest (up to 30pts)</span>
+    </div>
+
+    <h3>Upcoming Events — 20% of total</h3>
+    <p>Scored by AI based on proximity and significance of upcoming earnings, product launches, regulatory decisions, and macro events.</p>
+
+    <h3>Market Buzz — 15% of total</h3>
+    <p>Scored by AI based on recent price momentum, analyst consensus, and overall market sentiment toward the stock.</p>
+
+    <h3>Risk Level — 25% of total</h3>
+    <p>Scored by AI assessing volatility, debt burden, pending litigation, and proximity to binary events like earnings. Higher score means lower risk.</p>
+
+    <h3>Insider Signals — 15% of total</h3>
+    <p>Scored by AI looking for patterns in insider buying or selling. Defaults to 50 (neutral) when insufficient data is available. We're transparent about this limitation.</p>
+
+    <h3>The Final Number</h3>
+    <p>Each category is weighted and combined into an overall score. The "Odds" percentage you see is derived from this overall score — the higher the score, the stronger the algorithm's conviction in the predicted direction.</p>
+
+    <p style="color:#555;font-size:11px;margin-top:16px;font-family:var(--mono)">Data source: Financial Modeling Prep (real-time market data) + Gemini AI (scoring & analysis). This is entertainment, not financial advice. We show our work because we believe in transparency.</p>
+
+    <button class="how-close" id="how-close">Got it</button>
+  </div>
+</div>
+
 <div class="app centered" id="app">
   <!-- Header (always visible) -->
   <div class="header">
     <div class="tag">live ai engine · real data · entertainment only</div>
     <h1 id="title">The Odds Algo</h1>
     <p class="sub" id="subtitle">What are the odds? Enter a ticker and find out.</p>
+    <div class="how-link" id="how-link">How does this work?</div>
   </div>
 
   <!-- INPUT PHASE -->
@@ -466,7 +560,7 @@
       <div class="label">Popular</div>
       <div class="chips" id="chips"></div>
     </div>
-    <div class="free-badge" id="free-badge">100% free · limited lookups due to cost of API pulls</div>
+    <div class="free-badge" id="free-badge">100% free · unlimited lookups</div>
   </div>
 
   <!-- PAYWALL PHASE -->
@@ -690,6 +784,14 @@ tickerInput.addEventListener("keydown", (e) => {
 analyzeBtn.addEventListener("click", () => {
   currentTicker = tickerInput.value.trim();
   runAnalysis();
+});
+
+// --- How It Works ---
+$("how-link").addEventListener("click", () => {
+  document.getElementById("how-overlay").classList.add("visible");
+});
+$("how-close").addEventListener("click", () => {
+  document.getElementById("how-overlay").classList.remove("visible");
 });
 
 // --- Analysis flow ---
@@ -1126,4 +1228,3 @@ $("error-retry-btn").addEventListener("click", reset);
 
 </body>
 </html>
-
