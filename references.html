@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credits & Sources — TheOddsAlgo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a14; --surface: #0f0f1e; --border: #1a1a30;
+  --text: #f0f0f0; --muted: #555570; --dim: #333350;
+  --green: #22c55e; --mono: 'Space Mono', monospace; --sans: 'Space Grotesk', sans-serif;
+}
+html, body { background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+
+#page { max-width: 640px; margin: 0 auto; padding: 60px 24px 100px; }
+
+.back { font-size: 10px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; text-decoration: none; font-family: var(--mono); display: block; margin-bottom: 48px; transition: color 0.15s; }
+.back:hover { color: var(--text); }
+
+h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; color: var(--text); margin-bottom: 6px; }
+.subtitle { font-size: 11px; color: var(--muted); font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 48px; }
+
+.section { margin-bottom: 48px; }
+.section-label {
+  font-size: 9px; color: var(--muted); letter-spacing: 0.2em;
+  text-transform: uppercase; font-family: var(--mono);
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ref-item { margin-bottom: 20px; }
+.ref-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.ref-authors { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-bottom: 4px; }
+.ref-desc { font-size: 12px; color: var(--dim); line-height: 1.6; margin-bottom: 5px; }
+.ref-link { font-size: 10px; color: var(--green); font-family: var(--mono); text-decoration: none; letter-spacing: 0.05em; transition: opacity 0.15s; }
+.ref-link:hover { opacity: 0.7; }
+.ref-badge {
+  display: inline-block; font-size: 9px; font-family: var(--mono);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 3px; margin-left: 8px;
+  background: rgba(34,197,94,0.08); color: var(--green);
+  border: 1px solid rgba(34,197,94,0.2); vertical-align: middle;
+}
+
+.ai-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 20px 22px; margin-top: 4px;
+}
+.ai-card p { font-size: 13px; color: #888; line-height: 1.8; margin-bottom: 12px; }
+.ai-card p:last-child { margin-bottom: 0; }
+.ai-card strong { color: var(--text); font-weight: 600; }
+
+.divider { height: 1px; background: var(--border); margin: 40px 0; }
+
+.license-row {
+  display: flex; align-items: baseline; gap: 12px;
+  font-size: 11px; color: var(--dim); font-family: var(--mono);
+  margin-bottom: 8px;
+}
+.license-row .lr-name { color: var(--muted); width: 120px; flex-shrink: 0; }
+.license-row .lr-tag { color: var(--dim); }
+
+footer { font-size: 10px; color: var(--dim); font-family: var(--mono); margin-top: 48px; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div id="page">
+
+  <a class="back" href="/lab">← R Lab</a>
+
+  <h1>Credits & Sources</h1>
+  <div class="subtitle">Full transparency · Open methodology · Open source</div>
+
+  <!-- OPEN SOURCE TEXTS -->
+  <div class="section">
+    <div class="section-label">Open Source Textbooks</div>
+
+    <div class="ref-item">
+      <div class="ref-title">An Introduction to Statistical Learning (ISL) <span class="ref-badge">free pdf</span></div>
+      <div class="ref-authors">Gareth James, Daniela Witten, Trevor Hastie, Robert Tibshirani</div>
+      <div class="ref-desc">The primary reference for Levels 3 and 6. Covers regression, classification, resampling, tree-based methods, and unsupervised learning with R labs throughout. Used as the pedagogical backbone of this curriculum.</div>
+      <a class="ref-link" href="https://www.statlearning.com" target="_blank">statlearning.com →</a>
+    </div>
+
+    <div class="ref-item">
+      <div class="ref-title">R for Data Science (R4DS) <span class="ref-badge">free online</span></div>
+      <div class="ref-authors">Hadley Wickham, Mine Çetinkaya-Rundel, Garrett Grolemund</div>
+      <div class="ref-desc">Primary reference for Level 4 (The Tidyverse). Covers data import, transformation, visualisation, and communication using the tidyverse. The definitive guide to modern R practice.</div>
+      <a class="ref-link" href="https://r4ds.hadley.nz" target="_blank">r4ds.hadley.nz →</a>
+    </div>
+
+    <div class="ref-item">
+      <div class="ref-title">Forecasting: Principles and Practice (FPP3) <span class="ref-badge">free online</span></div>
+      <div class="ref-authors">Rob J Hyndman, George Athanasopoulos</div>
+      <div class="ref-desc">Primary reference for Level 5 (Time Series). Covers time series decomposition, exponential smoothing, ARIMA models, and forecast evaluation. Essential reading for anyone working with market data.</div>
+      <a class="ref-link" href="https://otexts.com/fpp3" target="_blank">otexts.com/fpp3 →</a>
+    </div>
+
+    <div class="ref-item">
+      <div class="ref-title">Advanced R <span class="ref-badge">free online</span></div>
+      <div class="ref-authors">Hadley Wickham</div>
+      <div class="ref-desc">Supplementary reference for Level 7. Covers R's object system, functional programming, metaprogramming, and performance. Consulted for curriculum design on advanced topics.</div>
+      <a class="ref-link" href="https://adv-r.hadley.nz" target="_blank">adv-r.hadley.nz →</a>
+    </div>
+
+    <div class="ref-item">
+      <div class="ref-title">OpenIntro Statistics <span class="ref-badge">free pdf</span></div>
+      <div class="ref-authors">David Diez, Mine Çetinkaya-Rundel, Christopher Barr</div>
+      <div class="ref-desc">Supplementary statistics reference. Used as a gentler introduction to probability and inference concepts before ISL. Freely available and community-maintained.</div>
+      <a class="ref-link" href="https://www.openintro.org/book/os" target="_blank">openintro.org →</a>
+    </div>
+  </div>
+
+  <!-- SOFTWARE -->
+  <div class="section">
+    <div class="section-label">Software & Infrastructure</div>
+
+    <div class="ref-item">
+      <div class="ref-title">webR — R via WebAssembly <span class="ref-badge">MIT license</span></div>
+      <div class="ref-authors">George Stagg, Lionel Henry — Posit PBC</div>
+      <div class="ref-desc">The engine that runs real R code directly in your browser with no server required. This is what makes the R Lab possible without backend infrastructure. A remarkable piece of open-source engineering.</div>
+      <a class="ref-link" href="https://github.com/r-wasm/webr" target="_blank">github.com/r-wasm/webr →</a>
+    </div>
+
+    <div class="ref-item">
+      <div class="ref-title">R Language <span class="ref-badge">GPL-2</span></div>
+      <div class="ref-authors">R Core Team</div>
+      <div class="ref-desc">The statistical computing language this entire curriculum is built on. Free, open source, and maintained by a global community since 1995.</div>
+      <a class="ref-link" href="https://www.r-project.org" target="_blank">r-project.org →</a>
+    </div>
+
+    <div class="ref-item">
+      <div class="ref-title">Vercel — Frontend Hosting</div>
+      <div class="ref-authors">Vercel Inc.</div>
+      <div class="ref-desc">Hosts theoddsalgo.com and the R Lab. Auto-deploys from GitHub on every commit.</div>
+      <a class="ref-link" href="https://vercel.com" target="_blank">vercel.com →</a>
+    </div>
+
+    <div class="ref-item">
+      <div class="ref-title">Railway — Backend Hosting</div>
+      <div class="ref-authors">Railway Corp.</div>
+      <div class="ref-desc">Hosts the Node.js backend that connects the main odds engine to FMP and Gemini APIs.</div>
+      <a class="ref-link" href="https://railway.app" target="_blank">railway.app →</a>
+    </div>
+  </div>
+
+  <!-- DATA -->
+  <div class="section">
+    <div class="section-label">Data Sources</div>
+
+    <div class="ref-item">
+      <div class="ref-title">Financial Modeling Prep (FMP)</div>
+      <div class="ref-authors">Financial Modeling Prep Inc.</div>
+      <div class="ref-desc">Provides real-time stock prices, market cap, beta, 52-week range, and earnings calendar data used in the main Odds Algo scoring engine.</div>
+      <a class="ref-link" href="https://financialmodelingprep.com" target="_blank">financialmodelingprep.com →</a>
+    </div>
+
+    <div class="ref-item">
+      <div class="ref-title">Gemini 2.5 Flash — AI Scoring</div>
+      <div class="ref-authors">Google DeepMind</div>
+      <div class="ref-desc">Powers the AI scoring engine for the main odds tool — evaluating catalyst clarity, market sentiment, risk, and insider signals for each ticker.</div>
+      <a class="ref-link" href="https://deepmind.google/technologies/gemini" target="_blank">deepmind.google →</a>
+    </div>
+  </div>
+
+  <!-- CLAUDE -->
+  <div class="section">
+    <div class="section-label">AI Engineering Tool</div>
+    <div class="ai-card">
+      <p><strong>This platform was built using Claude (Anthropic) as the primary engineering tool.</strong></p>
+      <p>Claude authored the majority of the HTML, CSS, JavaScript, and R curriculum structure for this project — including the R Lab interface, all 23 trial definitions, validation logic, the JS simulation engine, and this references page. The AI model used was <strong>Claude Sonnet 4.6</strong>.</p>
+      <p>All design decisions, content review, financial framing, and deployment were made by the project owner. Claude was the engineer; the human was the architect.</p>
+      <p>We believe transparency about AI-assisted development matters — especially on a platform that teaches data science. If you're curious about how this was built, the methodology is the same as the curriculum: iterative, tool-assisted, and documented.</p>
+      <a class="ref-link" href="https://www.anthropic.com" target="_blank">anthropic.com →</a>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- LICENSES -->
+  <div class="section">
+    <div class="section-label">Licenses</div>
+    <div class="license-row"><span class="lr-name">ISL textbook</span><span class="lr-tag">Creative Commons BY-NC 4.0</span></div>
+    <div class="license-row"><span class="lr-name">R for Data Science</span><span class="lr-tag">Creative Commons BY-NC-ND 3.0</span></div>
+    <div class="license-row"><span class="lr-name">FPP3</span><span class="lr-tag">Creative Commons BY-NC-SA 4.0</span></div>
+    <div class="license-row"><span class="lr-name">OpenIntro Stats</span><span class="lr-tag">Creative Commons BY-SA 3.0</span></div>
+    <div class="license-row"><span class="lr-name">webR</span><span class="lr-tag">MIT License</span></div>
+    <div class="license-row"><span class="lr-name">R language</span><span class="lr-tag">GPL-2 / GPL-3</span></div>
+    <div class="license-row"><span class="lr-name">R Lab curriculum</span><span class="lr-tag">MIT License — free to fork and build on</span></div>
+  </div>
+
+  <footer>
+    TheOddsAlgo.com · R Survival Trials · Entertainment and education only<br>
+    Not financial advice. Markets are unpredictable. Past performance is not indicative of future results.<br><br>
+    Built in public. Sources open. Methods transparent.
+  </footer>
+
+</div>
+</body>
+</html>
