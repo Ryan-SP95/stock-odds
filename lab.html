@@ -25,10 +25,24 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 #shell { display: flex; height: 100vh; overflow: hidden; }
 
 /* sidebar */
-#sidebar {
-  width: 200px; min-width: 200px; border-right: 1px solid var(--border);
-  background: #09090f; display: flex; flex-direction: column; overflow: hidden;
-}
+#sidebar { background: #09090f; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; transition: width 0.25s ease; position: relative; flex-shrink: 0; }
+#sidebar.expanded { width: 200px; }
+#sidebar.collapsed { width: 36px; }
+#sb-toggle { position: absolute; top: 50%; right: -10px; transform: translateY(-50%); width: 20px; height: 20px; background: #09090f; border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 9px; color: var(--muted); transition: color 0.15s; user-select: none; }
+#sb-toggle:hover { color: var(--text); }
+/* rail (collapsed) */
+#sb-rail { display: none; flex-direction: column; align-items: center; padding: 14px 0 10px; gap: 4px; width: 36px; }
+.rail-logo { font-family: var(--sans); font-size: 11px; font-weight: 700; color: var(--green); margin-bottom: 10px; writing-mode: vertical-rl; letter-spacing: 0.05em; }
+.rail-prog { width: 3px; height: 60px; background: var(--dim); border-radius: 2px; margin: 4px 0; position: relative; }
+.rail-prog-fill { position: absolute; bottom: 0; left: 0; right: 0; background: var(--green); border-radius: 2px; transition: height 0.6s ease; }
+.rail-sep { width: 16px; height: 1px; background: var(--border); margin: 4px 0; }
+.rail-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--dim); margin-bottom: 8px; transition: all 0.2s; cursor: pointer; }
+.rail-dot:hover { transform: scale(1.3); }
+.rail-dot.active { background: var(--yellow); }
+.rail-dot.done { background: var(--green); }
+.rail-dot.partial { background: var(--muted); }
+/* expanded inner */
+#sb-inner { display: flex; flex-direction: column; height: 100%; width: 200px; flex-shrink: 0; }
 .sb-top { padding: 16px 14px 10px; border-bottom: 1px solid var(--border); }
 .sb-logo { font-family: var(--sans); font-size: 13px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
 .sb-logo span { color: var(--green); }
@@ -39,37 +53,42 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .sb-progress-label span { color: var(--green); }
 .sb-bar { height: 2px; background: var(--dim); border-radius: 1px; }
 .sb-bar-fill { height: 100%; background: var(--green); border-radius: 1px; transition: width 0.6s ease; }
-#tree { flex: 1; overflow-y: auto; padding: 6px 0; }
+#tree { flex: 1; overflow-y: auto; padding: 4px 0; }
 #tree::-webkit-scrollbar { width: 2px; }
 #tree::-webkit-scrollbar-thumb { background: var(--border); }
 .sb-credits { padding: 10px 14px; border-top: 1px solid var(--border); }
 .sb-credits-link { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-decoration: none; text-transform: uppercase; transition: color 0.15s; }
 .sb-credits-link:hover { color: var(--text); }
-.level-label { padding: 10px 14px 4px; font-size: 9px; color: var(--dim); letter-spacing: 0.15em; text-transform: uppercase; }
-.trial-row {
-  padding: 7px 14px; display: flex; align-items: center; gap: 8px;
-  cursor: pointer; transition: background 0.1s; border-left: 2px solid transparent;
-  font-size: 11px; color: var(--muted);
-}
-.trial-row:hover { background: var(--surface); color: #aaa; }
-.trial-row.active { background: var(--surface); color: var(--text); border-left-color: var(--green); }
-.trial-row.done { color: #555580; }
+/* level headers */
+.level-header { padding: 8px 14px; display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; transition: background 0.1s; border-left: 2px solid transparent; }
+.level-header:hover { background: var(--surface); }
+.level-header.has-active { border-left-color: var(--green); }
+.lh-chevron { font-size: 8px; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; margin-left: auto; }
+.level-header.open .lh-chevron { transform: rotate(90deg); }
+.lh-name { font-size: 8px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; flex: 1; }
+.level-header.has-active .lh-name { color: #aaa; }
+.lh-count { font-size: 8px; color: var(--green); font-weight: 700; }
+.level-trials { overflow: hidden; transition: max-height 0.2s ease; }
+.level-trials.open { max-height: 600px; }
+.level-trials.closed { max-height: 0; }
+/* trial rows */
+.trial-row { padding: 6px 14px 6px 20px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: background 0.1s; border-left: 2px solid transparent; }
+.trial-row:hover { background: var(--surface); }
+.trial-row.active { background: var(--surface); border-left-color: var(--green); }
+.trial-row.locked { opacity: 0.25; cursor: not-allowed; pointer-events: none; }
 .trial-row.done .tr-dot { background: var(--green); }
 .trial-row.active .tr-id { color: var(--green); }
 .tr-id { font-size: 9px; font-weight: 700; width: 22px; flex-shrink: 0; color: var(--muted); }
-.tr-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
+.tr-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; color: var(--muted); }
+.trial-row.active .tr-name { color: var(--text); }
 .tr-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
 .trial-row.active .tr-dot { background: var(--yellow); }
 
 /* main */
 #main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
-.mission-bar { padding: 16px 24px 14px; border-bottom: 1px solid var(--border); background: #09090f; flex-shrink: 0; }
-.mb-meta { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
-.mb-id { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; }
-.mb-level { font-size: 9px; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase; }
-.mb-isl { font-size: 9px; color: var(--dim); margin-left: auto; }
+.mission-bar { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); background: #09090f; flex-shrink: 0; }
+.mb-tag { font-size: 9px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
 .mb-mission { font-family: var(--sans); font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.4; }
-.mb-concept { font-size: 10px; color: var(--muted); margin-top: 5px; }
 #editor-wrap { flex: 1; display: flex; flex-direction: column; padding: 16px 24px 0; min-height: 0; }
 .editor-label { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
 .engine-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow); flex-shrink: 0; }
@@ -87,16 +106,12 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 #editor::-webkit-scrollbar { width: 3px; }
 #editor::-webkit-scrollbar-thumb { background: var(--border); }
 .action-bar { padding: 12px 24px 0; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
-.run-btn {
-  padding: 8px 22px; background: transparent; border: 1px solid #2a2a50;
-  border-radius: 5px; color: var(--text); font-family: var(--mono);
-  font-size: 12px; cursor: pointer; letter-spacing: 0.08em; transition: all 0.15s;
-}
+.run-btn { padding: 8px 22px; background: transparent; border: 1px solid #2a2a50; border-radius: 5px; color: var(--text); font-family: var(--mono); font-size: 12px; cursor: pointer; letter-spacing: 0.08em; transition: all 0.15s; }
 .run-btn:hover { border-color: var(--text); }
 .run-btn:active { transform: scale(0.97); }
 .run-btn:disabled { opacity: 0.3; cursor: default; }
-.text-btn { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; letter-spacing: 0.05em; transition: color 0.15s; padding: 0; }
-.text-btn:hover { color: var(--text); }
+.hint-link { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; letter-spacing: 0.06em; transition: color 0.15s; padding: 0; margin-top: 6px; display: block; }
+.hint-link:hover { color: var(--yellow); }
 .kb { margin-left: auto; font-size: 10px; color: var(--dim); }
 #output { padding: 16px 24px 24px; font-size: 12px; line-height: 1.9; min-height: 80px; overflow-y: auto; flex-shrink: 0; max-height: 220px; }
 #output::-webkit-scrollbar { width: 3px; }
@@ -116,31 +131,36 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 </head>
 <body>
 <div id="shell">
-  <div id="sidebar">
-    <div class="sb-top">
-      <div class="sb-logo">TheOddsAlgo <span>R Lab</span></div>
-      <a class="sb-back" href="/">← main site</a>
+  <div id="sidebar" class="expanded">
+    <div id="sb-toggle" onclick="toggleSidebar()">‹</div>
+
+    <div id="sb-rail">
+      <div class="rail-logo">R</div>
+      <div class="rail-prog"><div class="rail-prog-fill" id="railFill" style="height:0%"></div></div>
+      <div class="rail-sep"></div>
+      <div id="rail-dots"></div>
     </div>
-    <div class="sb-progress">
-      <div class="sb-progress-label">Progress <span id="progressText">0 / 47</span></div>
-      <div class="sb-bar"><div class="sb-bar-fill" id="progressBar" style="width:0%"></div></div>
-    </div>
-    <div id="tree"></div>
-    <div class="sb-credits">
-      <a href="/python-lab" class="sb-credits-link" style="display:block;margin-bottom:6px;">Python Lab →</a>
-      <a href="/references" class="sb-credits-link">credits & sources →</a>
+
+    <div id="sb-inner">
+      <div class="sb-top">
+        <div class="sb-logo">TheOddsAlgo <span>R Lab</span></div>
+        <a class="sb-back" href="/">← main site</a>
+      </div>
+      <div class="sb-progress">
+        <div class="sb-progress-label">Progress <span id="progressText">0 / 47</span></div>
+        <div class="sb-bar"><div class="sb-bar-fill" id="progressBar" style="width:0%"></div></div>
+      </div>
+      <div id="tree"></div>
+      <div class="sb-credits">
+        <a href="/references" class="sb-credits-link">credits & sources →</a>
+      </div>
     </div>
   </div>
 
   <div id="main">
     <div class="mission-bar">
-      <div class="mb-meta">
-        <span class="mb-id" id="mbId">trial 0.1</span>
-        <span class="mb-level" id="mbLevel">Level 0 — Survival Basics</span>
-        <span class="mb-isl" id="mbIsl">ISL §2.3.1</span>
-      </div>
+      <div class="mb-tag" id="mbTag">trial 0.1</div>
       <div class="mb-mission" id="mbMission">Loading...</div>
-      <div class="mb-concept" id="mbConcept"></div>
     </div>
     <div id="editor-wrap">
       <div class="editor-label">
@@ -151,8 +171,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     </div>
     <div class="action-bar">
       <button class="run-btn" id="runBtn" onclick="runCode()" disabled>run</button>
-      <button class="text-btn" onclick="showHint()">hint</button>
-      <button class="text-btn" onclick="resetEditor()">reset</button>
       <span class="kb">ctrl+enter</span>
     </div>
     <div id="output">
@@ -953,27 +971,105 @@ let completed = new Set(JSON.parse(localStorage.getItem("rst_done")||"[]"));
 let current = 0;
 let webrReady = false;
 let webr = null;
+let sbExpanded = true;
+let levelOpen = {};
+let failCount = 0;
 
 function save() { localStorage.setItem("rst_done", JSON.stringify([...completed])); }
+
+// ── SIDEBAR TOGGLE ────────────────────────────────────────────────────────────
+function toggleSidebar() {
+  sbExpanded = !sbExpanded;
+  const sb = document.getElementById("sidebar");
+  const tog = document.getElementById("sb-toggle");
+  const rail = document.getElementById("sb-rail");
+  const inner = document.getElementById("sb-inner");
+  if (sbExpanded) {
+    sb.className = "expanded";
+    tog.textContent = "‹";
+    rail.style.display = "none";
+    inner.style.display = "flex";
+  } else {
+    sb.className = "collapsed";
+    tog.textContent = "›";
+    rail.style.display = "flex";
+    inner.style.display = "none";
+    buildRail();
+  }
+}
+
+// ── UNLOCKED LEVELS ───────────────────────────────────────────────────────────
+function getUnlockedLevels() {
+  const levels = [...new Set(TRIALS.map(t => t.level))];
+  const unlocked = new Set([0]);
+  levels.forEach(lv => {
+    if (lv === 0) return;
+    const prev = TRIALS.filter(t => t.level === lv - 1);
+    if (prev.every(t => completed.has(t.id))) unlocked.add(lv);
+  });
+  return unlocked;
+}
+
+// ── RAIL (collapsed) ──────────────────────────────────────────────────────────
+function buildRail() {
+  const dots = document.getElementById("rail-dots");
+  dots.innerHTML = "";
+  const pct = Math.round((completed.size / TRIALS.length) * 100);
+  document.getElementById("railFill").style.height = pct + "%";
+  const unlocked = getUnlockedLevels();
+  const levels = [...new Set(TRIALS.map(t => t.level))];
+  levels.forEach(lv => {
+    if (!unlocked.has(lv)) return;
+    const lvTrials = TRIALS.filter(t => t.level === lv);
+    const allDone = lvTrials.every(t => completed.has(t.id));
+    const isActive = TRIALS[current].level === lv;
+    const dot = document.createElement("div");
+    dot.className = "rail-dot" + (allDone ? " done" : isActive ? " active" : " partial");
+    dot.title = `Level ${lv}`;
+    dot.onclick = () => {
+      sbExpanded = true;
+      document.getElementById("sidebar").className = "expanded";
+      document.getElementById("sb-toggle").textContent = "‹";
+      document.getElementById("sb-rail").style.display = "none";
+      document.getElementById("sb-inner").style.display = "flex";
+      levelOpen[lv] = true;
+      buildTree();
+    };
+    dots.appendChild(dot);
+  });
+}
 
 // ── TREE ──────────────────────────────────────────────────────────────────────
 function buildTree() {
   const tree = document.getElementById("tree");
   tree.innerHTML = "";
-  let lastLevel = -1;
-  TRIALS.forEach((t, i) => {
-    if (t.level !== lastLevel) {
-      lastLevel = t.level;
-      const lbl = document.createElement("div");
-      lbl.className = "level-label";
-      lbl.textContent = `Level ${t.level} — ${t.levelName}`;
-      tree.appendChild(lbl);
-    }
-    const row = document.createElement("div");
-    row.className = "trial-row"+(i===current?" active":"")+(completed.has(t.id)?" done":"");
-    row.innerHTML = `<span class="tr-id">${t.id}</span><span class="tr-name">${t.concept.split("—")[0].trim()}</span><div class="tr-dot"></div>`;
-    row.onclick = () => loadTrial(i);
-    tree.appendChild(row);
+  const unlocked = getUnlockedLevels();
+  const levels = [...new Set(TRIALS.map(t => t.level))];
+  levels.forEach(lv => {
+    if (!unlocked.has(lv)) return;
+    const lvTrials = TRIALS.filter(t => t.level === lv);
+    const doneCount = lvTrials.filter(t => completed.has(t.id)).length;
+    const hasActive = TRIALS[current].level === lv;
+    const isOpen = levelOpen[lv] !== false;
+    const header = document.createElement("div");
+    header.className = "level-header" + (isOpen ? " open" : "") + (hasActive ? " has-active" : "");
+    header.innerHTML = `<span class="lh-name">Lv ${lv} — ${lvTrials[0].levelName}</span>${doneCount > 0 ? `<span class="lh-count">${doneCount}/${lvTrials.length}</span>` : ""}<span class="lh-chevron">▶</span>`;
+    header.onclick = () => { levelOpen[lv] = !levelOpen[lv]; buildTree(); };
+    tree.appendChild(header);
+    const group = document.createElement("div");
+    group.className = "level-trials " + (isOpen ? "open" : "closed");
+    lvTrials.forEach(t => {
+      const idx = TRIALS.indexOf(t);
+      const isLocked = idx > 0 && !completed.has(TRIALS[idx - 1].id);
+      const isDone = completed.has(t.id);
+      const isActive = idx === current;
+      const row = document.createElement("div");
+      row.className = "trial-row" + (isActive ? " active" : "") + (isDone ? " done" : "") + (isLocked ? " locked" : "");
+      row.innerHTML = `<span class="tr-id">${t.id}</span><span class="tr-name">${t.concept.split("—")[0].trim()}</span><div class="tr-dot"></div>`;
+      if (!isLocked) row.onclick = () => loadTrial(idx);
+      group.appendChild(row);
+    });
+    tree.appendChild(group);
   });
   const pct = Math.round((completed.size / TRIALS.length) * 100);
   document.getElementById("progressText").textContent = `${completed.size} / ${TRIALS.length}`;
@@ -983,20 +1079,20 @@ function buildTree() {
 // ── LOAD ──────────────────────────────────────────────────────────────────────
 function loadTrial(idx) {
   current = idx;
+  failCount = 0;
+  levelOpen[TRIALS[idx].level] = true;
   const t = TRIALS[idx];
-  document.getElementById("mbId").textContent = `trial ${t.id}`;
-  document.getElementById("mbLevel").textContent = `Level ${t.level} — ${t.levelName}`;
-  document.getElementById("mbIsl").textContent = t.isl;
+  document.getElementById("mbTag").textContent = `trial ${t.id}`;
   document.getElementById("mbMission").textContent = t.mission;
-  document.getElementById("mbConcept").textContent = t.concept;
   document.getElementById("editor").value = t.starter || "";
-  document.getElementById("output").innerHTML = `<div class="out-info">// Run your code. Output appears here.</div>`;
+  document.getElementById("output").innerHTML = `<div class="out-info">// output appears here</div>`;
   buildTree();
+  if (!sbExpanded) buildRail();
 }
 
 function resetEditor() {
   document.getElementById("editor").value = TRIALS[current].starter || "";
-  document.getElementById("output").innerHTML = `<div class="out-info">// Reset. Write your solution above.</div>`;
+  document.getElementById("output").innerHTML = `<div class="out-info">// reset.</div>`;
 }
 
 function showHint() {
@@ -1455,9 +1551,33 @@ function display(outputText, envData, errText, trial) {
   vDiv.style.whiteSpace="pre-wrap";
   vDiv.textContent=(verdict.pass?"✓ ":"✗ ")+verdict.msg;
   out.appendChild(vDiv);
+  if (!verdict.pass) {
+    failCount++;
+    if (failCount >= 1) {
+      const hl = document.createElement("button");
+      hl.className = "hint-link fadein";
+      hl.textContent = "→ hint";
+      hl.onclick = () => {
+        hl.remove();
+        const hd = document.createElement("div");
+        hd.className = "out-hint fadein";
+        hd.textContent = "# " + trial.hint;
+        out.appendChild(hd);
+      };
+      out.appendChild(hl);
+    }
+  }
   if(verdict.pass){
-    completed.add(trial.id); save(); buildTree();
+    completed.add(trial.id); save();
     const nextIdx=current+1;
+    // unlock next level if needed
+    if(nextIdx<TRIALS.length){
+      const nextLv=TRIALS[nextIdx].level;
+      const curLv=trial.level;
+      if(nextLv!==curLv) levelOpen[nextLv]=true;
+    }
+    buildTree();
+    if(!sbExpanded) buildRail();
     if(nextIdx<TRIALS.length){
       const nb=document.createElement("button");
       nb.className="next-btn fadein";
@@ -1500,6 +1620,9 @@ async function initWebR() {
   }
 }
 
+levelOpen[0] = true;
+document.getElementById("sb-rail").style.display = "none";
+document.getElementById("sb-inner").style.display = "flex";
 buildTree(); loadTrial(0); initWebR();
 </script>
 </body>
