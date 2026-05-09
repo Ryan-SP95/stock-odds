@@ -122,7 +122,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <a class="sb-back" href="/">← main site</a>
     </div>
     <div class="sb-progress">
-      <div class="sb-progress-label">Progress <span id="progressText">0 / 23</span></div>
+      <div class="sb-progress-label">Progress <span id="progressText">0 / 47</span></div>
       <div class="sb-bar"><div class="sb-bar-fill" id="progressBar" style="width:0%"></div></div>
     </div>
     <div id="tree"></div>
@@ -571,6 +571,378 @@ const TRIALS = [
       if(out.includes("3")) return {pass:true, msg:"3 columns: ticker, price, pe_ratio ✓\nJoining datasets is fundamental to real-world analysis.\nLevel 4 complete — you know the tidyverse."};
       return {pass:false, msg:"full_data should have 3 columns — ticker, price, and pe_ratio merged together"};
     }
+  },
+
+  // ── LEVEL 5: TIME SERIES ─────────────────────────────────────────────────
+  {
+    id:"5.0", level:5, levelName:"Time Series",
+    concept:"as.Date() — working with dates",
+    isl:"FPP3 §2",
+    mission:"Parse two date strings into R Date objects and compute the number of days between them. Assign to gap.",
+    hint:"as.Date('YYYY-MM-DD') converts a string to a date. Subtract two dates to get the difference — the result is in days.",
+    starter:"start <- as.Date(\"2024-01-02\")\nend   <- as.Date(\"2024-12-31\")\n\n# How many days between start and end?\ngap <- as.numeric(end - start)\ngap",
+    validate(env) {
+      const gap = Array.isArray(env.gap)?env.gap[0]:env.gap;
+      if(gap===undefined) return {pass:false, msg:"gap is not defined"};
+      if(Math.abs(gap-364)>1) return {pass:false, msg:`expected ~364 days, got ${gap}`};
+      return {pass:true, msg:`gap = ${gap} days\n2024 had 366 days (leap year) — 364 trading-day gaps matter for backtesting.`};
+    }
+  },
+  {
+    id:"5.1", level:5, levelName:"Time Series",
+    concept:"Date-indexed data frames — price series",
+    isl:"FPP3 §2",
+    mission:"Build a data frame with a date column and a price column. Dates should run Mon–Fri for one week. Assign to prices.",
+    hint:"Create a date vector with c(as.Date(...), as.Date(...), ...) or seq(as.Date(...), by='day', length.out=5). Pair it with a prices vector in data.frame().",
+    starter:"# Build a 5-row price series for one trading week\ndates  <- seq(as.Date(\"2024-01-08\"), by=\"day\", length.out=5)\nprices_vec <- c(185.2, 183.7, 186.4, 188.1, 187.5)\n\nprices <- data.frame(date=dates, close=prices_vec)\nnrow(prices)",
+    validate(env) {
+      const out=String(env.__output||"");
+      const p=env.prices;
+      if(p&&p.__isDF&&p.nrow===5) return {pass:true, msg:"5-row date-indexed price series ✓\nThis is the foundation of every time series analysis."};
+      if(out.includes("5")) return {pass:true, msg:"5-row date-indexed price series ✓\nThis is the foundation of every time series analysis."};
+      return {pass:false, msg:"prices should have 5 rows — one per trading day"};
+    }
+  },
+  {
+    id:"5.2", level:5, levelName:"Time Series",
+    concept:"diff() — compute returns from prices",
+    isl:"FPP3 §2",
+    mission:"Given a vector of closing prices, compute the daily dollar change using diff(). Assign to changes.",
+    hint:"diff(x) subtracts each element from the next: x[2]-x[1], x[3]-x[2], ... The result has one fewer element than the input.",
+    starter:"close <- c(185.2, 183.7, 186.4, 188.1, 187.5, 190.2, 192.8)\n\n# Compute daily price changes\nchanges <- diff(close)\nchanges",
+    validate(env) {
+      const ch=env.changes;
+      if(!Array.isArray(ch)) return {pass:false, msg:"changes should be a vector — use diff(close)"};
+      if(ch.length!==6) return {pass:false, msg:`expected 6 values (one less than input), got ${ch.length}`};
+      if(Math.abs(ch[0]-(-1.5))>0.01) return {pass:false, msg:`changes[1] should be -1.5, got ${ch[0].toFixed(2)}`};
+      return {pass:true, msg:`changes = [${ch.map(v=>v.toFixed(1)).join(", ")}]\ndiff() is how raw prices become returns.`};
+    }
+  },
+  {
+    id:"5.3", level:5, levelName:"Time Series",
+    concept:"lag() — compare to previous value",
+    isl:"FPP3 §2",
+    mission:"Compute percentage daily returns: (today - yesterday) / yesterday. Use diff() and the original price vector. Assign to pct_returns.",
+    hint:"Percentage return = diff(prices) / prices[-length(prices)]. The denominator removes the last element so lengths match.",
+    starter:"close <- c(185.2, 183.7, 186.4, 188.1, 187.5, 190.2, 192.8)\n\n# Compute percentage daily returns\npct_returns <- diff(close) / close[-length(close)]\nround(pct_returns * 100, 3)",
+    validate(env) {
+      const pr=env.pct_returns;
+      if(!Array.isArray(pr)) return {pass:false, msg:"pct_returns should be a numeric vector"};
+      if(pr.length!==6) return {pass:false, msg:`expected 6 returns, got ${pr.length}`};
+      if(Math.abs(pr[0]-(-0.0081))>0.001) return {pass:false, msg:`first return should be ~-0.81%, got ${(pr[0]*100).toFixed(2)}%`};
+      return {pass:true, msg:`daily returns: ${pr.map(v=>(v*100).toFixed(2)+"%").join("  ")}\nThis is the standard way to convert prices to returns.`};
+    }
+  },
+  {
+    id:"5.4", level:5, levelName:"Time Series",
+    concept:"Rolling mean — moving average by hand",
+    isl:"FPP3 §3",
+    mission:"Compute a 3-day rolling mean of closing prices using a for loop. Assign the result to ma3. It should have length = length(close) - 2.",
+    hint:"Loop from i=3 to length(close). At each step, take mean(close[(i-2):i]). Build up a vector of results.",
+    starter:"close <- c(185.2, 183.7, 186.4, 188.1, 187.5, 190.2, 192.8)\n\n# 3-day rolling mean\nma3 <- c()\nfor(i in 3:length(close)) {\n  ma3 <- c(ma3, mean(close[(i-2):i]))\n}\nround(ma3, 2)",
+    validate(env) {
+      const ma=env.ma3;
+      if(!Array.isArray(ma)) return {pass:false, msg:"ma3 should be a numeric vector"};
+      if(ma.length!==5) return {pass:false, msg:`expected 5 values, got ${ma.length}`};
+      if(Math.abs(ma[0]-185.1)>0.1) return {pass:false, msg:`ma3[1] should be ~185.1, got ${ma[0].toFixed(2)}`};
+      return {pass:true, msg:`ma3 = [${ma.map(v=>v.toFixed(2)).join(", ")}]\nBuilding it manually first means you understand what rollmean() does.`};
+    }
+  },
+  {
+    id:"5.5", level:5, levelName:"Time Series",
+    concept:"rollmean() — the professional way",
+    isl:"FPP3 §3",
+    mission:"Now use rollmean() from the zoo package to compute a 5-day moving average. Assign to ma5. Use align='right' and fill=NA.",
+    hint:"zoo is the professional time series package. rollmean(x, k, fill=NA, align='right') — k is the window size. The result is the same length as the input.",
+    starter:"library(zoo)\n\nclose <- c(185.2, 183.7, 186.4, 188.1, 187.5, 190.2, 192.8, 191.4, 193.6, 195.1)\n\n# 5-day moving average\nma5 <- rollmean(close, k=5, fill=NA, align=\"right\")\nround(ma5, 2)",
+    validate(env) {
+      const ma=env.ma5;
+      if(!Array.isArray(ma)) return {pass:false, msg:"ma5 should be a vector — did you assign the rollmean result?"};
+      if(ma.length!==10) return {pass:false, msg:`expected 10 values (same length as input), got ${ma.length}`};
+      const defined=ma.filter(v=>v!==null&&!isNaN(v));
+      if(defined.length!==6) return {pass:false, msg:`expected 6 non-NA values (first 4 should be NA with align='right')`};
+      return {pass:true, msg:`ma5 computed ✓\nFirst 4 values are NA — not enough history yet.\nThis is a 5-day moving average, the most common trend indicator.`};
+    }
+  },
+  {
+    id:"5.6", level:5, levelName:"Time Series",
+    concept:"Rolling volatility — risk changes over time",
+    isl:"FPP3 §3",
+    mission:"Compute 5-day rolling standard deviation of daily returns. Assign to roll_vol. This is rolling volatility — a key risk measure.",
+    hint:"rollapply(x, width, FUN, fill=NA, align='right') applies any function over a rolling window. Use sd as FUN.",
+    starter:"library(zoo)\n\nreturns <- c(-0.008, 0.015, 0.009, -0.005, 0.021, -0.012, 0.018, 0.003, -0.007, 0.024)\n\n# 5-day rolling volatility\nroll_vol <- rollapply(returns, width=5, FUN=sd, fill=NA, align=\"right\")\nround(roll_vol, 4)",
+    validate(env) {
+      const rv=env.roll_vol;
+      if(!Array.isArray(rv)) return {pass:false, msg:"roll_vol should be a vector — use rollapply()"};
+      if(rv.length!==10) return {pass:false, msg:`expected 10 values, got ${rv.length}`};
+      const defined=rv.filter(v=>v!==null&&!isNaN(v)&&v>0);
+      if(defined.length<5) return {pass:false, msg:"not enough non-NA values — check width=5 and align='right'"};
+      return {pass:true, msg:`rolling vol computed ✓\nNotice it changes day to day — volatility is not constant.\nThis is why static risk models fail.`};
+    }
+  },
+  {
+    id:"5.7", level:5, levelName:"Time Series",
+    concept:"acf() — autocorrelation",
+    isl:"FPP3 §2.8",
+    mission:"Compute the autocorrelation function of daily returns using acf(). Set lag.max=5 and plot=FALSE. Assign to ac. Does this stock have momentum?",
+    hint:"acf(x, lag.max=n, plot=FALSE) returns an object. The autocorrelation values are in ac$acf. Values near 0 = no pattern. Values away from 0 = momentum or mean reversion.",
+    starter:"returns <- c(-0.008, 0.015, 0.009, -0.005, 0.021, -0.012, 0.018,\n             0.003, -0.007, 0.024, 0.011, -0.003, 0.019, -0.008, 0.016)\n\n# Compute autocorrelation\nac <- acf(returns, lag.max=5, plot=FALSE)\nround(ac$acf, 3)",
+    validate(env) {
+      const ac=env.ac||env.ac_vals;
+      const out=String(env.__output||"");
+      if(out.includes("1.000")||out.includes("1")) return {pass:true, msg:"acf computed ✓\nLag 0 is always 1.0 (a series is perfectly correlated with itself).\nLags 1–5 near 0 = weak momentum. This is typical for stocks."};
+      if(ac&&ac.__isACF) return {pass:true, msg:"acf computed ✓\nLag 0 is always 1.0. Lags 1–5 near 0 = weak momentum."};
+      return {pass:false, msg:"assign acf(..., plot=FALSE) to ac, then print ac$acf"};
+    }
+  },
+
+  // ── LEVEL 6: MACHINE LEARNING ─────────────────────────────────────────────
+  {
+    id:"6.0", level:6, levelName:"Machine Learning",
+    concept:"Train/test split — the golden rule",
+    isl:"ISL §2.2",
+    mission:"Split a dataset into 80% training and 20% test sets. Use sample() to create a random index. Assign to train and test.",
+    hint:"sample(nrow(df), size=0.8*nrow(df)) gives random row indices. Use those to index the data frame: df[idx,] and df[-idx,].",
+    starter:"set.seed(42)\nstocks <- data.frame(\n  vol    = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4),\n  return = c(0.012,0.031,-0.005,0.044,0.018,0.027,-0.008,0.039,0.014,0.051)\n)\n\n# 80/20 split\nidx   <- sample(nrow(stocks), size=0.8*nrow(stocks))\ntrain <- stocks[idx, ]\ntest  <- stocks[-idx, ]\nnrow(train)",
+    validate(env) {
+      const out=String(env.__output||"");
+      const tr=env.train, te=env.test;
+      if(tr&&tr.__isDF&&tr.nrow===8&&te&&te.__isDF&&te.nrow===2) return {pass:true, msg:"train: 8 rows  test: 2 rows ✓\nNever train and evaluate on the same data — that's overfitting."};
+      if(out.includes("8")) return {pass:true, msg:"train: 8 rows  test: 2 rows ✓\nNever train and evaluate on the same data — that's overfitting."};
+      return {pass:false, msg:"train should have 8 rows, test should have 2 rows"};
+    }
+  },
+  {
+    id:"6.1", level:6, levelName:"Machine Learning",
+    concept:"glm() — logistic regression",
+    isl:"ISL §4.3",
+    mission:"Fit a logistic regression predicting whether a stock goes up (1) or down (0) based on volume. Use glm() with family=binomial. Assign to log_model.",
+    hint:"glm(outcome ~ predictor, data=df, family=binomial) — the same formula syntax as lm() but with a family argument. Outcome must be 0/1.",
+    starter:"trades <- data.frame(\n  volume    = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4,2.1,0.9),\n  up        = c(1,1,0,1,1,1,0,1,1,1,0,0)\n)\n\n# Logistic regression: up ~ volume\nlog_model <- glm(up ~ volume, data=trades, family=binomial)\ncoef(log_model)",
+    validate(env) {
+      const m=env.log_model;
+      const out=String(env.__output||"");
+      if(m&&m.__isLM) return {pass:true, msg:"logistic model fitted ✓\nCoefficients are log-odds. Positive volume coef = more volume → more likely up day."};
+      if(out.includes("volume")||out.includes("Intercept")) return {pass:true, msg:"logistic model fitted ✓\nCoefficients are log-odds. Positive volume coef = more volume → more likely up day."};
+      return {pass:false, msg:"log_model should be a glm object — check family=binomial"};
+    }
+  },
+  {
+    id:"6.2", level:6, levelName:"Machine Learning",
+    concept:"predict() with type='response' — probabilities",
+    isl:"ISL §4.3",
+    mission:"Use your logistic model to predict probabilities on new data. Use type='response' to get probabilities (not log-odds). Assign to probs.",
+    hint:"predict(model, newdata=df, type='response') returns values between 0 and 1. Without type='response' you get log-odds, which are harder to interpret.",
+    starter:"trades <- data.frame(\n  volume = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4,2.1,0.9),\n  up     = c(1,1,0,1,1,1,0,1,1,1,0,0)\n)\nlog_model <- glm(up ~ volume, data=trades, family=binomial)\n\nnew_data <- data.frame(volume=c(1.0, 2.0, 3.0))\nprobs <- predict(log_model, newdata=new_data, type=\"response\")\nround(probs, 3)",
+    validate(env) {
+      const p=env.probs;
+      const out=String(env.__output||"");
+      if(Array.isArray(p)&&p.length===3&&p.every(v=>v>0&&v<1)) return {pass:true, msg:`probs = [${p.map(v=>v.toFixed(3)).join(", ")}]\nAll between 0 and 1 ✓ — these are probabilities of an up day.`};
+      if(out.match(/0\.\d+/)) return {pass:true, msg:"probabilities computed ✓\nHigher volume → higher probability of up day, per the model."};
+      return {pass:false, msg:"probs should be 3 values between 0 and 1 — add type='response'"};
+    }
+  },
+  {
+    id:"6.3", level:6, levelName:"Machine Learning",
+    concept:"Confusion matrix — measuring accuracy",
+    isl:"ISL §4.4",
+    mission:"Convert probabilities to binary predictions (threshold 0.5), then build a confusion matrix with table(). Compare predicted vs actual.",
+    hint:"predicted <- ifelse(probs > 0.5, 1, 0) converts probabilities to 0/1. Then table(predicted, actual) shows correct vs incorrect predictions.",
+    starter:"actual    <- c(1, 1, 0, 1, 0, 1, 0, 1)\nprobs_vec <- c(0.82, 0.71, 0.34, 0.88, 0.41, 0.79, 0.29, 0.93)\n\n# Convert to binary and build confusion matrix\npredicted <- ifelse(probs_vec > 0.5, 1, 0)\nconf_mat  <- table(predicted, actual)\nconf_mat",
+    validate(env) {
+      const out=String(env.__output||"");
+      const cm=env.conf_mat;
+      if(out.includes("actual")||out.includes("predicted")||(cm&&cm.__isTable)) return {pass:true, msg:"confusion matrix built ✓\nTrue positives (top-left): correct up predictions.\nFalse positives (top-right): predicted up, was actually down.\nAccuracy = correct / total."};
+      return {pass:false, msg:"conf_mat should be a table — use table(predicted, actual)"};
+    }
+  },
+  {
+    id:"6.4", level:6, levelName:"Machine Learning",
+    concept:"arima() — time series forecasting",
+    isl:"FPP3 §9",
+    mission:"Fit an ARIMA(1,0,0) model to a return series. Assign to arima_model. Then forecast 3 steps ahead using forecast(). Assign to fc.",
+    hint:"arima(x, order=c(p,d,q)) — p=autoregressive terms, d=differencing, q=moving average. For ARIMA(1,0,0): order=c(1,0,0). Then forecast(model, h=3).",
+    starter:"library(forecast)\n\nreturns <- c(-0.008,0.015,0.009,-0.005,0.021,-0.012,0.018,\n             0.003,-0.007,0.024,0.011,-0.003,0.019,-0.008,0.016)\n\n# Fit ARIMA(1,0,0)\narima_model <- arima(returns, order=c(1,0,0))\n\n# Forecast 3 steps ahead\nfc <- forecast(arima_model, h=3)\nfc$mean",
+    validate(env) {
+      const fc=env.fc||env.arima_model;
+      const out=String(env.__output||"");
+      if(env.arima_model&&env.arima_model.__isArima) return {pass:true, msg:"ARIMA(1,0,0) fitted and forecast computed ✓\nThe forecast will be near the mean — ARIMA on its own is a humble model.\nForecast error matters more than the point estimate."};
+      if(out.match(/-?0\.0\d+/)) return {pass:true, msg:"ARIMA forecast computed ✓\nValues near zero are expected — stock returns are hard to predict."};
+      return {pass:false, msg:"fit arima(returns, order=c(1,0,0)) and forecast(arima_model, h=3)"};
+    }
+  },
+  {
+    id:"6.5", level:6, levelName:"Machine Learning",
+    concept:"MAE and RMSE — forecast evaluation",
+    isl:"FPP3 §5.8",
+    mission:"Given actual and predicted values, compute MAE (mean absolute error) and RMSE (root mean squared error). Assign to mae and rmse.",
+    hint:"MAE = mean(abs(actual - predicted)). RMSE = sqrt(mean((actual - predicted)^2)). Both measure how wrong your model is — smaller is better.",
+    starter:"actual    <- c(0.012, -0.005, 0.018, -0.003, 0.021)\npredicted <- c(0.008, -0.002, 0.015, -0.007, 0.019)\n\n# Compute error metrics\nmae  <- mean(abs(actual - predicted))\nrmse <- sqrt(mean((actual - predicted)^2))\n\ncat(\"MAE: \", round(mae,5), \"\\n\")\ncat(\"RMSE:\", round(rmse,5), \"\\n\")",
+    validate(env) {
+      const mae=Array.isArray(env.mae)?env.mae[0]:env.mae;
+      const rmse=Array.isArray(env.rmse)?env.rmse[0]:env.rmse;
+      if(mae===undefined) return {pass:false, msg:"mae is not defined"};
+      if(rmse===undefined) return {pass:false, msg:"rmse is not defined"};
+      if(Math.abs(mae-0.0034)>0.001) return {pass:false, msg:`mae ≈ ${mae?.toFixed(5)}, expected ~0.0034`};
+      return {pass:true, msg:`MAE = ${mae.toFixed(5)}  RMSE = ${rmse.toFixed(5)}\nRMSE penalises large errors more than MAE.\nAlways report both — they tell different stories.`};
+    }
+  },
+  {
+    id:"6.6", level:6, levelName:"Machine Learning",
+    concept:"rpart() — decision tree",
+    isl:"ISL §8.1",
+    mission:"Fit a decision tree predicting up/down days from volume and volatility. Use rpart(). Assign to tree_model.",
+    hint:"library(rpart) then rpart(outcome ~ var1 + var2, data=df, method='class') for classification trees. method='anova' for regression.",
+    starter:"library(rpart)\n\ntrades <- data.frame(\n  volume = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4,2.1,0.9),\n  vol_20 = c(0.8,1.2,0.6,1.5,0.9,1.1,0.5,1.3,0.8,1.6,1.0,0.7),\n  up     = as.factor(c(1,1,0,1,1,1,0,1,1,1,0,0))\n)\n\n# Decision tree\ntree_model <- rpart(up ~ volume + vol_20, data=trades, method=\"class\")\nprintcp(tree_model)",
+    validate(env) {
+      const t=env.tree_model;
+      const out=String(env.__output||"");
+      if(t&&t.__isTree) return {pass:true, msg:"decision tree fitted ✓\nTrees split data at the best threshold for each variable.\nThey're interpretable — you can read the rules."};
+      if(out.includes("CP")||out.includes("Root")||out.includes("rpart")) return {pass:true, msg:"decision tree fitted ✓\nThe CP table shows complexity vs error tradeoff.\nPrune the tree to avoid overfitting."};
+      return {pass:false, msg:"tree_model should be an rpart object — check library(rpart) and method='class'"};
+    }
+  },
+  {
+    id:"6.7", level:6, levelName:"Machine Learning",
+    concept:"randomForest() — ensemble learning",
+    isl:"ISL §8.2",
+    mission:"Fit a random forest with 100 trees on the same trading data. Assign to rf_model. Then check variable importance with importance().",
+    hint:"library(randomForest) then randomForest(outcome ~ ., data=df, ntree=100). The dot means 'all other columns'. importance() shows which variables matter most.",
+    starter:"library(randomForest)\n\nset.seed(42)\ntrades <- data.frame(\n  volume = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4,2.1,0.9),\n  vol_20 = c(0.8,1.2,0.6,1.5,0.9,1.1,0.5,1.3,0.8,1.6,1.0,0.7),\n  up     = as.factor(c(1,1,0,1,1,1,0,1,1,1,0,0))\n)\n\n# Random forest\nrf_model <- randomForest(up ~ ., data=trades, ntree=100)\nimportance(rf_model)",
+    validate(env) {
+      const rf=env.rf_model;
+      const out=String(env.__output||"");
+      if(rf&&rf.__isRF) return {pass:true, msg:"random forest fitted ✓\n100 trees, each trained on a random subset of data.\nEnsembles almost always beat single models.\nLevel 6 complete — you've done ML."};
+      if(out.includes("MeanDecreaseGini")||out.includes("volume")||out.includes("vol_20")) return {pass:true, msg:"random forest fitted ✓\nVariable importance tells you what actually drives predictions.\nLevel 6 complete — you've done ML."};
+      return {pass:false, msg:"rf_model should be a randomForest object — check library(randomForest)"};
+    }
+  },
+
+  // ── LEVEL 7: ALGO ARCHITECT ───────────────────────────────────────────────
+  {
+    id:"7.0", level:7, levelName:"Algo Architect",
+    concept:"Sharpe ratio — risk-adjusted return",
+    isl:"Capstone",
+    mission:"Compute the annualised Sharpe ratio for a return series. Assume 0% risk-free rate. Assign to sharpe. Formula: (mean(returns) / sd(returns)) * sqrt(252).",
+    hint:"Sharpe = (mean return / std dev of returns) * sqrt(252). The sqrt(252) annualises it — 252 trading days per year. A Sharpe above 1 is considered good.",
+    starter:"returns <- c(0.008,-0.003,0.012,0.005,-0.007,0.015,0.003,\n             -0.005,0.011,0.009,-0.002,0.014,0.006,-0.004,0.010)\n\n# Annualised Sharpe ratio (0% risk-free rate)\nsharpe <- (mean(returns) / sd(returns)) * sqrt(252)\nround(sharpe, 3)",
+    validate(env) {
+      const s=Array.isArray(env.sharpe)?env.sharpe[0]:env.sharpe;
+      if(s===undefined) return {pass:false, msg:"sharpe is not defined"};
+      if(s<1||s>4) return {pass:false, msg:`sharpe = ${s?.toFixed(3)} — check the formula: (mean/sd) * sqrt(252)`};
+      return {pass:true, msg:`Sharpe = ${s.toFixed(3)}\nAbove 1.0 is good. Above 2.0 is excellent. Above 3.0 is suspicious.\nThis is the first number any serious investor will ask for.`};
+    }
+  },
+  {
+    id:"7.1", level:7, levelName:"Algo Architect",
+    concept:"Drawdown analysis — measuring pain",
+    isl:"Capstone",
+    mission:"Compute the maximum drawdown from a cumulative return series. Max drawdown = largest peak-to-trough decline. Assign to max_dd.",
+    hint:"First compute cumulative returns: cumprod(1 + returns). Then running max: cummax(cum_ret). Drawdown = (cum_ret - running_max) / running_max. max_dd = min(drawdown).",
+    starter:"returns <- c(0.02,-0.01,0.03,-0.04,0.01,-0.03,0.02,0.04,-0.02,0.01)\n\n# Cumulative return series\ncum_ret     <- cumprod(1 + returns)\nrunning_max <- cummax(cum_ret)\ndrawdown    <- (cum_ret - running_max) / running_max\nmax_dd      <- min(drawdown)\nround(max_dd, 4)",
+    validate(env) {
+      const md=Array.isArray(env.max_dd)?env.max_dd[0]:env.max_dd;
+      if(md===undefined) return {pass:false, msg:"max_dd is not defined"};
+      if(md>=0) return {pass:false, msg:"max_dd should be negative — it represents a loss"};
+      if(md<-0.15||md>-0.01) return {pass:false, msg:`max_dd = ${md?.toFixed(4)} — check your formula`};
+      return {pass:true, msg:`max drawdown = ${(md*100).toFixed(2)}%\nThis is how bad it got at worst.\nInvestors care about drawdown as much as return — it measures survivability.`};
+    }
+  },
+  {
+    id:"7.2", level:7, levelName:"Algo Architect",
+    concept:"Probability → binary signal",
+    isl:"Capstone",
+    mission:"Convert model output probabilities into trading signals: buy (1) if prob > 0.6, sell (-1) if prob < 0.4, hold (0) otherwise. Assign to signals.",
+    hint:"Use nested ifelse(): ifelse(condition1, value1, ifelse(condition2, value2, value3)). Think about which condition maps to buy, which to sell.",
+    starter:"probs <- c(0.72, 0.45, 0.31, 0.68, 0.55, 0.82, 0.38, 0.61, 0.49, 0.77)\n\n# Convert to signals: 1=buy, -1=sell, 0=hold\nsignals <- ifelse(probs > 0.6, 1,\n           ifelse(probs < 0.4, -1, 0))\nsignals",
+    validate(env) {
+      const sig=env.signals;
+      if(!Array.isArray(sig)) return {pass:false, msg:"signals should be a vector of -1, 0, or 1"};
+      if(sig.length!==10) return {pass:false, msg:`expected 10 signals, got ${sig.length}`};
+      const exp=[1,0,-1,1,0,1,-1,1,0,1];
+      for(let i=0;i<10;i++) if(sig[i]!==exp[i]) return {pass:false, msg:`signals[${i+1}] should be ${exp[i]}, got ${sig[i]}`};
+      return {pass:true, msg:`signals = [${exp.join(", ")}]\n5 buys, 2 holds, 2 sells ✓\nThe hold zone prevents acting on weak signals — a key discipline.`};
+    }
+  },
+  {
+    id:"7.3", level:7, levelName:"Algo Architect",
+    concept:"Position sizing — Kelly criterion",
+    isl:"Capstone",
+    mission:"Compute the Kelly fraction for a strategy. Kelly = (win_rate * avg_win - (1-win_rate) * avg_loss) / avg_win. Assign to kelly. Then compute half-Kelly (the practical version).",
+    hint:"Kelly tells you the optimal fraction of capital to risk. Half-Kelly (kelly/2) is what practitioners use — full Kelly is too aggressive for real markets.",
+    starter:"win_rate <- 0.58\navg_win  <- 0.021\navg_loss <- 0.014\n\n# Kelly fraction\nkelly      <- (win_rate * avg_win - (1 - win_rate) * avg_loss) / avg_win\nhalf_kelly <- kelly / 2\n\ncat(\"Kelly:     \", round(kelly, 4), \"\\n\")\ncat(\"Half-Kelly:\", round(half_kelly, 4), \"\\n\")",
+    validate(env) {
+      const k=Array.isArray(env.kelly)?env.kelly[0]:env.kelly;
+      const hk=Array.isArray(env.half_kelly)?env.half_kelly[0]:env.half_kelly;
+      if(k===undefined) return {pass:false, msg:"kelly is not defined"};
+      if(Math.abs(k-0.2667)>0.01) return {pass:false, msg:`kelly ≈ ${k?.toFixed(4)}, expected ~0.267`};
+      return {pass:true, msg:`Kelly = ${k.toFixed(4)} → risk 26.7% per trade\nHalf-Kelly = ${hk.toFixed(4)} → risk 13.3% (practical)\nNever bet full Kelly — variance will ruin you first.`};
+    }
+  },
+  {
+    id:"7.4", level:7, levelName:"Algo Architect",
+    concept:"Signal generation — composite score",
+    isl:"Capstone",
+    mission:"Combine three indicators into a single normalised signal score. Normalise each to 0-1 range, then weight: 40% momentum, 35% volume, 25% volatility. Assign to score.",
+    hint:"Normalise: (x - min(x)) / (max(x) - min(x)) maps any vector to [0,1]. Then score = 0.4*mom_n + 0.35*vol_n + 0.25*vix_n.",
+    starter:"momentum   <- c(0.031, 0.012, -0.008, 0.044, 0.019, -0.005, 0.027)\nvolume_raw <- c(2.5, 1.2, 0.8, 3.1, 1.8, 0.5, 2.2)\nvolatility <- c(0.8, 1.2, 1.5, 0.6, 0.9, 1.8, 1.1)\n\n# Normalise each to [0,1]\nnorm <- function(x) (x - min(x)) / (max(x) - min(x))\nmom_n <- norm(momentum)\nvol_n <- norm(volume_raw)\nvix_n <- 1 - norm(volatility)  # invert: lower vol = better signal\n\n# Composite score\nscore <- 0.4*mom_n + 0.35*vol_n + 0.25*vix_n\nround(score, 3)",
+    validate(env) {
+      const sc=env.score;
+      if(!Array.isArray(sc)) return {pass:false, msg:"score should be a numeric vector"};
+      if(sc.length!==7) return {pass:false, msg:`expected 7 scores, got ${sc.length}`};
+      if(sc.some(v=>v<0||v>1)) return {pass:false, msg:"scores should all be between 0 and 1"};
+      return {pass:true, msg:`scores = [${sc.map(v=>v.toFixed(3)).join(", ")}]\nHighest score = strongest buy signal.\nThis is how quant signals are built — combine, weight, normalise.`};
+    }
+  },
+  {
+    id:"7.5", level:7, levelName:"Algo Architect",
+    concept:"Backtesting — strategy vs buy-and-hold",
+    isl:"Capstone",
+    mission:"Backtest a simple signal strategy: invest 100% when signal=1, cash (0% return) when signal=0. Compare final value to buy-and-hold. Assign to strat_final and bah_final.",
+    hint:"strat_returns = actual_returns * signals (signals are 0 or 1 here). Then cumprod(1 + strat_returns) gives the growth of $1. Compare to cumprod(1 + actual_returns).",
+    starter:"set.seed(1)\nactual_returns <- c(0.008,-0.003,0.012,-0.007,0.015,0.003,-0.005,0.011,0.009,-0.002)\nsignals_bin   <- c(1,0,1,0,1,1,0,1,1,0)  # 1=invested, 0=cash\n\n# Strategy returns\nstrat_ret   <- actual_returns * signals_bin\nstrat_final <- prod(1 + strat_ret)\nbah_final   <- prod(1 + actual_returns)\n\ncat(\"Strategy: $\", round(strat_final, 4), \"\\n\")\ncat(\"Buy&Hold: $\", round(bah_final,  4), \"\\n\")",
+    validate(env) {
+      const sf=Array.isArray(env.strat_final)?env.strat_final[0]:env.strat_final;
+      const bf=Array.isArray(env.bah_final)?env.bah_final[0]:env.bah_final;
+      if(sf===undefined) return {pass:false, msg:"strat_final is not defined"};
+      if(bf===undefined) return {pass:false, msg:"bah_final is not defined"};
+      const winner=sf>bf?"Strategy beats buy-and-hold":"Buy-and-hold beats strategy";
+      return {pass:true, msg:`Strategy: $${sf.toFixed(4)}  Buy&Hold: $${bf.toFixed(4)}\n${winner}\nMost strategies don't beat buy-and-hold — that's the honest truth.\nThe ones that do require edge, discipline, and low costs.`};
+    }
+  },
+  {
+    id:"7.6", level:7, levelName:"Algo Architect",
+    concept:"Walk-forward validation — honest testing",
+    isl:"FPP3 §5.10",
+    mission:"Implement a simple walk-forward test: train on first 60% of data, test on each remaining point sequentially. Count how many test predictions are correct. Assign to accuracy.",
+    hint:"Split at floor(n*0.6). Train a model on rows 1:split. Predict row split+1. Then expand training to split+1, predict split+2. Repeat. This mimics real trading — you never use future data.",
+    starter:"set.seed(42)\nn <- 20\ndata <- data.frame(\n  x = rnorm(n, mean=1.5, sd=0.5),\n  y = as.factor(rbinom(n, 1, 0.6))\n)\n\nsplit    <- floor(n * 0.6)\ncorrect  <- 0\n\nfor(i in (split+1):n) {\n  train_wf <- data[1:(i-1), ]\n  test_wf  <- data[i, ]\n  m        <- glm(y ~ x, data=train_wf, family=binomial)\n  prob     <- predict(m, newdata=test_wf, type=\"response\")\n  pred     <- ifelse(prob > 0.5, 1, 0)\n  if(pred == as.numeric(as.character(test_wf$y))) correct <- correct + 1\n}\n\naccuracy <- correct / (n - split)\nround(accuracy, 3)",
+    validate(env) {
+      const acc=Array.isArray(env.accuracy)?env.accuracy[0]:env.accuracy;
+      const out=String(env.__output||"");
+      if(acc===undefined&&!out.match(/0\.\d+/)) return {pass:false, msg:"accuracy is not defined — check your loop"};
+      const val=acc||parseFloat(out.match(/0\.\d+/)?.[0]);
+      if(val<0||val>1) return {pass:false, msg:`accuracy = ${val} — should be between 0 and 1`};
+      return {pass:true, msg:`walk-forward accuracy = ${(val*100).toFixed(1)}%\nThis is honest accuracy — each prediction used only past data.\nIn-sample accuracy is always higher. Walk-forward is what actually matters.`};
+    }
+  },
+  {
+    id:"7.7", level:7, levelName:"Algo Architect",
+    concept:"Full pipeline — data to evaluated strategy",
+    isl:"Capstone",
+    mission:"Put it all together. Given raw returns, compute: Sharpe ratio, max drawdown, and a simple buy signal (invest when last 3-day return > 0). Report all three.",
+    hint:"You've built each piece separately. Now chain them: pct_returns → sharpe → max_dd → signals → backtest. Use the functions and formulas from previous trials.",
+    starter:"set.seed(99)\nprices <- c(100,102,101,104,103,106,105,108,107,110,109,112,111,114,113,116)\n\n# 1. Compute returns\nreturns <- diff(prices) / prices[-length(prices)]\n\n# 2. Sharpe ratio\nsharpe  <- (mean(returns) / sd(returns)) * sqrt(252)\n\n# 3. Max drawdown\ncum_r   <- cumprod(1 + returns)\nmax_dd  <- min((cum_r - cummax(cum_r)) / cummax(cum_r))\n\n# 4. Rolling 3-day signal (buy when sum of last 3 returns > 0)\nn <- length(returns)\nsig <- rep(0, n)\nfor(i in 3:n) sig[i] <- ifelse(sum(returns[(i-2):i]) > 0, 1, 0)\n\n# 5. Strategy vs buy-and-hold\nstrat <- prod(1 + returns * sig)\nbah   <- prod(1 + returns)\n\ncat(\"Sharpe:      \", round(sharpe,3), \"\\n\")\ncat(\"Max Drawdown:\", round(max_dd*100,2), \"%\\n\")\ncat(\"Strategy:   $\", round(strat,4), \"\\n\")\ncat(\"Buy & Hold: $\", round(bah,4), \"\\n\")",
+    validate(env) {
+      const s=Array.isArray(env.sharpe)?env.sharpe[0]:env.sharpe;
+      const md=Array.isArray(env.max_dd)?env.max_dd[0]:env.max_dd;
+      const out=String(env.__output||"");
+      if(s===undefined||md===undefined) {
+        if(out.includes("Sharpe")&&out.includes("Drawdown")) return {pass:true, msg:"Full pipeline complete ✓\nYou took raw prices all the way to a backtested, risk-evaluated strategy.\nThis is what quant analysts do — in R, in Python, at every major fund.\nLevel 7 complete. You're an Algo Architect."};
+        return {pass:false, msg:"define sharpe and max_dd — check your variable names"};
+      }
+      return {pass:true, msg:`Sharpe = ${s.toFixed(3)}  MaxDD = ${(md*100).toFixed(2)}%\nFull pipeline complete ✓\nYou took raw prices all the way to a backtested, risk-evaluated strategy.\nThis is what quant analysts do — in R, in Python, at every major fund.\nLevel 7 complete. You are an Algo Architect.`};
+    }
   }
 
 ];
@@ -668,7 +1040,13 @@ async function runReal(code) {
     const vars = ["x","m","prob","returns","total_return","avg_return","best","worst",
                   "winners","targets","portfolio","sorted_port","expensive","vol","r",
                   "model","predicted","r_squared","port_value","stocks","positive_days",
-                  "trimmed","ranked","avg_by_ticker","result","full_data"];
+                  "trimmed","ranked","avg_by_ticker","result","full_data",
+                  "gap","prices","changes","pct_returns","ma3","ma5","roll_vol","ac",
+                  "train","test","log_model","probs","predicted","conf_mat","arima_model",
+                  "fc","mae","rmse","tree_model","rf_model",
+                  "sharpe","max_dd","signals","kelly","half_kelly","score",
+                  "strat_final","bah_final","accuracy","strat","bah",
+                  "cum_ret","running_max","drawdown","sig"];
     for (const v of vars) {
       try {
         const existsR = await webr.evalR(`exists("${v}")`);
@@ -860,6 +1238,150 @@ function evalExpr(expr, env) {
   }
   if (expr.startsWith("tidyverse_logo(")) return "__tidyverse_logo__";
 
+  // ── LEVEL 5-7 SIMULATOR EXTENSIONS ───────────────────────────────────────
+  // as.Date()
+  if (expr.startsWith("as.Date(")) {
+    const inner=expr.slice(8,-1).replace(/["']/g,"").trim();
+    if(inner.startsWith("seq(")) return {__isDateSeq:true, length:5};
+    return {__isDate:true, value:inner};
+  }
+  // seq with dates
+  if (expr.startsWith("seq(as.Date")) return {__isDateVec:true, length:5};
+  // diff()
+  if (expr.startsWith("diff(")) {
+    const v=env[expr.slice(5,-1).trim()];
+    if(Array.isArray(v)) return v.slice(1).map((x,i)=>x-v[i]);
+  }
+  // cumprod()
+  if (expr.startsWith("cumprod(")) {
+    const inner=expr.slice(8,-1).trim();
+    let v;
+    if(inner.startsWith("1 +")||inner.startsWith("1+")) {
+      const vname=inner.replace(/^1\s*\+\s*/,"").trim();
+      v=env[vname];
+      if(Array.isArray(v)){ let p=1; return v.map(x=>{p*=(1+x); return p;}); }
+    }
+    v=env[inner];
+    if(Array.isArray(v)){ let p=1; return v.map(x=>{p*=x; return p;}); }
+  }
+  // cummax()
+  if (expr.startsWith("cummax(")) {
+    const v=env[expr.slice(7,-1).trim()];
+    if(Array.isArray(v)){ let m=-Infinity; return v.map(x=>{m=Math.max(m,x); return m;}); }
+  }
+  // prod()
+  if (expr.startsWith("prod(")) {
+    const inner=expr.slice(5,-1).trim();
+    if(inner.startsWith("1 +")||inner.startsWith("1+")) {
+      const parts=inner.replace(/^1\s*\+\s*/,"").trim().split("*").map(s=>s.trim());
+      const a=env[parts[0]], b=parts[1]?env[parts[1]]:null;
+      let arr=a;
+      if(b&&Array.isArray(a)&&Array.isArray(b)) arr=a.map((v,i)=>v*(b[i]||0));
+      if(Array.isArray(arr)) return [arr.reduce((p,x)=>p*(1+x),1)];
+    }
+    const v=env[inner];
+    if(Array.isArray(v)) return [v.reduce((p,x)=>p*x,1)];
+  }
+  // rollmean / rollapply
+  if (expr.startsWith("rollmean(")||expr.startsWith("rollapply(")) {
+    const kMatch=expr.match(/k\s*=\s*(\d+)|width\s*=\s*(\d+)/);
+    const k=kMatch?parseInt(kMatch[1]||kMatch[2]):5;
+    const args=expr.slice(expr.indexOf("(")+1,-1).split(",");
+    const v=env[args[0].trim()];
+    if(Array.isArray(v)){
+      return v.map((_, i)=>{
+        if(i<k-1) return null;
+        const window=v.slice(i-k+1,i+1);
+        if(expr.startsWith("rollapply")&&expr.includes("sd")) {
+          const m=window.reduce((a,b)=>a+b,0)/window.length;
+          return Math.sqrt(window.reduce((a,b)=>a+(b-m)**2,0)/(window.length-1));
+        }
+        return window.reduce((a,b)=>a+b,0)/window.length;
+      });
+    }
+  }
+  // acf()
+  if (expr.startsWith("acf(")) return {__isACF:true};
+  // sample()
+  if (expr.startsWith("sample(")) {
+    const args=expr.slice(7,-1).split(",");
+    const n=parseInt(args[0])||10;
+    const size=args[1]?Math.round(eval(args[1].replace(/nrow\([^)]+\)/,n))):n;
+    return Array.from({length:size},(_,i)=>i+1);
+  }
+  // set.seed() — no-op in sim
+  if (expr.startsWith("set.seed(")) return undefined;
+  // glm()
+  if (expr.startsWith("glm(")) return {__isLM:true, __isGLM:true};
+  // table()
+  if (expr.startsWith("table(")) return {__isTable:true};
+  // arima()
+  if (expr.startsWith("arima(")) return {__isArima:true};
+  // forecast()
+  if (expr.startsWith("forecast(")) return {__isForecast:true, mean:[0.004,0.003,0.005]};
+  // rpart()
+  if (expr.startsWith("rpart(")) return {__isTree:true};
+  // randomForest()
+  if (expr.startsWith("randomForest(")) return {__isRF:true};
+  // printcp() importance() coef()
+  if (expr.startsWith("printcp(")||expr.startsWith("importance(")||expr.startsWith("coef(")) return "__model_output__";
+  // as.factor()
+  if (expr.startsWith("as.factor(")) { const v=env[expr.slice(10,-1).trim()]; return Array.isArray(v)?v:v; }
+  // as.numeric(as.character(...))
+  if (expr.startsWith("as.numeric(")) return [1];
+  // rep()
+  if (expr.startsWith("rep(")) {
+    const args=expr.slice(4,-1).split(",");
+    const val=parseFloat(args[0].trim());
+    const n=parseInt(args[1].trim())||1;
+    return Array(n).fill(val);
+  }
+  // rnorm()
+  if (expr.startsWith("rnorm(")) {
+    const args=expr.slice(6,-1).split(",");
+    const n=parseInt(args[0])||10;
+    return Array.from({length:n},()=>1.5+(Math.random()-0.5)*0.5);
+  }
+  // rbinom()
+  if (expr.startsWith("rbinom(")) {
+    const args=expr.slice(7,-1).split(",");
+    const n=parseInt(args[0])||10;
+    const p=parseFloat(args[2])||0.5;
+    return Array.from({length:n},()=>Math.random()<p?1:0);
+  }
+  // cat()
+  if (expr.startsWith("cat(")) {
+    const inner=expr.slice(4,-1);
+    const parts=inner.split(",").map(s=>s.trim());
+    const out=parts.map(p=>{
+      if(p.startsWith('"')||p.startsWith("'")) return p.replace(/^["']|["']$/g,"").replace(/\\n/,"\n");
+      const v=env[p];
+      if(Array.isArray(v)) return v.map(x=>typeof x==="number"?parseFloat(x.toFixed(4)):x).join(" ");
+      if(v!==undefined) return String(parseFloat(Number(v).toFixed(4)));
+      return p;
+    }).join(" ");
+    return "__cat__:"+out;
+  }
+  // round()
+  if (expr.startsWith("round(")) {
+    const args=expr.slice(6,-1).split(",");
+    const v=evalExpr(args[0].trim(),env);
+    const dp=parseInt(args[1])||3;
+    if(Array.isArray(v)) return v.map(x=>x===null?null:parseFloat(x.toFixed(dp)));
+    if(typeof v==="number") return [parseFloat(v.toFixed(dp))];
+  }
+  // floor()
+  if (expr.startsWith("floor(")) {
+    const inner=expr.slice(6,-1).trim();
+    const v=evalExpr(inner,env);
+    if(Array.isArray(v)) return [Math.floor(v[0])];
+    if(typeof v==="number") return [Math.floor(v)];
+  }
+  // norm function call: norm(x) where norm is defined as function
+  if (env[expr.split("(")[0]]&&expr.includes("(")) {
+    return undefined; // custom functions fall through to sim approximation
+  }
+
   if (expr.startsWith("subset(")) {
     const args=expr.slice(7,-1).split(","); const df=env[args[0].trim()];
     if(df&&df.__isDF) return {__isDF:true, nrow:2, ncol:df.ncol};
@@ -895,12 +1417,27 @@ function evalExpr(expr, env) {
 
 function formatVal(val) {
   if(val===undefined||val===null) return "";
+  if(typeof val==="string"&&val.startsWith("__cat__:")) return val.slice(8);
   if(val==="__summary__") return "Call: lm(formula = return ~ volume, data = trades)\n\nCoefficients:\n(Intercept)      volume\n   -0.01234     0.01854\n\nR-squared: 0.9711";
   if(val==="__tidyverse_logo__") return "-- Attaching core tidyverse packages:\ndplyr, ggplot2, tidyr, readr, purrr, stringr, forcats, lubridate";
-  if(Array.isArray(val)){ if(typeof val[0]==="string") return "[1] "+val.map(s=>`"${s}"`).join(" "); return "[1] "+val.map(v=>typeof v==="number"?(Number.isInteger(v)?v:parseFloat(v.toFixed(6))):v).join(" "); }
+  if(val==="__model_output__") return "Model output printed.";
+  if(Array.isArray(val)){
+    if(val.length===0) return "";
+    if(typeof val[0]==="string") return "[1] "+val.map(s=>`"${s}"`).join(" ");
+    const fmt=val.map(v=>v===null?"NA":typeof v==="number"?(Number.isInteger(v)?v:parseFloat(v.toFixed(6))):v);
+    return "[1] "+fmt.join(" ");
+  }
   if(val&&val.__isMatrix) return `     [,1] [,2]\n[1,]    1    3\n[2,]    2    4`;
   if(val&&val.__isDF) return `  ticker price shares\n1   AAPL   189     10\n2   TSLA   245      5\n3   NVDA   875      2`;
   if(val&&val.__isLM) return `\nCall:\nlm(formula = return ~ volume, data = trades)\n\nCoefficients:\n(Intercept)      volume\n   -0.01234     0.01854`;
+  if(val&&val.__isACF) return `\nAutocorrelations of series, by lag:\n  0      1      2      3      4      5\n1.000 -0.031  0.082 -0.045  0.061 -0.028`;
+  if(val&&val.__isTable) return `        actual\npredicted 0 1\n        0 1 1\n        1 0 6`;
+  if(val&&val.__isArima) return `\nCall:\narima(x = returns, order = c(1, 0, 0))\n\nCoefficients:\n     ar1  intercept\n  0.1823     0.0062`;
+  if(val&&val.__isForecast) return `[1] 0.00412 0.00385 0.00401`;
+  if(val&&val.__isTree) return `n= 12\n\nCP nsplit rel error\n1 0.333333      0  1.000000\n2 0.010000      1  0.666667`;
+  if(val&&val.__isRF) return `\nCall:\nrandomForest(formula = up ~ ., data = trades, ntree = 100)\nOOB error: 16.67%\n\nMeanDecreaseGini:\nvolume  vol_20\n  3.42    2.18`;
+  if(val&&val.__isDate) return `[1] "${val.value}"`;
+  if(val&&val.__isDateVec) return `[1] "2024-01-08" "2024-01-09" "2024-01-10" "2024-01-11" "2024-01-12"`;
   return String(val);
 }
 
@@ -929,7 +1466,7 @@ function display(outputText, envData, errText, trial) {
     } else {
       const fin=document.createElement("div");
       fin.className="out-pass fadein"; fin.style.marginTop="12px"; fin.style.whiteSpace="pre-wrap";
-      fin.textContent="✓ all trials complete\nLevels 5, 6, and 7 are coming.\nYou're ahead of schedule.";
+      fin.textContent="✓ all 47 trials complete.\nFrom c() to a backtested algo pipeline.\nYou are an Algo Architect.";
       out.appendChild(fin);
     }
   }
