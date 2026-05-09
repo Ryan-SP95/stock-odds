@@ -541,15 +541,24 @@
   </div>
 </div>
 
-<div class="app centered" id="app">
-  <!-- Header (always visible) -->
-  <div class="header">
+<div class="header">
     <div class="tag">live ai engine · real data · entertainment only</div>
     <h1 id="title">The Odds Algo</h1>
     <p class="sub" id="subtitle">What are the odds? Enter a ticker and find out.</p>
     <div class="how-link" id="how-link">How does this work?</div>
+    
+    <!-- R Lab link -->
+    <a href="/lab" style="
+      display: inline-block; margin-top: 12px;
+      font-size: 10px; font-family: var(--mono);
+      color: #555; text-decoration: none;
+      letter-spacing: 0.15em; text-transform: uppercase;
+    " onmouseover="this.style.color='#f0f0f0'"
+       onmouseout="this.style.color='#555'">
+      R Lab →
+    </a>
   </div>
-
+ 
   <!-- INPUT PHASE -->
   <div class="phase visible" id="phase-input">
     <div class="input-row">
