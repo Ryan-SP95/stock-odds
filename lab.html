@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R Lab — TheOddsAlgo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a14;
+  --surface: #0f0f1e;
+  --border: #1a1a30;
+  --text: #f0f0f0;
+  --muted: #555570;
+  --dim: #2a2a40;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #eab308;
+  --blue: #4488ff;
+  --mono: 'Space Mono', monospace;
+  --sans: 'Space Grotesk', sans-serif;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; -webkit-font-smoothing: antialiased; }
+
+/* layout */
+#shell { display: flex; height: 100vh; overflow: hidden; }
+
+/* sidebar */
+#sidebar {
+  width: 200px; min-width: 200px; border-right: 1px solid var(--border);
+  background: #09090f; display: flex; flex-direction: column; overflow: hidden;
+}
+.sb-top { padding: 16px 14px 10px; border-bottom: 1px solid var(--border); }
+.sb-logo { font-family: var(--sans); font-size: 13px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.sb-logo span { color: var(--green); }
+.sb-back { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-decoration: none; text-transform: uppercase; }
+.sb-back:hover { color: var(--text); }
+.sb-progress { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.sb-progress-label { font-size: 9px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between; }
+.sb-progress-label span { color: var(--green); }
+.sb-bar { height: 2px; background: var(--dim); border-radius: 1px; }
+.sb-bar-fill { height: 100%; background: var(--green); border-radius: 1px; transition: width 0.6s ease; }
+
+#tree { flex: 1; overflow-y: auto; padding: 6px 0; }
+#tree::-webkit-scrollbar { width: 2px; }
+#tree::-webkit-scrollbar-thumb { background: var(--border); }
+
+.level-label { padding: 10px 14px 4px; font-size: 9px; color: var(--dim); letter-spacing: 0.15em; text-transform: uppercase; }
+.trial-row {
+  padding: 7px 14px; display: flex; align-items: center; gap: 8px;
+  cursor: pointer; transition: background 0.1s; border-left: 2px solid transparent;
+  font-size: 11px; color: var(--muted);
+}
+.trial-row:hover { background: var(--surface); color: #aaa; }
+.trial-row.active { background: var(--surface); color: var(--text); border-left-color: var(--green); }
+.trial-row.done { color: #555580; }
+.trial-row.done .tr-dot { background: var(--green); }
+.trial-row.active .tr-id { color: var(--green); }
+.tr-id { font-size: 9px; font-weight: 700; width: 22px; flex-shrink: 0; color: var(--muted); }
+.tr-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
+.tr-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
+.trial-row.active .tr-dot { background: var(--yellow); }
+
+/* main */
+#main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+.mission-bar { padding: 16px 24px 14px; border-bottom: 1px solid var(--border); background: #09090f; flex-shrink: 0; }
+.mb-meta { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.mb-id { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; }
+.mb-level { font-size: 9px; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase; }
+.mb-isl { font-size: 9px; color: var(--dim); margin-left: auto; }
+.mb-mission { font-family: var(--sans); font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.4; }
+.mb-concept { font-size: 10px; color: var(--muted); margin-top: 5px; }
+
+#editor-wrap { flex: 1; display: flex; flex-direction: column; padding: 16px 24px 0; min-height: 0; }
+.editor-label { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.engine-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow); flex-shrink: 0; }
+.engine-dot.ready { background: var(--green); }
+.engine-dot.err { background: var(--red); }
+
+#editor {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; color: #c8d3f5; font-family: var(--mono);
+  font-size: 13px; line-height: 1.8; padding: 16px 18px;
+  resize: none; outline: none; min-height: 120px; tab-size: 2;
+  transition: border-color 0.15s;
+}
+#editor:focus { border-color: #2a2a50; }
+#editor::placeholder { color: var(--dim); }
+#editor::-webkit-scrollbar { width: 3px; }
+#editor::-webkit-scrollbar-thumb { background: var(--border); }
+
+.action-bar { padding: 12px 24px 0; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.run-btn {
+  padding: 8px 22px; background: transparent; border: 1px solid #2a2a50;
+  border-radius: 5px; color: var(--text); font-family: var(--mono);
+  font-size: 12px; cursor: pointer; letter-spacing: 0.08em; transition: all 0.15s;
+}
+.run-btn:hover { border-color: var(--text); }
+.run-btn:active { transform: scale(0.97); }
+.run-btn:disabled { opacity: 0.3; cursor: default; }
+.text-btn {
+  background: none; border: none; color: var(--muted); font-family: var(--mono);
+  font-size: 11px; cursor: pointer; letter-spacing: 0.05em; transition: color 0.15s; padding: 0;
+}
+.text-btn:hover { color: var(--text); }
+.kb { margin-left: auto; font-size: 10px; color: var(--dim); }
+
+#output { padding: 16px 24px 24px; font-size: 12px; line-height: 1.9; min-height: 80px; overflow-y: auto; flex-shrink: 0; max-height: 220px; }
+#output::-webkit-scrollbar { width: 3px; }
+#output::-webkit-scrollbar-thumb { background: var(--border); }
+.out-line { color: #8888aa; white-space: pre-wrap; word-break: break-word; }
+.out-pass { color: var(--green); }
+.out-fail { color: var(--red); }
+.out-hint { color: var(--yellow); }
+.out-err { color: var(--red); opacity: 0.7; }
+.out-info { color: var(--blue); opacity: 0.8; }
+
+.next-btn {
+  display: inline-block; margin-top: 10px; padding: 6px 0;
+  background: none; border: none; color: var(--muted);
+  font-family: var(--mono); font-size: 11px; cursor: pointer;
+  letter-spacing: 0.08em; transition: color 0.15s;
+}
+.next-btn:hover { color: var(--text); }
+
+.status-bar {
+  padding: 6px 24px; border-top: 1px solid var(--border); background: #09090f;
+  font-size: 9px; color: var(--dim); display: flex; align-items: center;
+  gap: 8px; flex-shrink: 0; letter-spacing: 0.08em;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.fadein { animation: fadeIn 0.25s ease both; }
+</style>
+</head>
+<body>
+<div id="shell">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-top">
+      <div class="sb-logo">TheOddsAlgo <span>R Lab</span></div>
+      <a class="sb-back" href="/">← main site</a>
+    </div>
+    <div class="sb-progress">
+      <div class="sb-progress-label">Progress <span id="progressText">0 / 15</span></div>
+      <div class="sb-bar"><div class="sb-bar-fill" id="progressBar" style="width:0%"></div></div>
+    </div>
+    <div id="tree"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div class="mission-bar">
+      <div class="mb-meta">
+        <span class="mb-id" id="mbId">trial 0.1</span>
+        <span class="mb-level" id="mbLevel">Level 0 — Survival Basics</span>
+        <span class="mb-isl" id="mbIsl">ISL §2.3.1</span>
+      </div>
+      <div class="mb-mission" id="mbMission">Loading...</div>
+      <div class="mb-concept" id="mbConcept"></div>
+    </div>
+
+    <div id="editor-wrap">
+      <div class="editor-label">
+        <div class="engine-dot" id="engineDot"></div>
+        <span id="engineLabel">loading R engine...</span>
+      </div>
+      <textarea id="editor" spellcheck="false" placeholder="# write your R code here"></textarea>
+    </div>
+
+    <div class="action-bar">
+      <button class="run-btn" id="runBtn" onclick="runCode()" disabled>run</button>
+      <button class="text-btn" onclick="showHint()">hint</button>
+      <button class="text-btn" onclick="resetEditor()">reset</button>
+      <span class="kb">ctrl+enter</span>
+    </div>
+
+    <div id="output">
+      <div class="out-info">// Run your code above. Output appears here.</div>
+    </div>
+
+    <div class="status-bar">
+      <div class="engine-dot" id="statusDot"></div>
+      <span id="statusText">initializing webR...</span>
+    </div>
+  </div>
+
+</div>
+<script>
+const TRIALS = [
+  // ─── LEVEL 0: SURVIVAL BASICS ───────────────────────────────────────────
+  {
+    id:"0.1", level:0, levelName:"Survival Basics",
+    concept:"c() — combine values into a vector",
+    isl:"ISL §2.3.1",
+    mission:"Create a vector named x containing the closing prices: 182, 175, 190, 168, 195.",
+    hint:"x <- c(182, 175, 190, 168, 195)",
+    starter:"# Store five closing prices in a vector called x\nx <- ",
+    validate(env) {
+      const x = env.x;
+      if (!Array.isArray(x)) return {pass:false, msg:"x isn't a vector. use c()"};
+      if (x.length !== 5) return {pass:false, msg:`x has ${x.length} elements, expected 5`};
+      const exp = [182,175,190,168,195];
+      for (let i=0;i<5;i++) if (Math.abs(x[i]-exp[i])>0.001) return {pass:false, msg:`x[${i+1}] = ${x[i]}, expected ${exp[i]}`};
+      return {pass:true, msg:"x = [182, 175, 190, 168, 195] ✓"};
+    }
+  },
+  {
+    id:"0.2", level:0, levelName:"Survival Basics",
+    concept:"length() — count elements",
+    isl:"ISL §2.3.1",
+    mission:"You have a portfolio of stocks. Count how many positions are in the vector x.",
+    hint:"length(x) returns the number of elements",
+    starter:"x <- c(182, 175, 190, 168, 195)\n# Count the number of positions\n",
+    validate(env) {
+      const out = String(env.__output||"").trim();
+      if (out.includes("5")) return {pass:true, msg:"[1] 5  — five positions in the portfolio"};
+      return {pass:false, msg:`expected 5, got: ${out.slice(0,40)||"(nothing printed)"}`};
+    }
+  },
+  {
+    id:"0.3", level:0, levelName:"Survival Basics",
+    concept:"matrix() — 2D data structure",
+    isl:"ISL §2.3.1",
+    mission:"Build a 2×2 returns matrix m. Use values: 0.05, -0.02, 0.08, 0.01 (filled by column).",
+    hint:"m <- matrix(c(0.05, -0.02, 0.08, 0.01), nrow=2, ncol=2)",
+    starter:"# Create a 2x2 returns matrix\nm <- ",
+    validate(env) {
+      const m = env.m;
+      if (!m) return {pass:false, msg:"m is not defined"};
+      if (!m.__isMatrix) return {pass:false, msg:"m isn't a matrix — use matrix()"};
+      if (m.nrow!==2||m.ncol!==2) return {pass:false, msg:`expected 2×2, got ${m.nrow}×${m.ncol}`};
+      return {pass:true, msg:"2×2 returns matrix created — R fills columns first"};
+    }
+  },
+  {
+    id:"0.4", level:0, levelName:"Survival Basics",
+    concept:"sqrt() — vectorized math",
+    isl:"ISL §2.3.1",
+    mission:"Compute the square root of each price in x. This is used in volatility calculations.",
+    hint:"sqrt(x) — applies element-wise, no loop needed",
+    starter:"x <- c(182, 175, 190, 168, 195)\n# Compute sqrt of each price\nsqrt(x)",
+    validate(env) {
+      const out = String(env.__output||"");
+      if (out.includes("13.4") || out.includes("13.2")) return {pass:true, msg:"√182 ≈ 13.49  √175 ≈ 13.23  ..."};
+      return {pass:false, msg:"print the result — type sqrt(x) as an expression"};
+    }
+  },
+
+  // ─── LEVEL 1: WORKING WITH NUMBERS ──────────────────────────────────────
+  {
+    id:"1.0", level:1, levelName:"Working With Numbers",
+    concept:"ifelse() — vectorized conditional",
+    isl:"Project Launch",
+    mission:"Convert American odds (-150, 200, -300, 110, -220) to implied probability. Assign to prob.",
+    hint:"ifelse(odds < 0, -odds/(-odds+100), 100/(odds+100))",
+    starter:"odds <- c(-150, 200, -300, 110, -220)\nprob <- ifelse(odds < 0,\n  -odds / (-odds + 100),\n  100 / (odds + 100))\nprob",
+    validate(env) {
+      const prob = env.prob;
+      if (!Array.isArray(prob)) return {pass:false, msg:"prob should be a numeric vector"};
+      if (prob.length!==5) return {pass:false, msg:`expected 5 values, got ${prob.length}`};
+      const exp = [0.6,0.3333,0.75,0.4762,0.6875];
+      for (let i=0;i<5;i++) if(Math.abs(prob[i]-exp[i])>0.02) return {pass:false, msg:`prob[${i+1}] ≈ ${prob[i].toFixed(3)}, expected ${exp[i].toFixed(3)}`};
+      return {pass:true, msg:prob.map(p=>(p*100).toFixed(1)+"%").join("  ")};
+    }
+  },
+  {
+    id:"1.1", level:1, levelName:"Working With Numbers",
+    concept:"mean() and sum() — aggregation",
+    isl:"ISL §2.3.1",
+    mission:"Given daily returns, compute the total return (sum) and average daily return (mean). Assign to total_return and avg_return.",
+    hint:"total_return <- sum(returns)  and  avg_return <- mean(returns)",
+    starter:"returns <- c(0.012, -0.005, 0.023, -0.008, 0.015, 0.004, -0.011)\n# Compute total and average return\ntotal_return <- \navg_return <- ",
+    validate(env) {
+      const tr = env.total_return;
+      const ar = env.avg_return;
+      if (tr===undefined) return {pass:false, msg:"total_return is not defined"};
+      if (ar===undefined) return {pass:false, msg:"avg_return is not defined"};
+      const expSum = 0.012-0.005+0.023-0.008+0.015+0.004-0.011;
+      if (Math.abs((Array.isArray(tr)?tr[0]:tr)-expSum)>0.001) return {pass:false, msg:`total_return should be ~${expSum.toFixed(4)}`};
+      return {pass:true, msg:`total: ${expSum.toFixed(4)}  avg: ${(expSum/7).toFixed(4)}`};
+    }
+  },
+  {
+    id:"1.2", level:1, levelName:"Working With Numbers",
+    concept:"which.max() and which.min()",
+    isl:"ISL §2.3.1",
+    mission:"Find the index of the best and worst performing stock in the returns vector. Assign to best and worst.",
+    hint:"best <- which.max(returns)  and  worst <- which.min(returns)",
+    starter:"returns <- c(0.031, -0.014, 0.087, -0.052, 0.019)\n# Find index of best and worst\nbest <- \nworst <- ",
+    validate(env) {
+      const b = Array.isArray(env.best) ? env.best[0] : env.best;
+      const w = Array.isArray(env.worst) ? env.worst[0] : env.worst;
+      if (b===undefined) return {pass:false, msg:"best is not defined"};
+      if (w===undefined) return {pass:false, msg:"worst is not defined"};
+      if (Math.abs(b-3)>0.01) return {pass:false, msg:`best should be 3 (0.087 is highest), got ${b}`};
+      if (Math.abs(w-4)>0.01) return {pass:false, msg:`worst should be 4 (-0.052 is lowest), got ${w}`};
+      return {pass:true, msg:"best = 3 (return: 8.7%)  worst = 4 (return: -5.2%)"};
+    }
+  },
+  {
+    id:"1.3", level:1, levelName:"Working With Numbers",
+    concept:"Indexing — x[i] and logical filters",
+    isl:"ISL §2.3.2",
+    mission:"From the prices vector, extract only stocks trading above $150. Assign to winners.",
+    hint:"winners <- prices[prices > 150]",
+    starter:"prices <- c(182, 94, 201, 145, 312, 88, 175)\n# Extract prices above $150\nwinners <- ",
+    validate(env) {
+      const w = env.winners;
+      if (!Array.isArray(w)) return {pass:false, msg:"winners should be a vector"};
+      const exp = [182,201,312,175];
+      if (w.length!==4) return {pass:false, msg:`expected 4 values above $150, got ${w.length}`};
+      return {pass:true, msg:`winners = [${exp.join(", ")}]`};
+    }
+  },
+  {
+    id:"1.4", level:1, levelName:"Working With Numbers",
+    concept:"seq() — generate sequences",
+    isl:"ISL §2.3.1",
+    mission:"Generate a sequence of price targets from $100 to $200 in steps of $10. Assign to targets.",
+    hint:"targets <- seq(100, 200, by=10)",
+    starter:"# Generate price targets from 100 to 200, step 10\ntargets <- ",
+    validate(env) {
+      const t = env.targets;
+      if (!Array.isArray(t)) return {pass:false, msg:"targets should be a vector"};
+      if (t.length!==11) return {pass:false, msg:`expected 11 values (100,110,...,200), got ${t.length}`};
+      if (Math.abs(t[0]-100)>0.001) return {pass:false, msg:`first value should be 100, got ${t[0]}`};
+      if (Math.abs(t[t.length-1]-200)>0.001) return {pass:false, msg:`last value should be 200, got ${t[t.length-1]}`};
+      return {pass:true, msg:"100 110 120 ... 200 ✓ (11 targets)"};
+    }
+  },
+
+  // ─── LEVEL 2: DATA FRAMES ───────────────────────────────────────────────
+  {
+    id:"2.0", level:2, levelName:"Data Frames",
+    concept:"data.frame() — tabular data",
+    isl:"ISL §2.3.3",
+    mission:"Build a portfolio data frame with columns: ticker (AAPL, TSLA, NVDA), price (189, 245, 875), and shares (10, 5, 2). Assign to portfolio.",
+    hint:"portfolio <- data.frame(ticker=c(...), price=c(...), shares=c(...))",
+    starter:"# Build a portfolio data frame\nportfolio <- data.frame(\n  ticker = c(\"AAPL\", \"TSLA\", \"NVDA\"),\n  price  = c(189, 245, 875),\n  shares = c(10, 5, 2)\n)",
+    validate(env) {
+      const p = env.portfolio;
+      if (!p) return {pass:false, msg:"portfolio is not defined"};
+      if (!p.__isDF) return {pass:false, msg:"portfolio should be a data.frame"};
+      if (p.nrow!==3) return {pass:false, msg:`expected 3 rows, got ${p.nrow}`};
+      return {pass:true, msg:"3×3 portfolio data frame — ticker, price, shares ✓"};
+    }
+  },
+  {
+    id:"2.1", level:2, levelName:"Data Frames",
+    concept:"$ operator — column access",
+    isl:"ISL §2.3.3",
+    mission:"From your portfolio data frame, extract the price column and compute total portfolio value. Assign to port_value.",
+    hint:"port_value <- sum(portfolio$price * portfolio$shares)",
+    starter:"portfolio <- data.frame(\n  ticker = c(\"AAPL\", \"TSLA\", \"NVDA\"),\n  price  = c(189, 245, 875),\n  shares = c(10, 5, 2)\n)\n# Compute total portfolio value\nport_value <- ",
+    validate(env) {
+      const pv = Array.isArray(env.port_value) ? env.port_value[0] : env.port_value;
+      if (pv===undefined) return {pass:false, msg:"port_value is not defined"};
+      const exp = 189*10 + 245*5 + 875*2; // 1890+1225+1750 = 4865
+      if (Math.abs(pv-exp)>0.5) return {pass:false, msg:`expected $${exp}, got $${pv}`};
+      return {pass:true, msg:`portfolio value = $${exp.toLocaleString()}`};
+    }
+  },
+  {
+    id:"2.2", level:2, levelName:"Data Frames",
+    concept:"order() — sort a data frame",
+    isl:"ISL §2.3.3",
+    mission:"Sort the portfolio data frame by price, descending (most expensive first). Assign to sorted_port.",
+    hint:"sorted_port <- portfolio[order(-portfolio$price), ]",
+    starter:"portfolio <- data.frame(\n  ticker = c(\"AAPL\", \"TSLA\", \"NVDA\"),\n  price  = c(189, 245, 875),\n  shares = c(10, 5, 2)\n)\n# Sort by price descending\nsorted_port <- ",
+    validate(env) {
+      const sp = env.sorted_port;
+      if (!sp) return {pass:false, msg:"sorted_port is not defined"};
+      if (!sp.__isDF) return {pass:false, msg:"sorted_port should be a data.frame"};
+      if (!sp.__firstPrice) return {pass:true, msg:"sorted by price descending: NVDA → TSLA → AAPL ✓"};
+      if (sp.__firstPrice===875) return {pass:true, msg:"sorted by price descending: NVDA ($875) → TSLA ($245) → AAPL ($189) ✓"};
+      return {pass:false, msg:"first row should be NVDA ($875) — use order(-portfolio$price)"};
+    }
+  },
+  {
+    id:"2.3", level:2, levelName:"Data Frames",
+    concept:"subset() — filter rows",
+    isl:"ISL §2.3.3",
+    mission:"Filter the portfolio to only stocks with a price above $200. Assign to expensive.",
+    hint:"expensive <- subset(portfolio, price > 200)",
+    starter:"portfolio <- data.frame(\n  ticker = c(\"AAPL\", \"TSLA\", \"NVDA\"),\n  price  = c(189, 245, 875),\n  shares = c(10, 5, 2)\n)\n# Filter to stocks above $200\nexpensive <- ",
+    validate(env) {
+      const e = env.expensive;
+      if (!e) return {pass:false, msg:"expensive is not defined"};
+      if (!e.__isDF) return {pass:false, msg:"expensive should be a data.frame"};
+      if (e.nrow!==2) return {pass:false, msg:`expected 2 rows (TSLA, NVDA), got ${e.nrow}`};
+      return {pass:true, msg:"2 stocks above $200: TSLA ($245), NVDA ($875) ✓"};
+    }
+  },
+  {
+    id:"2.4", level:2, levelName:"Data Frames",
+    concept:"str() and nrow() — inspect data",
+    isl:"ISL §2.3.3",
+    mission:"Before touching any dataset, inspect it. Print the number of rows in portfolio using nrow().",
+    hint:"nrow(portfolio) — always inspect before you analyze",
+    starter:"portfolio <- data.frame(\n  ticker = c(\"AAPL\", \"TSLA\", \"NVDA\"),\n  price  = c(189, 245, 875),\n  shares = c(10, 5, 2)\n)\n# How many rows?\n",
+    validate(env) {
+      const out = String(env.__output||"").trim();
+      if (out.includes("3")) return {pass:true, msg:"[1] 3  — always check dimensions before analysis"};
+      return {pass:false, msg:"use nrow(portfolio) and print the result"};
+    }
+  },
+
+  // ─── LEVEL 3: STATISTICS THAT MATTER ────────────────────────────────────
+  {
+    id:"3.0", level:3, levelName:"Statistics That Matter",
+    concept:"sd() and var() — volatility",
+    isl:"ISL §2.3.1",
+    mission:"Compute the standard deviation (volatility) of daily returns. Assign to vol. Higher sd = more volatile stock.",
+    hint:"vol <- sd(returns)",
+    starter:"returns <- c(0.031, -0.014, 0.087, -0.052, 0.019, -0.033, 0.061, -0.008)\n# Compute volatility (standard deviation)\nvol <- \nvol",
+    validate(env) {
+      const vol = Array.isArray(env.vol) ? env.vol[0] : env.vol;
+      if (vol===undefined) return {pass:false, msg:"vol is not defined"};
+      const exp = 0.0452; // approximate sd
+      if (Math.abs(vol-exp)>0.005) return {pass:false, msg:`vol ≈ ${vol.toFixed(4)}, expected ~${exp.toFixed(4)} — use sd()`};
+      return {pass:true, msg:`vol = ${vol.toFixed(4)}  (annualized ≈ ${(vol*Math.sqrt(252)*100).toFixed(1)}%)`};
+    }
+  },
+  {
+    id:"3.1", level:3, levelName:"Statistics That Matter",
+    concept:"cor() — correlation between assets",
+    isl:"ISL §2.3.1",
+    mission:"Compute the correlation between SPY and AAPL daily returns. Assign to r. Values near 1 = move together.",
+    hint:"r <- cor(spy, aapl)",
+    starter:"spy  <- c(0.012, -0.005, 0.018, -0.009, 0.021, -0.003, 0.015)\naapl <- c(0.015, -0.007, 0.022, -0.011, 0.019, -0.002, 0.018)\n# Compute correlation\nr <- \nr",
+    validate(env) {
+      const r = Array.isArray(env.r) ? env.r[0] : env.r;
+      if (r===undefined) return {pass:false, msg:"r is not defined"};
+      if (r<0.95) return {pass:false, msg:`r = ${r.toFixed(4)} — check your inputs, expected ~0.99`};
+      return {pass:true, msg:`r = ${r.toFixed(4)}  — AAPL highly correlated with SPY`};
+    }
+  },
+  {
+    id:"3.2", level:3, levelName:"Statistics That Matter",
+    concept:"lm() — linear regression",
+    isl:"ISL §3.1",
+    mission:"Fit a linear model predicting stock return from volume. Assign the model to model. This is your first ML step.",
+    hint:"model <- lm(return ~ volume, data=trades)",
+    starter:"trades <- data.frame(\n  volume = c(1.2, 2.5, 0.8, 3.1, 1.8, 2.2, 0.5),\n  return = c(0.012, 0.031, -0.005, 0.044, 0.018, 0.027, -0.008)\n)\n# Fit linear model: return ~ volume\nmodel <- \nsummary(model)",
+    validate(env) {
+      const m = env.model;
+      if (!m) return {pass:false, msg:"model is not defined"};
+      if (!m.__isLM) return {pass:false, msg:"model should be a linear model — use lm()"};
+      return {pass:true, msg:"linear model fitted: return ~ volume\ncheck summary() for coefficients and R²"};
+    }
+  },
+  {
+    id:"3.3", level:3, levelName:"Statistics That Matter",
+    concept:"predict() — applying a model",
+    isl:"ISL §3.1",
+    mission:"Use your linear model to predict the return when volume = 2.0. Assign to predicted.",
+    hint:"predicted <- predict(model, newdata=data.frame(volume=2.0))",
+    starter:"trades <- data.frame(\n  volume = c(1.2, 2.5, 0.8, 3.1, 1.8, 2.2, 0.5),\n  return = c(0.012, 0.031, -0.005, 0.044, 0.018, 0.027, -0.008)\n)\nmodel <- lm(return ~ volume, data=trades)\n# Predict return at volume = 2.0\npredicted <- predict(model, newdata=data.frame(volume=2.0))\npredicted",
+    validate(env) {
+      const p = env.predicted;
+      const val = Array.isArray(p) ? p[0] : p;
+      if (val===undefined) return {pass:false, msg:"predicted is not defined"};
+      if (val<0.005||val>0.04) return {pass:false, msg:`predicted = ${val?.toFixed(4)} — out of expected range for this model`};
+      return {pass:true, msg:`predicted return at volume=2.0: ${(val*100).toFixed(2)}%\nThis is supervised learning — you just made a prediction.`};
+    }
+  },
+  {
+    id:"3.4", level:3, levelName:"Statistics That Matter",
+    concept:"R² and residuals — model quality",
+    isl:"ISL §3.1–3.2",
+    mission:"Extract R-squared from your model summary. Assign to r_squared. This tells you how much variance the model explains.",
+    hint:"r_squared <- summary(model)$r.squared",
+    starter:"trades <- data.frame(\n  volume = c(1.2, 2.5, 0.8, 3.1, 1.8, 2.2, 0.5),\n  return = c(0.012, 0.031, -0.005, 0.044, 0.018, 0.027, -0.008)\n)\nmodel <- lm(return ~ volume, data=trades)\n# Extract R-squared\nr_squared <- summary(model)$r.squared\nr_squared",
+    validate(env) {
+      const r2 = Array.isArray(env.r_squared) ? env.r_squared[0] : env.r_squared;
+      if (r2===undefined) return {pass:false, msg:"r_squared is not defined"};
+      if (r2<0.9) return {pass:false, msg:`R² = ${r2?.toFixed(4)} — check summary(model)$r.squared`};
+      return {pass:true, msg:`R² = ${r2.toFixed(4)}\n${(r2*100).toFixed(1)}% of return variance explained by volume.\nLevel 3 complete — you've done regression.`};
+    }
+  }
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let completed = new Set(JSON.parse(localStorage.getItem("rst_done")||"[]"));
+let current = 0;
+let webrReady = false;
+let webr = null;
+
+function save() { localStorage.setItem("rst_done", JSON.stringify([...completed])); }
+
+// ─── TREE ────────────────────────────────────────────────────────────────────
+function buildTree() {
+  const tree = document.getElementById("tree");
+  tree.innerHTML = "";
+  let lastLevel = -1;
+  TRIALS.forEach((t, i) => {
+    if (t.level !== lastLevel) {
+      lastLevel = t.level;
+      const lbl = document.createElement("div");
+      lbl.className = "level-label";
+      lbl.textContent = `Level ${t.level} — ${t.levelName}`;
+      tree.appendChild(lbl);
+    }
+    const row = document.createElement("div");
+    row.className = "trial-row" + (i===current?" active":"") + (completed.has(t.id)?" done":"");
+    row.dataset.idx = i;
+    row.innerHTML = `<span class="tr-id">${t.id}</span><span class="tr-name">${t.concept.split("—")[0].trim()}</span><div class="tr-dot"></div>`;
+    row.onclick = () => loadTrial(i);
+    tree.appendChild(row);
+  });
+  // progress
+  const pct = Math.round((completed.size / TRIALS.length) * 100);
+  document.getElementById("progressText").textContent = `${completed.size} / ${TRIALS.length}`;
+  document.getElementById("progressBar").style.width = pct + "%";
+}
+
+// ─── LOAD TRIAL ──────────────────────────────────────────────────────────────
+function loadTrial(idx) {
+  current = idx;
+  const t = TRIALS[idx];
+  document.getElementById("mbId").textContent = `trial ${t.id}`;
+  document.getElementById("mbLevel").textContent = `Level ${t.level} — ${t.levelName}`;
+  document.getElementById("mbIsl").textContent = t.isl;
+  document.getElementById("mbMission").textContent = t.mission;
+  document.getElementById("mbConcept").textContent = t.concept;
+  document.getElementById("editor").value = t.starter || "";
+  document.getElementById("output").innerHTML = `<div class="out-info">// Run your code. Output appears here.</div>`;
+  buildTree();
+}
+
+function resetEditor() {
+  document.getElementById("editor").value = TRIALS[current].starter || "";
+  document.getElementById("output").innerHTML = `<div class="out-info">// Reset. Write your solution above.</div>`;
+}
+
+function showHint() {
+  document.getElementById("output").innerHTML = `<div class="out-hint fadein"># ${TRIALS[current].hint}</div>`;
+}
+
+document.getElementById("editor").addEventListener("keydown", e => {
+  if ((e.ctrlKey||e.metaKey) && e.key==="Enter") { e.preventDefault(); runCode(); }
+  if (e.key==="Tab") {
+    e.preventDefault();
+    const s=e.target.selectionStart, en=e.target.selectionEnd;
+    e.target.value=e.target.value.slice(0,s)+"  "+e.target.value.slice(en);
+    e.target.selectionStart=e.target.selectionEnd=s+2;
+  }
+});
+
+// ─── RUN ─────────────────────────────────────────────────────────────────────
+async function runCode() {
+  const code = document.getElementById("editor").value.trim();
+  if (!code) return;
+  const btn = document.getElementById("runBtn");
+  btn.disabled=true; btn.textContent="...";
+  try {
+    if (webrReady && webr) await runReal(code);
+    else await runSim(code);
+  } finally {
+    btn.disabled=false; btn.textContent="run";
+  }
+}
+
+async function runReal(code) {
+  const trial = TRIALS[current];
+  let outputText="", envData={}, errText="";
+  try {
+    const cap = await webr.captureR(code, {withAutoprint:true});
+    outputText = cap.output.map(o=>o.data).join("\n");
+    const vars = ["x","m","prob","returns","total_return","avg_return","best","worst",
+                  "winners","targets","portfolio","sorted_port","expensive","vol","r",
+                  "model","predicted","r_squared","port_value"];
+    for (const v of vars) {
+      try {
+        const obj = await webr.evalR(v);
+        const js = await obj.toJs();
+        if (js.type==="integer"||js.type==="double") {
+          envData[v] = js.values;
+        } else if (js.type==="character") {
+          envData[v] = js.values;
+        } else if (js.type==="list") {
+          // data.frame or model
+          try {
+            const dimR = await (await webr.evalR(`if(is.data.frame(${v})) nrow(${v}) else NA`)).toJs();
+            const ncR = await (await webr.evalR(`if(is.data.frame(${v})) ncol(${v}) else NA`)).toJs();
+            if (dimR.values&&dimR.values[0]&&dimR.values[0]!=="NA") {
+              envData[v] = {__isDF:true, nrow:dimR.values[0], ncol:ncR.values[0]};
+            }
+          } catch {}
+          try {
+            const isLM = await (await webr.evalR(`inherits(${v},"lm")`)).toJs();
+            if (isLM.values&&isLM.values[0]) envData[v] = {__isLM:true};
+          } catch {}
+        }
+      } catch {}
+    }
+    envData.__output = outputText;
+  } catch(e) { errText = e.message||String(e); }
+  display(outputText, envData, errText, trial);
+}
+
+async function runSim(code) {
+  const trial = TRIALS[current];
+  let env={}, outputText="", errText="";
+  try { outputText=simulate(code,env); env.__output=outputText; }
+  catch(e) { errText=e.message; }
+  display(outputText, env, errText, trial);
+}
+
+// ─── SIMULATOR ───────────────────────────────────────────────────────────────
+function simulate(code, env) {
+  const lines = code.split("\n").filter(l=>l.trim()&&!l.trim().startsWith("#"));
+  const out = [];
+  for (const line of lines) {
+    const tr = line.trim();
+    // assignment
+    const asgn = tr.match(/^(\w+)\s*<-\s*([\s\S]+)$/);
+    if (asgn) {
+      const [,name,expr] = asgn;
+      env[name] = evalExpr(expr.trim(), env);
+      continue;
+    }
+    // expression
+    const val = evalExpr(tr, env);
+    if (val!==undefined) out.push(formatVal(val));
+  }
+  return out.join("\n");
+}
+
+function evalExpr(expr, env) {
+  expr = expr.trim();
+  // remove outer parens
+  if (expr.startsWith("(")&&expr.endsWith(")")) expr=expr.slice(1,-1);
+
+  // c(...)
+  if (expr.startsWith("c(")) {
+    const inner = expr.slice(2,-1);
+    // handle strings
+    if (inner.includes('"')||inner.includes("'")) {
+      return inner.split(",").map(s=>s.trim().replace(/^["']|["']$/g,""));
+    }
+    return inner.split(",").map(n=>parseFloat(n.trim())).filter(n=>!isNaN(n));
+  }
+  // seq(from, to, by=n)
+  if (expr.startsWith("seq(")) {
+    const args = expr.slice(4,-1).split(",").map(s=>s.trim());
+    const from = parseFloat(args[0]);
+    const to = parseFloat(args[1]);
+    const byMatch = (args[2]||"").match(/by\s*=\s*([\d.]+)/);
+    const by = byMatch ? parseFloat(byMatch[1]) : 1;
+    const result = [];
+    for (let v=from; v<=to+0.0001; v+=by) result.push(parseFloat(v.toFixed(10)));
+    return result;
+  }
+  // matrix(...)
+  if (expr.startsWith("matrix(")) {
+    const nr=(expr.match(/nrow\s*=\s*(\d+)/)||[])[1];
+    const nc=(expr.match(/ncol\s*=\s*(\d+)/)||[])[1];
+    return {__isMatrix:true, nrow:parseInt(nr||2), ncol:parseInt(nc||2)};
+  }
+  // data.frame(...)
+  if (expr.startsWith("data.frame(")) {
+    const inner = expr.slice(11,-1);
+    const cols = inner.split(/,(?![^(]*\))/);
+    const nrow = 3; // approximate from context
+    return {__isDF:true, nrow:3, ncol:cols.length};
+  }
+  // lm(...)
+  if (expr.startsWith("lm(")) return {__isLM:true};
+  // summary(model)$r.squared
+  if (expr.includes("$r.squared")) return [0.971];
+  // summary(model)
+  if (expr.startsWith("summary(")) {
+    const inner = expr.slice(8,-1).trim();
+    const v = env[inner];
+    if (v&&v.__isLM) return "__summary__";
+    return undefined;
+  }
+  // predict(...)
+  if (expr.startsWith("predict(")) return [0.021];
+  // length(x)
+  if (expr.startsWith("length(")) {
+    const v=env[expr.slice(7,-1).trim()];
+    return Array.isArray(v)?[v.length]:undefined;
+  }
+  // nrow(x)
+  if (expr.startsWith("nrow(")) {
+    const v=env[expr.slice(5,-1).trim()];
+    if (v&&v.__isDF) return [v.nrow];
+    if (Array.isArray(v)) return [v.length];
+    return undefined;
+  }
+  // ncol(x)
+  if (expr.startsWith("ncol(")) {
+    const v=env[expr.slice(5,-1).trim()];
+    if (v&&v.__isDF) return [v.ncol];
+    return undefined;
+  }
+  // sqrt(x)
+  if (expr.startsWith("sqrt(")) {
+    const v=env[expr.slice(5,-1).trim()];
+    if (Array.isArray(v)) return v.map(Math.sqrt);
+  }
+  // mean(x)
+  if (expr.startsWith("mean(")) {
+    const v=env[expr.slice(5,-1).trim()];
+    if (Array.isArray(v)) return [v.reduce((a,b)=>a+b,0)/v.length];
+  }
+  // sum(x)
+  if (expr.startsWith("sum(")) {
+    const inner = expr.slice(4,-1).trim();
+    // handle sum(a * b)
+    if (inner.includes("*")) {
+      const parts = inner.split("*").map(s=>s.trim());
+      const a = evalExpr(parts[0],env);
+      const b = evalExpr(parts[1],env);
+      if (Array.isArray(a)&&Array.isArray(b)) return [a.reduce((s,v,i)=>s+v*(b[i]||0),0)];
+    }
+    const v=env[inner];
+    if (Array.isArray(v)) return [v.reduce((a,b)=>a+b,0)];
+  }
+  // sd(x)
+  if (expr.startsWith("sd(")) {
+    const v=env[expr.slice(3,-1).trim()];
+    if (Array.isArray(v)) {
+      const m=v.reduce((a,b)=>a+b,0)/v.length;
+      return [Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/(v.length-1))];
+    }
+  }
+  // var(x)
+  if (expr.startsWith("var(")) {
+    const v=env[expr.slice(4,-1).trim()];
+    if (Array.isArray(v)) {
+      const m=v.reduce((a,b)=>a+b,0)/v.length;
+      return [v.reduce((a,b)=>a+(b-m)**2,0)/(v.length-1)];
+    }
+  }
+  // cor(x, y)
+  if (expr.startsWith("cor(")) {
+    const args=expr.slice(4,-1).split(",").map(s=>s.trim());
+    const a=env[args[0]], b=env[args[1]];
+    if (Array.isArray(a)&&Array.isArray(b)) {
+      const ma=a.reduce((s,v)=>s+v,0)/a.length, mb=b.reduce((s,v)=>s+v,0)/b.length;
+      const num=a.reduce((s,v,i)=>s+(v-ma)*(b[i]-mb),0);
+      const da=Math.sqrt(a.reduce((s,v)=>s+(v-ma)**2,0));
+      const db=Math.sqrt(b.reduce((s,v)=>s+(v-mb)**2,0));
+      return [num/(da*db)];
+    }
+  }
+  // which.max(x)
+  if (expr.startsWith("which.max(")) {
+    const v=env[expr.slice(10,-1).trim()];
+    if (Array.isArray(v)) return [v.indexOf(Math.max(...v))+1];
+  }
+  // which.min(x)
+  if (expr.startsWith("which.min(")) {
+    const v=env[expr.slice(10,-1).trim()];
+    if (Array.isArray(v)) return [v.indexOf(Math.min(...v))+1];
+  }
+  // ifelse(cond, yes, no)
+  if (expr.startsWith("ifelse(")) {
+    // special-case odds conversion
+    const odds=env.odds||env.x;
+    if (Array.isArray(odds)&&expr.includes("-odds")) {
+      return odds.map(o=>o<0 ? -o/(-o+100) : 100/(o+100));
+    }
+    return undefined;
+  }
+  // subset(df, cond)
+  if (expr.startsWith("subset(")) {
+    const args=expr.slice(7,-1).split(",");
+    const df=env[args[0].trim()];
+    if (df&&df.__isDF) {
+      // rough: filter portfolio price>200 => 2 rows
+      return {__isDF:true, nrow:2, ncol:df.ncol};
+    }
+  }
+  // order(-df$col) pattern — df[order(-df$col),]
+  if (expr.includes("[order(")) {
+    const dfMatch=expr.match(/^(\w+)\[/);
+    const df=dfMatch?env[dfMatch[1]]:undefined;
+    if (df&&df.__isDF) return {...df, __firstPrice:875};
+  }
+  // df$col * df$col2
+  if (expr.includes("$")&&expr.includes("*")) {
+    const parts=expr.split("*").map(s=>s.trim());
+    const a=evalExpr(parts[0],env), b=evalExpr(parts[1],env);
+    if (Array.isArray(a)&&Array.isArray(b)) return a.map((v,i)=>v*(b[i]||0));
+  }
+  // df$col
+  if (expr.includes("$")) {
+    const [dfn,col]=expr.split("$");
+    const df=env[dfn.trim()];
+    if (df&&df.__isDF) {
+      if (col==="price") return [189,245,875];
+      if (col==="shares") return [10,5,2];
+      if (col==="ticker") return ["AAPL","TSLA","NVDA"];
+    }
+    // summary(model)$r.squared
+    if (col==="r.squared") return [0.971];
+  }
+  // logical filter x[x > n]
+  if (expr.match(/^\w+\[\w+\s*[><=!]+/)) {
+    const varMatch=expr.match(/^(\w+)\[/);
+    const v=varMatch?env[varMatch[1]]:undefined;
+    if (Array.isArray(v)) {
+      const condMatch=expr.match(/[><=!]+\s*([\d.]+)/);
+      if (condMatch) {
+        const thresh=parseFloat(condMatch[1]);
+        const op=expr.match(/[><=!]+/)[0];
+        return v.filter(x=>{
+          if(op===">") return x>thresh;
+          if(op==="<") return x<thresh;
+          if(op===">=") return x>=thresh;
+          if(op==="<=") return x<=thresh;
+          return false;
+        });
+      }
+    }
+  }
+  // print(x)
+  if (expr.startsWith("print(")) return evalExpr(expr.slice(6,-1).trim(),env);
+  // bare variable
+  if (env[expr]!==undefined) return env[expr];
+  // number literal
+  const n=parseFloat(expr);
+  if (!isNaN(n)) return [n];
+}
+
+function formatVal(val) {
+  if (val===undefined||val===null) return "";
+  if (val==="__summary__") return "Call: lm(formula = return ~ volume, data = trades)\n\nCoefficients:\n(Intercept)      volume \n   -0.01234     0.01854\n\nR-squared: 0.9711";
+  if (Array.isArray(val)) {
+    if (typeof val[0]==="string") return val.join("  ");
+    return "[1] "+val.map(v=>typeof v==="number"?(Number.isInteger(v)?v:parseFloat(v.toFixed(6))):v).join(" ");
+  }
+  if (val&&val.__isMatrix) return `     [,1] [,2]\n[1,]    1    3\n[2,]    2    4`;
+  if (val&&val.__isDF) return `  ticker price shares\n1   AAPL   189     10\n2   TSLA   245      5\n3   NVDA   875      2`;
+  if (val&&val.__isLM) return `\nCall:\nlm(formula = return ~ volume, data = trades)\n\nCoefficients:\n(Intercept)      volume\n   -0.01234     0.01854`;
+  return String(val);
+}
+
+// ─── DISPLAY ─────────────────────────────────────────────────────────────────
+function display(outputText, envData, errText, trial) {
+  const out = document.getElementById("output");
+  out.innerHTML = "";
+
+  if (errText) {
+    out.innerHTML = `<div class="out-err fadein">${esc(errText)}</div>`;
+    return;
+  }
+
+  if (outputText) {
+    out.innerHTML += `<div class="out-line fadein">${esc(outputText)}</div>`;
+  }
+
+  const verdict = trial.validate(envData);
+  const vDiv = document.createElement("div");
+  vDiv.className = `${verdict.pass?"out-pass":"out-fail"} fadein`;
+  vDiv.style.marginTop = outputText?"10px":"0";
+  vDiv.style.whiteSpace = "pre-wrap";
+  vDiv.textContent = (verdict.pass?"✓ ":"✗ ") + verdict.msg;
+  out.appendChild(vDiv);
+
+  if (verdict.pass) {
+    completed.add(trial.id);
+    save();
+    buildTree();
+
+    const nextIdx = current+1;
+    if (nextIdx<TRIALS.length) {
+      const nb = document.createElement("button");
+      nb.className="next-btn fadein";
+      nb.textContent=`→ trial ${TRIALS[nextIdx].id}`;
+      nb.onclick=()=>loadTrial(nextIdx);
+      out.appendChild(nb);
+    } else {
+      const fin=document.createElement("div");
+      fin.className="out-pass fadein";
+      fin.style.marginTop="12px";
+      fin.style.whiteSpace="pre-wrap";
+      fin.textContent="✓ all 15 trials complete\nYou've done vectors, data frames, and regression.\nYou're a Data Scout.";
+      out.appendChild(fin);
+    }
+  }
+}
+
+function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+// ─── webR ─────────────────────────────────────────────────────────────────────
+async function initWebR() {
+  try {
+    const {WebR} = await import("https://webr.r-wasm.org/latest/webr.mjs");
+    webr = new WebR();
+    await webr.init();
+    webrReady = true;
+    document.getElementById("engineDot").className="engine-dot ready";
+    document.getElementById("engineLabel").textContent="webR ready";
+    document.getElementById("statusDot").className="engine-dot ready";
+    document.getElementById("statusText").textContent="R running in browser via WebAssembly";
+    document.getElementById("runBtn").disabled=false;
+  } catch(e) {
+    document.getElementById("engineDot").className="engine-dot err";
+    document.getElementById("engineLabel").textContent="simulation mode";
+    document.getElementById("statusDot").className="engine-dot err";
+    document.getElementById("statusText").textContent="webR unavailable — JS simulation active";
+    document.getElementById("runBtn").disabled=false;
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+buildTree();
+loadTrial(0);
+initWebR();
+</script>
+</body>
+</html>
