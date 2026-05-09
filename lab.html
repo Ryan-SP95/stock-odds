@@ -569,32 +569,62 @@ async function runReal(code) {
   const trial = TRIALS[current];
   let outputText="", envData={}, errText="";
   try {
-    const cap = await webr.captureR(code, {withAutoprint:true});
-    outputText = cap.output.map(o=>o.data).join("\n");
+    // Capture output by wrapping in capture.output
+    const wrappedCode = `
+local({
+  output <- capture.output({
+    tryCatch({
+      ${code}
+    }, error=function(e) cat("ERROR:", conditionMessage(e), "\n"))
+  })
+  cat(paste(output, collapse="\n"))
+})`;
+    // Execute the code to set variables in global env
+    await webr.evalRVoid(code);
+    // Capture printed output separately
+    try {
+      const outR = await webr.evalR(`paste(capture.output({${code}}), collapse="\n")`);
+      const outJs = await outR.toJs();
+      outputText = (outJs.values||[]).join("\n");
+    } catch(e2) {
+      outputText = "";
+    }
+
     const vars = ["x","m","prob","returns","total_return","avg_return","best","worst",
                   "winners","targets","portfolio","sorted_port","expensive","vol","r",
                   "model","predicted","r_squared","port_value"];
     for (const v of vars) {
       try {
-        const obj = await webr.evalR(v);
-        const js = await obj.toJs();
-        if (js.type==="integer"||js.type==="double") {
+        // check exists first
+        const existsR = await webr.evalR(`exists("${v}")`);
+        const existsJs = await existsR.toJs();
+        if (!existsJs.values||!existsJs.values[0]) continue;
+
+        // check type
+        const typeR = await webr.evalR(`class(${v})[1]`);
+        const typeJs = await typeR.toJs();
+        const cls = (typeJs.values||[])[0]||"";
+
+        if (cls==="numeric"||cls==="integer"||cls==="logical") {
+          const obj = await webr.evalR(`as.numeric(${v})`);
+          const js = await obj.toJs();
           envData[v] = js.values;
-        } else if (js.type==="character") {
+        } else if (cls==="character") {
+          const obj = await webr.evalR(v);
+          const js = await obj.toJs();
           envData[v] = js.values;
-        } else if (js.type==="list") {
-          // data.frame or model
-          try {
-            const dimR = await (await webr.evalR(`if(is.data.frame(${v})) nrow(${v}) else NA`)).toJs();
-            const ncR = await (await webr.evalR(`if(is.data.frame(${v})) ncol(${v}) else NA`)).toJs();
-            if (dimR.values&&dimR.values[0]&&dimR.values[0]!=="NA") {
-              envData[v] = {__isDF:true, nrow:dimR.values[0], ncol:ncR.values[0]};
-            }
-          } catch {}
-          try {
-            const isLM = await (await webr.evalR(`inherits(${v},"lm")`)).toJs();
-            if (isLM.values&&isLM.values[0]) envData[v] = {__isLM:true};
-          } catch {}
+        } else if (cls==="data.frame") {
+          const nr = await (await webr.evalR(`nrow(${v})`)).toJs();
+          const nc = await (await webr.evalR(`ncol(${v})`)).toJs();
+          envData[v] = {__isDF:true, nrow:nr.values[0], ncol:nc.values[0]};
+        } else if (cls==="lm") {
+          const r2 = await (await webr.evalR(`summary(${v})$r.squared`)).toJs();
+          envData[v] = {__isLM:true};
+          if (r2.values) envData.r_squared = r2.values;
+        } else if (cls==="matrix") {
+          const nr = await (await webr.evalR(`nrow(${v})`)).toJs();
+          const nc = await (await webr.evalR(`ncol(${v})`)).toJs();
+          envData[v] = {__isMatrix:true, nrow:nr.values[0], ncol:nc.values[0]};
         }
       } catch {}
     }
@@ -897,6 +927,14 @@ async function initWebR() {
     const {WebR} = await import("https://webr.r-wasm.org/latest/webr.mjs");
     webr = new WebR();
     await webr.init();
+    // polyfill evalRVoid for older webR versions
+    if (!webr.evalRVoid) {
+      webr.evalRVoid = async (code) => { await webr.evalR(code); };
+    }
+    // smoke test
+    const t = await webr.evalR("1+1");
+    const tj = await t.toJs();
+    if (!tj.values || tj.values[0] !== 2) throw new Error("smoke test failed");
     webrReady = true;
     document.getElementById("engineDot").className="engine-dot ready";
     document.getElementById("engineLabel").textContent="webR ready";
@@ -904,6 +942,7 @@ async function initWebR() {
     document.getElementById("statusText").textContent="R running in browser via WebAssembly";
     document.getElementById("runBtn").disabled=false;
   } catch(e) {
+    console.warn("webR failed:", e.message);
     document.getElementById("engineDot").className="engine-dot err";
     document.getElementById("engineLabel").textContent="simulation mode";
     document.getElementById("statusDot").className="engine-dot err";
