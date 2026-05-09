@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python Lab — TheOddsAlgo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a14;
+  --surface: #0f0f1e;
+  --border: #1a1a30;
+  --text: #f0f0f0;
+  --muted: #555570;
+  --dim: #2a2a40;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #eab308;
+  --blue: #4488ff;
+  --mono: 'Space Mono', monospace;
+  --sans: 'Space Grotesk', sans-serif;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; -webkit-font-smoothing: antialiased; }
+#shell { display: flex; height: 100vh; overflow: hidden; }
+
+/* sidebar */
+#sidebar {
+  width: 200px; min-width: 200px; border-right: 1px solid var(--border);
+  background: #09090f; display: flex; flex-direction: column; overflow: hidden;
+}
+.sb-top { padding: 16px 14px 10px; border-bottom: 1px solid var(--border); }
+.sb-logo { font-family: var(--sans); font-size: 13px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.sb-logo span { color: var(--green); }
+.sb-back { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-decoration: none; text-transform: uppercase; }
+.sb-back:hover { color: var(--text); }
+.sb-progress { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.sb-progress-label { font-size: 9px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between; }
+.sb-progress-label span { color: var(--green); }
+.sb-bar { height: 2px; background: var(--dim); border-radius: 1px; }
+.sb-bar-fill { height: 100%; background: var(--green); border-radius: 1px; transition: width 0.6s ease; }
+#tree { flex: 1; overflow-y: auto; padding: 6px 0; }
+#tree::-webkit-scrollbar { width: 2px; }
+#tree::-webkit-scrollbar-thumb { background: var(--border); }
+.sb-bottom { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+.sb-credits-link { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-decoration: none; text-transform: uppercase; transition: color 0.15s; }
+.sb-credits-link:hover { color: var(--text); }
+.level-label { padding: 10px 14px 4px; font-size: 9px; color: var(--dim); letter-spacing: 0.15em; text-transform: uppercase; }
+.trial-row {
+  padding: 7px 14px; display: flex; align-items: center; gap: 8px;
+  cursor: pointer; transition: background 0.1s; border-left: 2px solid transparent;
+  font-size: 11px; color: var(--muted);
+}
+.trial-row:hover { background: var(--surface); color: #aaa; }
+.trial-row.active { background: var(--surface); color: var(--text); border-left-color: var(--green); }
+.trial-row.done { color: #555580; }
+.trial-row.done .tr-dot { background: var(--green); }
+.trial-row.active .tr-id { color: var(--green); }
+.tr-id { font-size: 9px; font-weight: 700; width: 22px; flex-shrink: 0; color: var(--muted); }
+.tr-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
+.tr-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
+.trial-row.active .tr-dot { background: var(--yellow); }
+
+/* main */
+#main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.mission-bar { padding: 16px 24px 14px; border-bottom: 1px solid var(--border); background: #09090f; flex-shrink: 0; }
+.mb-meta { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.mb-id { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; }
+.mb-level { font-size: 9px; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase; }
+.mb-isl { font-size: 9px; color: var(--dim); margin-left: auto; }
+.mb-mission { font-family: var(--sans); font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.4; }
+.mb-concept { font-size: 10px; color: var(--muted); margin-top: 5px; }
+#editor-wrap { flex: 1; display: flex; flex-direction: column; padding: 16px 24px 0; min-height: 0; }
+.editor-label { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.engine-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow); flex-shrink: 0; }
+.engine-dot.ready { background: var(--green); }
+.engine-dot.err { background: var(--red); }
+#editor {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; color: #c8d3f5; font-family: var(--mono);
+  font-size: 13px; line-height: 1.8; padding: 16px 18px;
+  resize: none; outline: none; min-height: 120px; tab-size: 4;
+  transition: border-color 0.15s;
+}
+#editor:focus { border-color: #2a2a50; }
+#editor::placeholder { color: var(--dim); }
+#editor::-webkit-scrollbar { width: 3px; }
+#editor::-webkit-scrollbar-thumb { background: var(--border); }
+.action-bar { padding: 12px 24px 0; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.run-btn {
+  padding: 8px 22px; background: transparent; border: 1px solid #2a2a50;
+  border-radius: 5px; color: var(--text); font-family: var(--mono);
+  font-size: 12px; cursor: pointer; letter-spacing: 0.08em; transition: all 0.15s;
+}
+.run-btn:hover { border-color: var(--text); }
+.run-btn:active { transform: scale(0.97); }
+.run-btn:disabled { opacity: 0.3; cursor: default; }
+.text-btn { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; letter-spacing: 0.05em; transition: color 0.15s; padding: 0; }
+.text-btn:hover { color: var(--text); }
+.kb { margin-left: auto; font-size: 10px; color: var(--dim); }
+#output { padding: 16px 24px 24px; font-size: 12px; line-height: 1.9; min-height: 80px; overflow-y: auto; flex-shrink: 0; max-height: 220px; }
+#output::-webkit-scrollbar { width: 3px; }
+#output::-webkit-scrollbar-thumb { background: var(--border); }
+.out-line { color: #8888aa; white-space: pre-wrap; word-break: break-word; }
+.out-pass { color: var(--green); }
+.out-fail { color: var(--red); }
+.out-hint { color: var(--yellow); }
+.out-err { color: var(--red); opacity: 0.7; }
+.out-info { color: var(--blue); opacity: 0.8; }
+.next-btn { display: inline-block; margin-top: 10px; padding: 6px 0; background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; letter-spacing: 0.08em; transition: color 0.15s; }
+.next-btn:hover { color: var(--text); }
+.status-bar { padding: 6px 24px; border-top: 1px solid var(--border); background: #09090f; font-size: 9px; color: var(--dim); display: flex; align-items: center; gap: 8px; flex-shrink: 0; letter-spacing: 0.08em; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.fadein { animation: fadeIn 0.25s ease both; }
+</style>
+</head>
+<body>
+<div id="shell">
+  <div id="sidebar">
+    <div class="sb-top">
+      <div class="sb-logo">TheOddsAlgo <span>Py Lab</span></div>
+      <a class="sb-back" href="/">← main site</a>
+    </div>
+    <div class="sb-progress">
+      <div class="sb-progress-label">Progress <span id="progressText">0 / 47</span></div>
+      <div class="sb-bar"><div class="sb-bar-fill" id="progressBar" style="width:0%"></div></div>
+    </div>
+    <div id="tree"></div>
+    <div class="sb-bottom">
+      <a href="/lab" class="sb-credits-link">R Lab →</a>
+      <a href="/references" class="sb-credits-link">credits & sources →</a>
+    </div>
+  </div>
+
+  <div id="main">
+    <div class="mission-bar">
+      <div class="mb-meta">
+        <span class="mb-id" id="mbId">trial 0.1</span>
+        <span class="mb-level" id="mbLevel">Level 0 — Survival Basics</span>
+        <span class="mb-isl" id="mbIsl">Python Docs</span>
+      </div>
+      <div class="mb-mission" id="mbMission">Loading...</div>
+      <div class="mb-concept" id="mbConcept"></div>
+    </div>
+    <div id="editor-wrap">
+      <div class="editor-label">
+        <div class="engine-dot" id="engineDot"></div>
+        <span id="engineLabel">loading Pyodide...</span>
+      </div>
+      <textarea id="editor" spellcheck="false" placeholder="# write your Python code here"></textarea>
+    </div>
+    <div class="action-bar">
+      <button class="run-btn" id="runBtn" onclick="runCode()" disabled>run</button>
+      <button class="text-btn" onclick="showHint()">hint</button>
+      <button class="text-btn" onclick="resetEditor()">reset</button>
+      <span class="kb">ctrl+enter</span>
+    </div>
+    <div id="output">
+      <div class="out-info">// Run your code above. Output appears here.</div>
+    </div>
+    <div class="status-bar">
+      <div class="engine-dot" id="statusDot"></div>
+      <span id="statusText">initializing Pyodide...</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── TRIALS ────────────────────────────────────────────────────────────────────
+const TRIALS = [
+
+  // ── LEVEL 0: SURVIVAL BASICS ─────────────────────────────────────────────
+  {
+    id:"0.1", level:0, levelName:"Survival Basics",
+    concept:"lists — store a sequence of values",
+    ref:"Python Docs",
+    mission:"Create a list named prices containing five closing prices: 182, 175, 190, 168, 195.",
+    hint:"Lists use square brackets: prices = [a, b, c, ...]. What five values do you need?",
+    starter:"# Store five closing prices in a list\nprices = ",
+    validate(env, out) {
+      const p = env.prices;
+      if (!Array.isArray(p)) return {pass:false, msg:"prices isn't a list. use [ ]"};
+      if (p.length !== 5) return {pass:false, msg:`prices has ${p.length} elements, expected 5`};
+      const exp = [182, 175, 190, 168, 195];
+      for (let i = 0; i < 5; i++) if (Math.abs(p[i] - exp[i]) > 0.001) return {pass:false, msg:`prices[${i}] = ${p[i]}, expected ${exp[i]}`};
+      return {pass:true, msg:"prices = [182, 175, 190, 168, 195] ✓"};
+    }
+  },
+  {
+    id:"0.2", level:0, levelName:"Survival Basics",
+    concept:"len() — count elements",
+    ref:"Python Docs",
+    mission:"You have a portfolio of stocks. Count how many positions are in prices and print it.",
+    hint:"There's a built-in that answers 'how many things are in this?': len(). Try print(len(prices)).",
+    starter:"prices = [182, 175, 190, 168, 195]\n# Count the positions and print\n",
+    validate(env, out) {
+      if (out.includes("5")) return {pass:true, msg:"5  — five positions in the portfolio"};
+      return {pass:false, msg:`expected 5, got: ${out.slice(0,40)||"(nothing printed)"}`};
+    }
+  },
+  {
+    id:"0.3", level:0, levelName:"Survival Basics",
+    concept:"for loop — iterate over a list",
+    ref:"Python Docs",
+    mission:"Loop over prices and print each one on its own line.",
+    hint:"for price in prices: — then indented: print(price). Python uses indentation (4 spaces) instead of braces.",
+    starter:"prices = [182, 175, 190, 168, 195]\n# Print each price\n",
+    validate(env, out) {
+      const lines = out.trim().split("\n").map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+      if (lines.length >= 5 && Math.abs(lines[0]-182)<0.01 && Math.abs(lines[4]-195)<0.01)
+        return {pass:true, msg:"182\n175\n190\n168\n195 ✓"};
+      return {pass:false, msg:`expected 5 prices on separate lines. got: ${out.slice(0,60)||"(nothing)"}`};
+    }
+  },
+  {
+    id:"0.4", level:0, levelName:"Survival Basics",
+    concept:"basic math — arithmetic operators",
+    ref:"Python Docs",
+    mission:"You bought 100 shares at $148.50 and sold at $162.30. Compute your profit and assign to profit.",
+    hint:"profit = (sell - buy) * shares. Python uses *, -, + just like a calculator. Print profit to see the result.",
+    starter:"buy = 148.50\nsell = 162.30\nshares = 100\n# Compute profit\nprofit = \nprint(profit)",
+    validate(env, out) {
+      const p = env.profit;
+      const val = Array.isArray(p) ? p[0] : (typeof p === 'number' ? p : parseFloat(out));
+      if (isNaN(val)) return {pass:false, msg:"profit is not defined or not a number"};
+      if (Math.abs(val - 1380) > 0.5) return {pass:false, msg:`expected $1380.00 profit, got ${val}`};
+      return {pass:true, msg:"profit = $1,380.00 ✓"};
+    }
+  },
+  {
+    id:"0.5", level:0, levelName:"Survival Basics",
+    concept:"print() — output and string formatting",
+    ref:"Python Docs",
+    mission:"Print a summary line: 'Portfolio: 5 stocks, avg price $182.00' — compute avg from the list.",
+    hint:"sum(prices)/len(prices) gives the average. Use an f-string: f'Portfolio: {n} stocks, avg price ${avg:.2f}'",
+    starter:"prices = [182, 175, 190, 168, 195]\n# Compute avg and print the summary\n",
+    validate(env, out) {
+      if (out.includes("5") && out.includes("182")) return {pass:true, msg:"Portfolio summary printed ✓"};
+      return {pass:false, msg:"print a string containing '5' and '182'. use an f-string."};
+    }
+  },
+
+  // ── LEVEL 1: WORKING WITH NUMBERS ────────────────────────────────────────
+  {
+    id:"1.1", level:1, levelName:"Working With Numbers",
+    concept:"list comprehensions — transform data",
+    ref:"Python Docs",
+    mission:"Convert a list of prices to returns using a list comprehension. returns[i] = (prices[i] - prices[i-1]) / prices[i-1] for i >= 1.",
+    hint:"[expr for i in range(1, len(prices))] — inside expr, reference prices[i] and prices[i-1]. One line replaces a whole loop.",
+    starter:"prices = [182, 175, 190, 168, 195]\n# Compute returns for each day (skip index 0)\nreturns = [(prices[i] - prices[i-1]) / prices[i-1] for i in range(1, len(prices))]\nprint([round(r, 4) for r in returns])",
+    validate(env, out) {
+      const r = env.returns;
+      if (!Array.isArray(r)) return {pass:false, msg:"returns should be a list"};
+      if (r.length !== 4) return {pass:false, msg:`expected 4 returns, got ${r.length}`};
+      if (Math.abs(r[0] - (-0.03846)) > 0.002) return {pass:false, msg:`returns[0] ≈ ${r[0].toFixed(4)}, expected ~-0.0385`};
+      return {pass:true, msg:`returns: ${r.map(v=>v.toFixed(4)).join(", ")} ✓`};
+    }
+  },
+  {
+    id:"1.2", level:1, levelName:"Working With Numbers",
+    concept:"sum(), max(), min() — aggregation",
+    ref:"Python Docs",
+    mission:"Given daily_returns, find the total return (sum), best day (max), and worst day (min). Assign to total, best, worst.",
+    hint:"Python has built-in sum(), max(), min() — pass the list directly. No import needed.",
+    starter:"daily_returns = [0.012, -0.005, 0.023, -0.008, 0.015, 0.004, -0.011]\ntotal = \nbest = \nworst = \nprint(round(total,4), round(best,4), round(worst,4))",
+    validate(env, out) {
+      const t = env.total, b = env.best, w = env.worst;
+      if (t === undefined) return {pass:false, msg:"total is not defined"};
+      const expT = 0.012-0.005+0.023-0.008+0.015+0.004-0.011;
+      if (Math.abs((Array.isArray(t)?t[0]:t) - expT) > 0.001) return {pass:false, msg:`total should be ~${expT.toFixed(4)}`};
+      return {pass:true, msg:`total: ${expT.toFixed(4)}  best: 0.023  worst: -0.011 ✓`};
+    }
+  },
+  {
+    id:"1.3", level:1, levelName:"Working With Numbers",
+    concept:"zip() — pair two lists together",
+    ref:"Python Docs",
+    mission:"Pair tickers with prices using zip() and print each as 'AAPL: $182'. Compute total portfolio value.",
+    hint:"for ticker, price in zip(tickers, prices): — zip() locks two lists together element by element. Use an f-string to print.",
+    starter:"tickers = ['AAPL', 'TSLA', 'NVDA']\nprices  = [189, 245, 875]\nshares  = [10, 5, 2]\n# Print each holding and compute total value\ntotal_value = 0\nfor ticker, price, qty in zip(tickers, prices, shares):\n    print(f'{ticker}: ${price}')\n    total_value += price * qty\nprint(f'Total: ${total_value}')",
+    validate(env, out) {
+      if (out.includes("AAPL") && out.includes("NVDA") && out.includes("3640"))
+        return {pass:true, msg:"AAPL: $189  TSLA: $245  NVDA: $875  Total: $3640 ✓"};
+      return {pass:false, msg:"print each ticker:price pair and the total value (expected $3640)"};
+    }
+  },
+  {
+    id:"1.4", level:1, levelName:"Working With Numbers",
+    concept:"import numpy — vectorized math",
+    ref:"NumPy Docs",
+    mission:"Use numpy to compute the mean and standard deviation of returns. Assign to mu and sigma.",
+    hint:"import numpy as np — then np.mean(arr) and np.std(arr). numpy works on lists directly.",
+    starter:"import numpy as np\nreturns = [0.031, -0.014, 0.087, -0.052, 0.019, -0.033, 0.061, -0.008]\nmu = \nsigma = \nprint(f'mean={mu:.4f}  std={sigma:.4f}')",
+    validate(env, out) {
+      const mu = env.mu, sigma = env.sigma;
+      if (mu === undefined) return {pass:false, msg:"mu is not defined — use np.mean()"};
+      const m = Array.isArray(mu) ? mu[0] : mu;
+      if (Math.abs(m - 0.011375) > 0.002) return {pass:false, msg:`mu ≈ ${m?.toFixed(4)}, expected ~0.0114`};
+      if (sigma === undefined) return {pass:false, msg:"sigma is not defined — use np.std()"};
+      return {pass:true, msg:`mean=${m?.toFixed(4)}  std≈0.0427 ✓`};
+    }
+  },
+  {
+    id:"1.5", level:1, levelName:"Working With Numbers",
+    concept:"numpy arrays — vectorized operations",
+    ref:"NumPy Docs",
+    mission:"Create a numpy array of prices and compute: annualized volatility = std(daily_returns) * sqrt(252). Assign to ann_vol.",
+    hint:"np.array([...]) makes an array. np.sqrt(252) gives √252. Multiply sigma by it — no loop needed.",
+    starter:"import numpy as np\nreturns = np.array([0.031, -0.014, 0.087, -0.052, 0.019, -0.033, 0.061, -0.008])\nann_vol = \nprint(f'Annualized vol: {ann_vol:.1%}')",
+    validate(env, out) {
+      const av = env.ann_vol;
+      const v = Array.isArray(av) ? av[0] : av;
+      if (v === undefined) return {pass:false, msg:"ann_vol is not defined"};
+      if (v < 0.5 || v > 1.0) return {pass:false, msg:`ann_vol ≈ ${v?.toFixed(3)}, expected ~0.677 (67.7%)`};
+      return {pass:true, msg:`Annualized vol ≈ ${(v*100).toFixed(1)}% ✓`};
+    }
+  },
+
+  // ── LEVEL 2: DATAFRAMES WITH PANDAS ──────────────────────────────────────
+  {
+    id:"2.1", level:2, levelName:"DataFrames with pandas",
+    concept:"pd.DataFrame — tabular data",
+    ref:"pandas Docs",
+    mission:"Build a portfolio DataFrame with columns: ticker, price, shares. Assign to df.",
+    hint:"import pandas as pd. Then pd.DataFrame({'col1': [...], 'col2': [...]}) — each key is a column name, each value is a list.",
+    starter:"import pandas as pd\ndf = pd.DataFrame({\n    'ticker': ['AAPL', 'TSLA', 'NVDA'],\n    'price':  [189, 245, 875],\n    'shares': [10, 5, 2]\n})\nprint(df)",
+    validate(env, out) {
+      if (out.includes("AAPL") && out.includes("NVDA") && out.includes("875"))
+        return {pass:true, msg:"3×3 portfolio DataFrame — ticker, price, shares ✓"};
+      return {pass:false, msg:"print(df) should show a table with AAPL, TSLA, NVDA"};
+    }
+  },
+  {
+    id:"2.2", level:2, levelName:"DataFrames with pandas",
+    concept:"iloc & loc — row and column access",
+    ref:"pandas Docs",
+    mission:"From the portfolio DataFrame, select the second row using iloc and print it. Then select the 'price' column using df['price'].",
+    hint:"df.iloc[1] selects row at integer position 1 (zero-indexed). df['price'] selects the price column by name.",
+    starter:"import pandas as pd\ndf = pd.DataFrame({\n    'ticker': ['AAPL', 'TSLA', 'NVDA'],\n    'price':  [189, 245, 875],\n    'shares': [10, 5, 2]\n})\nprint(df.iloc[1])\nprint(df['price'].values)",
+    validate(env, out) {
+      if (out.includes("TSLA") && out.includes("245"))
+        return {pass:true, msg:"Row 1 (TSLA, $245) selected. Price column extracted ✓"};
+      return {pass:false, msg:"expected TSLA in row 1 and price column values [189, 245, 875]"};
+    }
+  },
+  {
+    id:"2.3", level:2, levelName:"DataFrames with pandas",
+    concept:"Boolean filtering — query rows",
+    ref:"pandas Docs",
+    mission:"Filter the portfolio to stocks with price > 200. Assign to expensive.",
+    hint:"df[df['price'] > 200] — the inner condition creates a boolean Series, the outer [] uses it to filter rows.",
+    starter:"import pandas as pd\ndf = pd.DataFrame({\n    'ticker': ['AAPL', 'TSLA', 'NVDA'],\n    'price':  [189, 245, 875],\n    'shares': [10, 5, 2]\n})\nexpensive = \nprint(expensive)",
+    validate(env, out) {
+      if (out.includes("TSLA") && out.includes("NVDA") && !out.includes("AAPL"))
+        return {pass:true, msg:"expensive = TSLA ($245) + NVDA ($875) ✓"};
+      if (out.includes("TSLA") && out.includes("NVDA"))
+        return {pass:true, msg:"expensive = TSLA ($245) + NVDA ($875) ✓"};
+      return {pass:false, msg:"expected only TSLA and NVDA (price > 200). AAPL should be excluded."};
+    }
+  },
+  {
+    id:"2.4", level:2, levelName:"DataFrames with pandas",
+    concept:"sort_values() — sort a DataFrame",
+    ref:"pandas Docs",
+    mission:"Sort the portfolio by price descending. Assign to sorted_df.",
+    hint:"df.sort_values('price', ascending=False) — ascending=False flips the order so highest comes first.",
+    starter:"import pandas as pd\ndf = pd.DataFrame({\n    'ticker': ['AAPL', 'TSLA', 'NVDA'],\n    'price':  [189, 245, 875],\n    'shares': [10, 5, 2]\n})\nsorted_df = \nprint(sorted_df['ticker'].values)",
+    validate(env, out) {
+      if (out.includes("NVDA") && out.indexOf("NVDA") < out.indexOf("TSLA"))
+        return {pass:true, msg:"NVDA ($875) → TSLA ($245) → AAPL ($189) ✓"};
+      return {pass:false, msg:"first row should be NVDA ($875). use ascending=False"};
+    }
+  },
+  {
+    id:"2.5", level:2, levelName:"DataFrames with pandas",
+    concept:"groupby() — aggregate by category",
+    ref:"pandas Docs",
+    mission:"Given a trades DataFrame with sector and pnl columns, compute mean pnl per sector using groupby.",
+    hint:"df.groupby('sector')['pnl'].mean() — groupby splits by the category, then you pick the numeric column and aggregate.",
+    starter:"import pandas as pd\ntrades = pd.DataFrame({\n    'sector': ['Tech','Tech','Finance','Finance','Tech'],\n    'pnl':    [120, -30, 85, 200, 60]\n})\nsector_avg = trades.groupby('sector')['pnl'].mean()\nprint(sector_avg)",
+    validate(env, out) {
+      if (out.includes("Finance") && out.includes("142") && out.includes("Tech") && out.includes("50"))
+        return {pass:true, msg:"Finance avg: $142.50  Tech avg: $50.00 ✓"};
+      if (out.includes("Finance") && out.includes("Tech"))
+        return {pass:true, msg:"groupby sector pnl mean computed ✓"};
+      return {pass:false, msg:"expected Finance avg=142.5 and Tech avg=50.0"};
+    }
+  },
+  {
+    id:"2.6", level:2, levelName:"DataFrames with pandas",
+    concept:"merge() — join two DataFrames",
+    ref:"pandas Docs",
+    mission:"Merge a prices DataFrame with a fundamentals DataFrame on 'ticker'. Assign to merged.",
+    hint:"pd.merge(df1, df2, on='ticker') — like a SQL JOIN on the ticker column. Both DataFrames must have a 'ticker' column.",
+    starter:"import pandas as pd\nprices = pd.DataFrame({'ticker':['AAPL','TSLA'],'price':[189,245]})\nfundamentals = pd.DataFrame({'ticker':['AAPL','TSLA'],'pe_ratio':[28.5,62.1]})\nmerged = pd.merge(prices, fundamentals, on='ticker')\nprint(merged)",
+    validate(env, out) {
+      if (out.includes("pe_ratio") && out.includes("28") && out.includes("62"))
+        return {pass:true, msg:"prices + fundamentals merged on ticker ✓"};
+      return {pass:false, msg:"merged should have price and pe_ratio columns. use pd.merge(..., on='ticker')"};
+    }
+  },
+
+  // ── LEVEL 3: STATISTICS ───────────────────────────────────────────────────
+  {
+    id:"3.1", level:3, levelName:"Statistics",
+    concept:"mean, std, variance — descriptive stats",
+    ref:"NumPy Docs",
+    mission:"Compute mean, standard deviation, and variance of returns. Assign to mu, sigma, var.",
+    hint:"np.mean(), np.std(), np.var() — all take an array. Variance = sigma squared. Std deviation = volatility in finance.",
+    starter:"import numpy as np\nreturns = np.array([0.031,-0.014,0.087,-0.052,0.019,-0.033,0.061,-0.008])\nmu = \nsigma = \nvar = \nprint(f'μ={mu:.4f}  σ={sigma:.4f}  var={var:.6f}')",
+    validate(env, out) {
+      const mu = env.mu;
+      const m = Array.isArray(mu) ? mu[0] : mu;
+      if (m === undefined) return {pass:false, msg:"mu is not defined — use np.mean()"};
+      if (Math.abs(m - 0.011375) > 0.002) return {pass:false, msg:`mu ≈ ${m?.toFixed(4)}, expected ~0.0114`};
+      return {pass:true, msg:`μ=${m?.toFixed(4)}  σ≈0.0427  var≈0.00182 ✓`};
+    }
+  },
+  {
+    id:"3.2", level:3, levelName:"Statistics",
+    concept:"np.corrcoef — correlation matrix",
+    ref:"NumPy Docs",
+    mission:"Compute the correlation between AAPL and SPY daily returns. Assign the correlation coefficient to corr.",
+    hint:"np.corrcoef(series1, series2) returns a 2×2 matrix. The off-diagonal element [0,1] (or [1,0]) is the correlation.",
+    starter:"import numpy as np\naapl = np.array([0.02,-0.01,0.03,-0.02,0.01,0.04,-0.01,0.02])\nspy  = np.array([0.01,-0.005,0.02,-0.01,0.005,0.025,-0.005,0.015])\ncorr_matrix = np.corrcoef(aapl, spy)\ncorr = \nprint(f'AAPL/SPY correlation: {corr:.4f}')",
+    validate(env, out) {
+      const c = env.corr;
+      const v = Array.isArray(c) ? c[0] : c;
+      if (v === undefined) return {pass:false, msg:"corr is not defined — extract [0,1] from the matrix"};
+      if (v < 0.9 || v > 1.01) return {pass:false, msg:`expected correlation ~0.99, got ${v?.toFixed(4)}`};
+      return {pass:true, msg:`AAPL/SPY correlation ≈ ${v?.toFixed(4)} ✓`};
+    }
+  },
+  {
+    id:"3.3", level:3, levelName:"Statistics",
+    concept:"numpy linear algebra — matrix operations",
+    ref:"NumPy Docs",
+    mission:"Build a 2×2 covariance matrix from two return series. Use np.cov() and print the result.",
+    hint:"np.cov(series1, series2) — returns a 2×2 matrix where diagonals are variances and off-diagonals are covariance.",
+    starter:"import numpy as np\naapl = np.array([0.02,-0.01,0.03,-0.02,0.01])\ntsla = np.array([0.04,-0.03,0.05,-0.04,0.02])\ncov = np.cov(aapl, tsla)\nprint(cov)",
+    validate(env, out) {
+      if (out.includes("0.0") && (out.includes("[[") || out.includes("array")))
+        return {pass:true, msg:"2×2 covariance matrix computed ✓"};
+      if (out.includes("0.") && out.includes("\n"))
+        return {pass:true, msg:"covariance matrix printed ✓"};
+      return {pass:false, msg:"print the cov matrix — should be 2×2 with variances on the diagonal"};
+    }
+  },
+  {
+    id:"3.4", level:3, levelName:"Statistics",
+    concept:"scipy.stats — z-score and normality",
+    ref:"SciPy Docs",
+    mission:"Compute the z-score of a return of 0.08 given mu=0.01 and sigma=0.03. Assign to z. Then compute the p-value using scipy.",
+    hint:"z = (x - mu) / sigma. Then from scipy import stats and use stats.norm.sf(z) for the one-tail p-value (probability of seeing this or higher).",
+    starter:"from scipy import stats\nmu, sigma = 0.01, 0.03\nx = 0.08\nz = (x - mu) / sigma\np_value = stats.norm.sf(z)\nprint(f'z={z:.2f}  p={p_value:.4f}')",
+    validate(env, out) {
+      if (out.includes("z=2.33") || out.includes("z=2.3"))
+        return {pass:true, msg:"z=2.33  p≈0.0099 — that return is 2.33 standard deviations above average ✓"};
+      if (out.includes("2.3") && out.includes("0.0"))
+        return {pass:true, msg:"z-score and p-value computed ✓"};
+      return {pass:false, msg:"expected z≈2.33. z = (0.08 - 0.01) / 0.03"};
+    }
+  },
+  {
+    id:"3.5", level:3, levelName:"Statistics",
+    concept:"linear regression — OLS with numpy",
+    ref:"NumPy Docs",
+    mission:"Fit a linear regression: return ~ volume. Use np.polyfit(volume, returns, 1). Assign slope and intercept.",
+    hint:"np.polyfit(x, y, 1) returns [slope, intercept]. Index [0] is slope, [1] is intercept. This is the OLS line of best fit.",
+    starter:"import numpy as np\nvolume  = np.array([1.2, 1.8, 2.1, 0.9, 3.0, 1.5, 2.4])\nreturns = np.array([0.01, 0.02, 0.03, -0.01, 0.04, 0.015, 0.035])\ncoeffs = np.polyfit(volume, returns, 1)\nslope = coeffs[0]\nintercept = coeffs[1]\nprint(f'slope={slope:.4f}  intercept={intercept:.4f}')",
+    validate(env, out) {
+      if (out.includes("slope=") && out.includes("intercept="))
+        return {pass:true, msg:"OLS fitted: higher volume → higher return ✓"};
+      const s = env.slope;
+      if (s !== undefined) return {pass:true, msg:"linear regression coefficients extracted ✓"};
+      return {pass:false, msg:"assign slope=coeffs[0] and intercept=coeffs[1]"};
+    }
+  },
+
+  // ── LEVEL 4: TIME SERIES ──────────────────────────────────────────────────
+  {
+    id:"4.1", level:4, levelName:"Time Series",
+    concept:"datetime — working with dates",
+    ref:"Python Docs",
+    mission:"Create a list of 5 trading dates starting from 2024-01-08, weekdays only. Assign to dates.",
+    hint:"from datetime import date, timedelta. Start with date(2024,1,8) and add timedelta(days=1) in a loop, skipping weekends (date.weekday() >= 5).",
+    starter:"from datetime import date, timedelta\nstart = date(2024, 1, 8)\ndates = []\ncurrent = start\nwhile len(dates) < 5:\n    if current.weekday() < 5:\n        dates.append(current)\n    current += timedelta(days=1)\nprint(dates)",
+    validate(env, out) {
+      if (out.includes("2024-01-08") && out.includes("2024-01-12"))
+        return {pass:true, msg:"2024-01-08 through 2024-01-12 (Mon–Fri) ✓"};
+      return {pass:false, msg:"expected dates from 2024-01-08 to 2024-01-12 (5 weekdays)"};
+    }
+  },
+  {
+    id:"4.2", level:4, levelName:"Time Series",
+    concept:"pct_change() — compute returns",
+    ref:"pandas Docs",
+    mission:"Given a price Series, compute percentage changes using pct_change(). Assign to returns.",
+    hint:"pd.Series(prices).pct_change() — returns NaN for the first element (no prior price). The rest are (p[i]-p[i-1])/p[i-1].",
+    starter:"import pandas as pd\nprices = pd.Series([182, 175, 190, 168, 195])\nreturns = prices.pct_change()\nprint(returns.dropna().round(4))",
+    validate(env, out) {
+      if (out.includes("-0.03") || out.includes("-0.0385"))
+        return {pass:true, msg:"pct_change: -0.0385, 0.0857, -0.1158, 0.1607 ✓"};
+      return {pass:false, msg:"use .pct_change() on the prices Series. first value will be NaN."};
+    }
+  },
+  {
+    id:"4.3", level:4, levelName:"Time Series",
+    concept:"rolling() — moving averages",
+    ref:"pandas Docs",
+    mission:"Compute a 3-day moving average of prices. Assign to ma3.",
+    hint:"prices.rolling(window=3).mean() — the first 2 values will be NaN because there aren't 3 points yet.",
+    starter:"import pandas as pd\nprices = pd.Series([182, 175, 190, 168, 195, 210, 205])\nma3 = prices.rolling(window=3).mean()\nprint(ma3.round(2))",
+    validate(env, out) {
+      if (out.includes("182.33") || out.includes("182.3") || out.includes("177.67") || out.includes("177.6"))
+        return {pass:true, msg:"3-day MA: NaN, NaN, 182.33, 177.67, 184.33, 191.0, 203.33 ✓"};
+      if (out.includes("NaN") && out.includes("18"))
+        return {pass:true, msg:"rolling 3-day moving average computed ✓"};
+      return {pass:false, msg:"use .rolling(window=3).mean() — first 2 values will be NaN"};
+    }
+  },
+  {
+    id:"4.4", level:4, levelName:"Time Series",
+    concept:"shift() — lag a series",
+    ref:"pandas Docs",
+    mission:"Use shift(1) to create a 'yesterday's price' column. Then compute daily return manually.",
+    hint:"prices.shift(1) shifts everything down by one period — index 0 becomes NaN, index 1 gets index 0's value. Then (prices - lagged) / lagged.",
+    starter:"import pandas as pd\nprices = pd.Series([182, 175, 190, 168, 195])\nlagged = prices.shift(1)\nmanual_return = (prices - lagged) / lagged\nprint(manual_return.dropna().round(4))",
+    validate(env, out) {
+      if (out.includes("-0.03") && out.includes("0.08"))
+        return {pass:true, msg:"shift(1) lag applied → returns match pct_change() ✓"};
+      return {pass:false, msg:"expected returns similar to pct_change() output. check shift(1) calculation."};
+    }
+  },
+  {
+    id:"4.5", level:4, levelName:"Time Series",
+    concept:"rolling volatility — annualized",
+    ref:"pandas Docs",
+    mission:"Compute a 5-day rolling standard deviation of returns, annualized (×√252). Assign to rolling_vol.",
+    hint:"returns.rolling(5).std() * np.sqrt(252) — chain .rolling(5) then .std(). Multiply by √252 to annualize.",
+    starter:"import pandas as pd, numpy as np\nreturns = pd.Series([0.02,-0.01,0.03,-0.015,0.025,0.01,-0.02,0.015,0.005,-0.01])\nrolling_vol = returns.rolling(5).std() * np.sqrt(252)\nprint(rolling_vol.dropna().round(4))",
+    validate(env, out) {
+      if (out.includes("0.") && out.length > 20)
+        return {pass:true, msg:"rolling 5-day annualized volatility computed ✓"};
+      return {pass:false, msg:"use .rolling(5).std() then multiply by np.sqrt(252)"};
+    }
+  },
+  {
+    id:"4.6", level:4, levelName:"Time Series",
+    concept:"moving average crossover — signal generation",
+    ref:"pandas Docs",
+    mission:"Generate a signal: 1 when 5-day MA > 20-day MA, else 0. Assign to signal.",
+    hint:"Compute ma5 = prices.rolling(5).mean() and ma20 = prices.rolling(20).mean(). Then signal = (ma5 > ma20).astype(int).",
+    starter:"import pandas as pd, numpy as np\nnp.random.seed(42)\nprices = pd.Series(100 + np.cumsum(np.random.randn(40)*0.5))\nma5 = prices.rolling(5).mean()\nma20 = prices.rolling(20).mean()\nsignal = (ma5 > ma20).astype(int)\nprint(signal.tail(10).values)",
+    validate(env, out) {
+      if (out.includes("0") && out.includes("1") && out.length > 5)
+        return {pass:true, msg:"MA crossover signal generated — 1=long, 0=flat ✓"};
+      return {pass:false, msg:"signal should be array of 0s and 1s based on MA comparison"};
+    }
+  },
+  {
+    id:"4.7", level:4, levelName:"Time Series",
+    concept:"autocorrelation — does today predict tomorrow?",
+    ref:"pandas Docs",
+    mission:"Test if returns are autocorrelated at lag 1. Use returns.autocorr(lag=1). Print the result.",
+    hint:"returns.autocorr(lag=1) computes the correlation of the series with its own 1-period lag. Values near 0 = random walk.",
+    starter:"import pandas as pd, numpy as np\nnp.random.seed(7)\nreturns = pd.Series(np.random.randn(100) * 0.01)\nlag1_autocorr = returns.autocorr(lag=1)\nprint(f'Autocorrelation (lag 1): {lag1_autocorr:.4f}')\nprint('Near zero = consistent with random walk')",
+    validate(env, out) {
+      if (out.includes("Autocorrelation") && out.includes("."))
+        return {pass:true, msg:"lag-1 autocorrelation computed — close to 0 suggests random walk ✓"};
+      return {pass:false, msg:"use returns.autocorr(lag=1) and print the value"};
+    }
+  },
+
+  // ── LEVEL 5: MACHINE LEARNING ─────────────────────────────────────────────
+  {
+    id:"5.1", level:5, levelName:"Machine Learning",
+    concept:"train/test split — never train on test data",
+    ref:"scikit-learn Docs",
+    mission:"Split features X and labels y into train/test sets using an 80/20 split. Assign X_train, X_test, y_train, y_test.",
+    hint:"from sklearn.model_selection import train_test_split. train_test_split(X, y, test_size=0.2, random_state=42) — random_state for reproducibility.",
+    starter:"from sklearn.model_selection import train_test_split\nimport numpy as np\nnp.random.seed(42)\nX = np.random.randn(100, 3)\ny = (X[:,0] + X[:,1] > 0).astype(int)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\nprint(f'Train: {len(X_train)}  Test: {len(X_test)}')",
+    validate(env, out) {
+      if (out.includes("Train: 80") && out.includes("Test: 20"))
+        return {pass:true, msg:"80/20 split: 80 train, 20 test ✓"};
+      return {pass:false, msg:"expected 'Train: 80  Test: 20'. use test_size=0.2"};
+    }
+  },
+  {
+    id:"5.2", level:5, levelName:"Machine Learning",
+    concept:"LogisticRegression — binary classification",
+    ref:"scikit-learn Docs",
+    mission:"Fit a LogisticRegression model to predict whether a stock goes up (1) or down (0). Print train accuracy.",
+    hint:"from sklearn.linear_model import LogisticRegression. model.fit(X_train, y_train) then model.score(X_train, y_train).",
+    starter:"from sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import train_test_split\nimport numpy as np\nnp.random.seed(42)\nX = np.random.randn(200,4)\ny = (X[:,0]*0.5 + X[:,1]*0.3 + np.random.randn(200)*0.2 > 0).astype(int)\nX_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42)\nmodel = LogisticRegression()\nmodel.fit(X_train, y_train)\nprint(f'Train accuracy: {model.score(X_train,y_train):.3f}')\nprint(f'Test accuracy:  {model.score(X_test,y_test):.3f}')",
+    validate(env, out) {
+      if (out.includes("Train accuracy:") && out.includes("Test accuracy:"))
+        return {pass:true, msg:"LogisticRegression fitted and scored ✓"};
+      return {pass:false, msg:"print both train and test accuracy using model.score()"};
+    }
+  },
+  {
+    id:"5.3", level:5, levelName:"Machine Learning",
+    concept:"predict_proba — probability outputs",
+    ref:"scikit-learn Docs",
+    mission:"Use predict_proba to get the probability of 'up' (class 1) for each test sample. Assign to up_probs.",
+    hint:"model.predict_proba(X_test) returns a 2-column array — column 0 is P(down), column 1 is P(up). Use [:,1] to extract.",
+    starter:"from sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import train_test_split\nimport numpy as np\nnp.random.seed(42)\nX = np.random.randn(200,4)\ny = (X[:,0]*0.5 + X[:,1]*0.3 + np.random.randn(200)*0.2 > 0).astype(int)\nX_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42)\nmodel = LogisticRegression().fit(X_train, y_train)\nup_probs = model.predict_proba(X_test)[:,1]\nprint(up_probs[:5].round(3))",
+    validate(env, out) {
+      if (out.includes("0.") && out.length > 20)
+        return {pass:true, msg:"predict_proba[:,1] → P(up) for each sample ✓"};
+      return {pass:false, msg:"up_probs should be an array of probabilities between 0 and 1"};
+    }
+  },
+  {
+    id:"5.4", level:5, levelName:"Machine Learning",
+    concept:"confusion matrix — evaluate classification",
+    ref:"scikit-learn Docs",
+    mission:"Compute the confusion matrix for your test predictions. Print it and identify true positives.",
+    hint:"from sklearn.metrics import confusion_matrix. confusion_matrix(y_test, y_pred) where y_pred = model.predict(X_test).",
+    starter:"from sklearn.linear_model import LogisticRegression\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.metrics import confusion_matrix\nimport numpy as np\nnp.random.seed(42)\nX = np.random.randn(200,4)\ny = (X[:,0]*0.5 + X[:,1]*0.3 + np.random.randn(200)*0.2 > 0).astype(int)\nX_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42)\nmodel = LogisticRegression().fit(X_train,y_train)\ny_pred = model.predict(X_test)\ncm = confusion_matrix(y_test, y_pred)\nprint(cm)\nprint(f'True positives (correctly predicted UP): {cm[1,1]}')",
+    validate(env, out) {
+      if (out.includes("True positives") && out.includes("[["))
+        return {pass:true, msg:"confusion matrix printed — rows=actual, cols=predicted ✓"};
+      if (out.includes("True positives"))
+        return {pass:true, msg:"confusion matrix evaluated ✓"};
+      return {pass:false, msg:"print(cm) and then extract cm[1,1] for true positives"};
+    }
+  },
+  {
+    id:"5.5", level:5, levelName:"Machine Learning",
+    concept:"DecisionTreeClassifier — interpretable model",
+    ref:"scikit-learn Docs",
+    mission:"Fit a DecisionTree with max_depth=3. Print feature importances.",
+    hint:"from sklearn.tree import DecisionTreeClassifier. After fitting, model.feature_importances_ gives an array of importances summing to 1.",
+    starter:"from sklearn.tree import DecisionTreeClassifier\nfrom sklearn.model_selection import train_test_split\nimport numpy as np\nnp.random.seed(42)\nX = np.random.randn(200,4)\ny = (X[:,0]*0.5 + X[:,1]*0.3 + np.random.randn(200)*0.2 > 0).astype(int)\nX_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42)\ndt = DecisionTreeClassifier(max_depth=3, random_state=42)\ndt.fit(X_train, y_train)\nprint('Importances:', dt.feature_importances_.round(3))\nprint(f'Test acc: {dt.score(X_test,y_test):.3f}')",
+    validate(env, out) {
+      if (out.includes("Importances:") && out.includes("Test acc:"))
+        return {pass:true, msg:"DecisionTree fitted — feature importances reveal which signals matter ✓"};
+      return {pass:false, msg:"print feature_importances_ and test accuracy"};
+    }
+  },
+  {
+    id:"5.6", level:5, levelName:"Machine Learning",
+    concept:"RandomForestClassifier — ensemble model",
+    ref:"scikit-learn Docs",
+    mission:"Fit a RandomForest with 100 trees. Compare its test accuracy to the single decision tree.",
+    hint:"from sklearn.ensemble import RandomForestClassifier. RF averages 100 trees — usually beats a single tree through diversity.",
+    starter:"from sklearn.ensemble import RandomForestClassifier\nfrom sklearn.tree import DecisionTreeClassifier\nfrom sklearn.model_selection import train_test_split\nimport numpy as np\nnp.random.seed(42)\nX = np.random.randn(300,4)\ny = (X[:,0]*0.5 + X[:,1]*0.3 + np.random.randn(300)*0.2 > 0).astype(int)\nX_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42)\ndt = DecisionTreeClassifier(max_depth=3,random_state=42).fit(X_train,y_train)\nrf = RandomForestClassifier(n_estimators=100,random_state=42).fit(X_train,y_train)\nprint(f'DT test acc:  {dt.score(X_test,y_test):.3f}')\nprint(f'RF test acc:  {rf.score(X_test,y_test):.3f}')",
+    validate(env, out) {
+      if (out.includes("DT test acc:") && out.includes("RF test acc:"))
+        return {pass:true, msg:"RandomForest vs DecisionTree compared — ensemble wins ✓"};
+      return {pass:false, msg:"print both DT and RF test accuracies"};
+    }
+  },
+  {
+    id:"5.7", level:5, levelName:"Machine Learning",
+    concept:"feature importance — what drives the signal?",
+    ref:"scikit-learn Docs",
+    mission:"Sort and print feature importances from the RandomForest. Identify the top feature.",
+    hint:"rf.feature_importances_ is an array. Use np.argsort()[::-1] to get sorted indices (descending). Pair with feature names.",
+    starter:"from sklearn.ensemble import RandomForestClassifier\nfrom sklearn.model_selection import train_test_split\nimport numpy as np\nnp.random.seed(42)\nfeature_names = ['momentum','volume','vol_20','rsi']\nX = np.random.randn(300,4)\ny = (X[:,0]*0.6 + X[:,1]*0.2 + np.random.randn(300)*0.3 > 0).astype(int)\nX_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42)\nrf = RandomForestClassifier(n_estimators=100,random_state=42).fit(X_train,y_train)\nidxs = np.argsort(rf.feature_importances_)[::-1]\nfor i in idxs:\n    print(f'{feature_names[i]}: {rf.feature_importances_[i]:.3f}')",
+    validate(env, out) {
+      if (out.includes("momentum") && out.includes("0."))
+        return {pass:true, msg:"feature importances ranked — momentum leads ✓"};
+      return {pass:false, msg:"print each feature name with its importance, sorted descending"};
+    }
+  },
+  {
+    id:"5.8", level:5, levelName:"Machine Learning",
+    concept:"ARIMA — time series forecasting",
+    ref:"statsmodels Docs",
+    mission:"Fit an ARIMA(1,0,0) model to a return series. Print the AR coefficient.",
+    hint:"from statsmodels.tsa.arima.model import ARIMA. ARIMA(returns, order=(1,0,0)).fit() — order=(p,d,q). Access .params to see coefficients.",
+    starter:"from statsmodels.tsa.arima.model import ARIMA\nimport numpy as np\nnp.random.seed(1)\nreturns = np.random.randn(100)*0.01\nmodel = ARIMA(returns, order=(1,0,0)).fit()\nprint(model.summary().tables[1])",
+    validate(env, out) {
+      if (out.includes("ar.L1") || out.includes("const") || out.includes("0."))
+        return {pass:true, msg:"ARIMA(1,0,0) fitted — AR coefficient near 0 confirms near-random-walk ✓"};
+      return {pass:false, msg:"print model.summary().tables[1] to see the coefficients"};
+    }
+  },
+
+  // ── LEVEL 6: ALGO ARCHITECT ───────────────────────────────────────────────
+  {
+    id:"6.1", level:6, levelName:"Algo Architect",
+    concept:"Sharpe ratio — risk-adjusted return",
+    ref:"Quant Finance",
+    mission:"Compute the annualized Sharpe ratio for a return series. Assume risk-free rate = 0. Assign to sharpe.",
+    hint:"Sharpe = mean(returns) / std(returns) * sqrt(252). Scale both mean and std to daily, then annualize. Higher = better risk/reward.",
+    starter:"import numpy as np\nreturns = np.array([0.02,-0.01,0.03,-0.015,0.025,0.01,-0.02,0.015,0.005,-0.01,\n                    0.02, 0.03,-0.005,0.01,0.025,-0.01,0.015,0.02,-0.015,0.03])\nsharpe = (np.mean(returns) / np.std(returns)) * np.sqrt(252)\nprint(f'Sharpe ratio: {sharpe:.3f}')",
+    validate(env, out) {
+      if (out.includes("Sharpe ratio:") && out.includes("."))
+        return {pass:true, msg:"Sharpe ratio computed — >1.0 is considered good ✓"};
+      return {pass:false, msg:"sharpe = (mean/std) * sqrt(252) — print the result"};
+    }
+  },
+  {
+    id:"6.2", level:6, levelName:"Algo Architect",
+    concept:"maximum drawdown — worst-case loss",
+    ref:"Quant Finance",
+    mission:"Compute the maximum drawdown of a price series. Assign to max_dd as a negative percentage.",
+    hint:"Track the running maximum (peak). At each point, drawdown = (price - peak) / peak. Max drawdown = min of all drawdowns.",
+    starter:"import numpy as np\nprices = np.array([100,108,115,110,98,105,112,95,88,102,115,120])\npeak = np.maximum.accumulate(prices)\ndrawdown = (prices - peak) / peak\nmax_dd = drawdown.min()\nprint(f'Max drawdown: {max_dd:.2%}')",
+    validate(env, out) {
+      if (out.includes("Max drawdown:") && out.includes("-"))
+        return {pass:true, msg:"Max drawdown computed — the worst peak-to-trough loss ✓"};
+      return {pass:false, msg:"use np.maximum.accumulate(prices) for rolling peak, then compute min drawdown"};
+    }
+  },
+  {
+    id:"6.3", level:6, levelName:"Algo Architect",
+    concept:"probability to signal — threshold logic",
+    ref:"Quant Finance",
+    mission:"Convert model probabilities to a trading signal: 1 if P(up)>0.55, -1 if P(up)<0.45, else 0.",
+    hint:"np.where() handles multi-condition logic: np.where(cond1, val1, np.where(cond2, val2, val3)). Nested np.where for three outcomes.",
+    starter:"import numpy as np\nup_probs = np.array([0.62, 0.48, 0.71, 0.43, 0.55, 0.38, 0.60, 0.50])\nsignal = np.where(up_probs > 0.55, 1, np.where(up_probs < 0.45, -1, 0))\nprint('probs: ', up_probs)\nprint('signal:', signal)",
+    validate(env, out) {
+      if (out.includes("signal:") && out.includes("1") && out.includes("-1"))
+        return {pass:true, msg:"signals: 1=long, -1=short, 0=flat ✓"};
+      return {pass:false, msg:"signal array should contain 1, -1, and 0 values"};
+    }
+  },
+  {
+    id:"6.4", level:6, levelName:"Algo Architect",
+    concept:"Kelly criterion — position sizing",
+    ref:"Quant Finance",
+    mission:"Compute the Kelly fraction for a bet: win probability p=0.55, win/loss ratio b=2.0. Assign to kelly.",
+    hint:"Kelly formula: f = (b*p - (1-p)) / b. This gives the fraction of capital to risk for maximum long-run growth.",
+    starter:"p = 0.55   # win probability\nb = 2.0    # win/loss ratio\nkelly = (b * p - (1 - p)) / b\nhalf_kelly = kelly / 2  # most practitioners use half-Kelly\nprint(f'Full Kelly: {kelly:.3f} ({kelly:.1%} of capital)')\nprint(f'Half Kelly: {half_kelly:.3f} ({half_kelly:.1%} of capital)')",
+    validate(env, out) {
+      if (out.includes("Full Kelly:") && out.includes("0.3") || out.includes("32.5"))
+        return {pass:true, msg:"Kelly = 0.325 (32.5% of capital). Half-Kelly = 16.25% — more common in practice ✓"};
+      if (out.includes("Full Kelly:") && out.includes("."))
+        return {pass:true, msg:"Kelly fraction computed ✓"};
+      return {pass:false, msg:"kelly = (b*p - (1-p)) / b — should be about 0.325"};
+    }
+  },
+  {
+    id:"6.5", level:6, levelName:"Algo Architect",
+    concept:"composite signal score — combining indicators",
+    ref:"Quant Finance",
+    mission:"Combine momentum, volume, and ML probability into a composite score. Normalize each to 0–1 range, then average.",
+    hint:"(x - x.min()) / (x.max() - x.min()) normalizes to [0,1]. Then stack into a matrix and take the row mean.",
+    starter:"import numpy as np\nmomentum = np.array([0.02, -0.01, 0.05, -0.03, 0.04])\nvolume   = np.array([1.5,   0.8,  2.1,   0.6,  1.9])   # normalized to 1.0 avg\nml_prob  = np.array([0.62,  0.41, 0.71,  0.38, 0.65])\ndef norm(x): return (x-x.min())/(x.max()-x.min())\ncomposite = (norm(momentum) + norm(volume) + norm(ml_prob)) / 3\nprint('Composite scores:', composite.round(3))",
+    validate(env, out) {
+      if (out.includes("Composite scores:") && out.includes("0."))
+        return {pass:true, msg:"composite signal: combines momentum + volume + ML into one score ✓"};
+      return {pass:false, msg:"normalize each signal to [0,1] then average — print composite"};
+    }
+  },
+  {
+    id:"6.6", level:6, levelName:"Algo Architect",
+    concept:"backtest — strategy vs buy-and-hold",
+    ref:"Quant Finance",
+    mission:"Backtest a simple signal: invest $1 each day the signal=1, else hold cash. Compare to buy-and-hold.",
+    hint:"strategy_returns = returns * signal_lag (shift signal by 1 to avoid lookahead). Cumulative = (1+r).cumprod(). Compare final values.",
+    starter:"import numpy as np\nnp.random.seed(42)\nreturns = np.random.randn(252)*0.01 + 0.0003\nsignal = (returns > 0).astype(int)  # perfect hindsight (for demo)\nsignal_lag = np.roll(signal, 1);  signal_lag[0] = 0  # lag to avoid lookahead\nstrat_ret = returns * signal_lag\nbh_equity   = np.cumprod(1 + returns)\nstrat_equity = np.cumprod(1 + strat_ret)\nprint(f'Buy & Hold final: ${bh_equity[-1]:.3f}')\nprint(f'Strategy final:   ${strat_equity[-1]:.3f}')",
+    validate(env, out) {
+      if (out.includes("Buy & Hold") && out.includes("Strategy"))
+        return {pass:true, msg:"backtest complete — compare cumulative equity curves ✓"};
+      return {pass:false, msg:"print both Buy & Hold and Strategy final equity values"};
+    }
+  },
+  {
+    id:"6.7", level:6, levelName:"Algo Architect",
+    concept:"walk-forward validation — avoiding overfitting",
+    ref:"Quant Finance",
+    mission:"Implement a walk-forward split: train on first 70%, test on last 30%. Report both in-sample and out-of-sample Sharpe.",
+    hint:"split = int(len(returns) * 0.7). Then returns[:split] is in-sample, returns[split:] is out-of-sample. Compute Sharpe on each.",
+    starter:"import numpy as np\nnp.random.seed(42)\nreturns = np.random.randn(252)*0.01 + 0.0003\nsplit = int(len(returns)*0.7)\nin_sample  = returns[:split]\nout_sample = returns[split:]\ndef sharpe(r): return (r.mean()/r.std())*np.sqrt(252) if r.std()>0 else 0\nprint(f'In-sample Sharpe:      {sharpe(in_sample):.3f}')\nprint(f'Out-of-sample Sharpe:  {sharpe(out_sample):.3f}')",
+    validate(env, out) {
+      if (out.includes("In-sample Sharpe:") && out.includes("Out-of-sample Sharpe:"))
+        return {pass:true, msg:"walk-forward validation: if OOS Sharpe crashes vs IS, you overfit ✓"};
+      return {pass:false, msg:"print both in-sample and out-of-sample Sharpe ratios"};
+    }
+  },
+  {
+    id:"6.8", level:6, levelName:"Algo Architect",
+    concept:"full pipeline — signal → backtest → report",
+    ref:"Quant Finance",
+    mission:"Build the complete pipeline: generate signals from a RandomForest, backtest them, compute Sharpe and max drawdown.",
+    hint:"Chain it: train RF → predict_proba → threshold to signal → lag signal → multiply by returns → compute Sharpe and drawdown.",
+    starter:"from sklearn.ensemble import RandomForestClassifier\nfrom sklearn.model_selection import train_test_split\nimport numpy as np\nnp.random.seed(42)\nn=300\nX = np.random.randn(n,4)\nreturns = np.random.randn(n)*0.01 + 0.0003\ny = (X[:,0]*0.4 + X[:,1]*0.3 + np.random.randn(n)*0.4 > 0).astype(int)\nX_tr,X_te,y_tr,y_te,r_tr,r_te = train_test_split(X,y,returns,test_size=0.3,random_state=42)\nrf = RandomForestClassifier(100,random_state=42).fit(X_tr,y_tr)\nprobs = rf.predict_proba(X_te)[:,1]\nsig = (probs > 0.55).astype(int)\nstrat = r_te * sig\nsharpe = (strat.mean()/strat.std())*np.sqrt(252) if strat.std()>0 else 0\npeak = np.maximum.accumulate(np.cumprod(1+strat))\nmax_dd = ((np.cumprod(1+strat)-peak)/peak).min()\nprint(f'Strategy Sharpe:   {sharpe:.3f}')\nprint(f'Max Drawdown:      {max_dd:.2%}')\nprint(f'Win rate:          {(strat>0).mean():.1%}')",
+    validate(env, out) {
+      if (out.includes("Strategy Sharpe:") && out.includes("Max Drawdown:") && out.includes("Win rate:"))
+        return {pass:true, msg:"full pipeline complete: ML signals → backtest → risk metrics ✓\nYou are an Algo Architect."};
+      return {pass:false, msg:"print Strategy Sharpe, Max Drawdown, and Win rate"};
+    }
+  },
+
+  // ── LEVEL 7: BEYOND THE LAB ───────────────────────────────────────────────
+  {
+    id:"7.1", level:7, levelName:"Beyond the Lab",
+    concept:"APIs — how real data gets in",
+    ref:"yfinance Docs",
+    mission:"Understand how yfinance would fetch real data. Write the code structure (it won't execute here) and print a placeholder.",
+    hint:"import yfinance as yf — yf.download('AAPL', start='2024-01-01', end='2024-12-31') returns a DataFrame. In production, replace simulation data with this.",
+    starter:"# yfinance runs in a real Python environment (not this browser sandbox)\n# This is what live data ingestion looks like:\n\"\"\"\nimport yfinance as yf\naapl = yf.download('AAPL', start='2024-01-01', end='2024-12-31')\nreturns = aapl['Close'].pct_change().dropna()\nprint(f'Fetched {len(returns)} days of AAPL data')\n\"\"\"\n\n# For now, simulate the same structure:\nimport numpy as np\nreturns = np.random.randn(252)*0.013 + 0.0004  # AAPL-like params\nprint(f'Simulated {len(returns)} trading days')\nprint(f'Annualized return: {returns.mean()*252:.1%}')\nprint(f'Annualized vol:    {returns.std()*np.sqrt(252):.1%}')",
+    validate(env, out) {
+      if (out.includes("252") && out.includes("Annualized"))
+        return {pass:true, msg:"API structure understood — same code, real data in production ✓"};
+      return {pass:false, msg:"run the simulation block — print 252 days of stats"};
+    }
+  },
+  {
+    id:"7.2", level:7, levelName:"Beyond the Lab",
+    concept:"live data pipeline concept",
+    ref:"yfinance Docs",
+    mission:"Design a live data function: fetch → clean → compute returns → generate signal → print trade decision.",
+    hint:"Structure the function even if data is mocked. def analyze_stock(ticker): ... return signal. Clean code > clever code.",
+    starter:"import numpy as np\n\ndef analyze_stock(ticker, n_days=60):\n    \"\"\"Production version would call yf.download(ticker)\"\"\"\n    # Simulate price data\n    np.random.seed(hash(ticker) % 1000)\n    prices = 100 * np.cumprod(1 + np.random.randn(n_days)*0.012)\n    returns = np.diff(prices)/prices[:-1]\n    \n    # Signal logic\n    ma5  = np.convolve(prices, np.ones(5)/5, 'valid')[-1]\n    ma20 = np.convolve(prices, np.ones(20)/20, 'valid')[-1]\n    sharpe = (returns.mean()/returns.std()) * np.sqrt(252)\n    signal = 'LONG' if ma5>ma20 and sharpe>0.5 else 'FLAT'\n    \n    print(f'{ticker}: MA5=${ma5:.2f}  MA20=${ma20:.2f}  Sharpe={sharpe:.2f}  → {signal}')\n    return signal\n\nfor t in ['AAPL','TSLA','NVDA','SPY']:\n    analyze_stock(t)",
+    validate(env, out) {
+      if (out.includes("AAPL") && out.includes("TSLA") && (out.includes("LONG") || out.includes("FLAT")))
+        return {pass:true, msg:"live pipeline structured — swap simulation with yf.download() for production ✓"};
+      return {pass:false, msg:"print each ticker's analysis with a LONG or FLAT signal"};
+    }
+  },
+  {
+    id:"7.3", level:7, levelName:"Beyond the Lab",
+    concept:"what comes next — the full stack",
+    ref:"TheOddsAlgo",
+    mission:"Print your trading system's architecture: data → features → model → signal → position sizing → risk management → execution.",
+    hint:"No imports needed. Just print a clear pipeline. Naming the steps is the first act of designing a system.",
+    starter:"layers = [\n    ('1. Data',        'yfinance / FMP API → price, volume, fundamentals'),\n    ('2. Features',    'returns, vol, MA crossover, RSI, sector momentum'),\n    ('3. Model',       'RandomForest / LogisticRegression → P(up)'),\n    ('4. Signal',      'P(up)>0.55 → LONG | P(up)<0.45 → SHORT | else FLAT'),\n    ('5. Sizing',      'Kelly fraction × account equity = position size'),\n    ('6. Risk',        'stop-loss at -2σ | max drawdown circuit breaker 15%'),\n    ('7. Execution',   'broker API (Alpaca / IBKR) → market or limit order'),\n    ('8. Monitoring',  'daily PnL, Sharpe, drawdown, win rate logging'),\n]\nprint('=== Trading System Architecture ===')\nfor name, desc in layers:\n    print(f'{name:18s}  {desc}')",
+    validate(env, out) {
+      if (out.includes("Data") && out.includes("Signal") && out.includes("Execution"))
+        return {pass:true, msg:"=== CONGRATULATIONS ===\nAll 47 trials complete.\nFrom lists to a full trading stack.\nYou are an Algo Architect."};
+      return {pass:false, msg:"print all 8 layers of the trading system architecture"};
+    }
+  },
+
+]; // end TRIALS
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let current = 0;
+let completed = new Set(JSON.parse(localStorage.getItem('py_completed')||'[]'));
+let pyodide = null;
+let pyodideReady = false;
+
+function save() {
+  localStorage.setItem('py_completed', JSON.stringify([...completed]));
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────────────────────────
+function buildTree() {
+  const tree = document.getElementById('tree');
+  tree.innerHTML = '';
+  let lastLevel = -1;
+
+  TRIALS.forEach((t, i) => {
+    if (t.level !== lastLevel) {
+      const lbl = document.createElement('div');
+      lbl.className = 'level-label';
+      lbl.textContent = `level ${t.level} — ${t.levelName}`;
+      tree.appendChild(lbl);
+      lastLevel = t.level;
+    }
+    const row = document.createElement('div');
+    row.className = 'trial-row' + (i === current ? ' active' : '') + (completed.has(t.id) ? ' done' : '');
+    row.innerHTML = `<span class="tr-id">${t.id}</span><span class="tr-name">${t.concept}</span><span class="tr-dot"></span>`;
+    row.onclick = () => loadTrial(i);
+    tree.appendChild(row);
+  });
+
+  const done = completed.size;
+  document.getElementById('progressText').textContent = `${done} / 47`;
+  document.getElementById('progressBar').style.width = `${(done/47)*100}%`;
+}
+
+// ── LOAD TRIAL ────────────────────────────────────────────────────────────────
+function loadTrial(idx) {
+  current = idx;
+  const t = TRIALS[idx];
+  document.getElementById('mbId').textContent = `trial ${t.id}`;
+  document.getElementById('mbLevel').textContent = `Level ${t.level} — ${t.levelName}`;
+  document.getElementById('mbIsl').textContent = t.ref;
+  document.getElementById('mbMission').textContent = t.mission;
+  document.getElementById('mbConcept').textContent = t.concept;
+  document.getElementById('editor').value = t.starter || '';
+  document.getElementById('output').innerHTML = '<div class="out-info">// Run your code above. Output appears here.</div>';
+  buildTree();
+  document.getElementById('editor').focus();
+}
+
+function resetEditor() {
+  document.getElementById('editor').value = TRIALS[current].starter || '';
+}
+
+function showHint() {
+  const out = document.getElementById('output');
+  out.innerHTML = `<div class="out-hint fadein">hint: ${esc(TRIALS[current].hint)}</div>`;
+}
+
+// ── RUN CODE ──────────────────────────────────────────────────────────────────
+async function runCode() {
+  const code = document.getElementById('editor').value;
+  if (pyodideReady && pyodide) {
+    await runWithPyodide(code);
+  } else {
+    runWithSimulator(code);
+  }
+}
+
+// Ctrl+Enter shortcut
+document.getElementById('editor').addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); }
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const ta = e.target;
+    const s = ta.selectionStart;
+    ta.value = ta.value.slice(0, s) + '    ' + ta.value.slice(ta.selectionEnd);
+    ta.selectionStart = ta.selectionEnd = s + 4;
+  }
+});
+
+// ── PYODIDE ENGINE ────────────────────────────────────────────────────────────
+async function runWithPyodide(code) {
+  const out = document.getElementById('output');
+  out.innerHTML = '<div class="out-info">running...</div>';
+  try {
+    // Capture stdout
+    pyodide.runPython(`
+import sys, io
+_capture = io.StringIO()
+sys.stdout = _capture
+`);
+    let env = {};
+    try {
+      pyodide.runPython(code);
+      const captured = pyodide.runPython(`sys.stdout = sys.__stdout__; _capture.getvalue()`);
+      const outputText = String(captured || '');
+
+      // Extract variable state
+      const ns = pyodide.globals;
+      const trial = TRIALS[current];
+
+      // Build env from pyodide namespace
+      try {
+        const varNames = ['prices','returns','profit','total','best','worst','up_probs',
+          'mu','sigma','var','corr','ann_vol','sharpe','max_dd','kelly','composite',
+          'signal','sorted_df','expensive','merged','sector_avg','lag1_autocorr',
+          'rolling_vol','ma3','lagged','z','p_value','slope','intercept','coeffs',
+          'X_train','X_test','y_train','y_test','dates','corr_matrix','strat','bh_equity'];
+        for (const v of varNames) {
+          try {
+            const val = ns.get(v);
+            if (val !== undefined) {
+              try { env[v] = val.toJs ? val.toJs() : val; } catch(e) { env[v] = val; }
+            }
+          } catch(e) {}
+        }
+      } catch(e) {}
+
+      display(outputText, env, null, trial);
+    } catch(e) {
+      pyodide.runPython('import sys; sys.stdout = sys.__stdout__');
+      display('', {}, e.message || String(e), TRIALS[current]);
+    }
+  } catch(e) {
+    display('', {}, String(e), TRIALS[current]);
+  }
+}
+
+// ── JS SIMULATOR ──────────────────────────────────────────────────────────────
+function runWithSimulator(code) {
+  const out = document.getElementById('output');
+  out.innerHTML = '<div class="out-info">running (simulation)...</div>';
+
+  const trial = TRIALS[current];
+  const printed = [];
+  const env = {};
+
+  // Simple Python-to-JS simulation
+  try {
+    const result = simulatePython(code, env, printed);
+    const outputText = printed.join('\n');
+    display(outputText, env, null, trial);
+  } catch(e) {
+    display('', env, `SimulationError: ${e.message}`, trial);
+  }
+}
+
+function simulatePython(code, env, printed) {
+  // Strip comments
+  const lines = code.split('\n').map(l => l.replace(/#.*$/, '').trimEnd());
+
+  const print = (...args) => {
+    const s = args.map(a => {
+      if (Array.isArray(a)) return '[' + a.map(x => typeof x === 'number' ? parseFloat(x.toFixed(6)) : `'${x}'`).join(', ') + ']';
+      if (typeof a === 'number') return parseFloat(a.toFixed(6)).toString();
+      return String(a);
+    }).join(' ');
+    printed.push(s);
+  };
+
+  // Execute line-by-line with pattern matching
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const stripped = line.trim();
+    if (!stripped || stripped.startsWith('#') || stripped.startsWith('"""') || stripped.startsWith("'''")) continue;
+
+    // Import statements — just mark as available
+    if (stripped.startsWith('import ') || stripped.startsWith('from ')) continue;
+
+    // Simple assignment: var = expr
+    const assignMatch = stripped.match(/^(\w+)\s*=\s*(.+)$/);
+    if (assignMatch) {
+      const varName = assignMatch[1];
+      const rhs = assignMatch[2];
+      try {
+        env[varName] = evalPyExpr(rhs, env);
+      } catch(e) { /* ignore eval errors */ }
+      continue;
+    }
+
+    // print(...)
+    if (stripped.startsWith('print(')) {
+      try {
+        const inner = stripped.slice(6, -1);
+        const val = evalPyExpr(inner, env);
+        print(val);
+      } catch(e) { print(stripped); }
+      continue;
+    }
+
+    // for loops and compound statements — approximate
+    if (stripped.startsWith('for ') || stripped.startsWith('while ')) {
+      // Find loop body
+      const bodyLines = [];
+      let j = i + 1;
+      while (j < lines.length && (lines[j].startsWith('    ') || lines[j].startsWith('\t') || !lines[j].trim())) {
+        if (lines[j].trim()) bodyLines.push(lines[j].trim());
+        j++;
+      }
+      simulateLoop(stripped, bodyLines, env, printed, print);
+      i = j - 1;
+      continue;
+    }
+  }
+  return env;
+}
+
+function evalPyExpr(expr, env) {
+  expr = expr.trim();
+  if (!expr) return undefined;
+
+  // String literals
+  if ((expr.startsWith("'") && expr.endsWith("'")) || (expr.startsWith('"') && expr.endsWith('"')))
+    return expr.slice(1,-1);
+
+  // f-string
+  if (expr.startsWith("f'") || expr.startsWith('f"')) {
+    const inner = expr.slice(2,-1);
+    return inner.replace(/\{([^}]+)\}/g, (m, code) => {
+      try {
+        const parts = code.split(':');
+        const val = evalPyExpr(parts[0].trim(), env);
+        const fmt = parts[1] ? parts[1].trim() : '';
+        if (typeof val === 'number') {
+          if (fmt.endsWith('%')) { const dp = parseInt(fmt) || 1; return (val*100).toFixed(dp) + '%'; }
+          if (fmt.includes('.')) { const dp = parseInt(fmt.split('.')[1]) || 2; return val.toFixed(dp); }
+        }
+        return String(val ?? '');
+      } catch(e) { return m; }
+    });
+  }
+
+  // List literal
+  if (expr.startsWith('[') && expr.endsWith(']')) {
+    const inner = expr.slice(1,-1).trim();
+    if (!inner) return [];
+    try {
+      return inner.split(',').map(x => evalPyExpr(x.trim(), env));
+    } catch(e) { return []; }
+  }
+
+  // Tuple
+  if (expr.startsWith('(') && expr.endsWith(')')) {
+    const inner = expr.slice(1,-1);
+    try { return inner.split(',').map(x => evalPyExpr(x.trim(), env)); } catch(e) {}
+  }
+
+  // numpy/pandas mock returns
+  if (expr.startsWith('np.array(')) {
+    const inner = expr.slice(9,-1).trim();
+    return evalPyExpr(inner, env);
+  }
+  if (expr.startsWith('pd.Series(') || expr.startsWith('np.zeros(') || expr.startsWith('np.ones(')) {
+    return [0, 0, 0, 0, 0];
+  }
+  if (expr.startsWith('np.mean(')) {
+    const arr = evalPyExpr(expr.slice(8,-1), env);
+    if (Array.isArray(arr) && arr.length) return arr.reduce((a,b)=>a+b,0)/arr.length;
+  }
+  if (expr.startsWith('np.std(')) {
+    const arr = evalPyExpr(expr.slice(7,-1), env);
+    if (Array.isArray(arr) && arr.length) {
+      const m = arr.reduce((a,b)=>a+b,0)/arr.length;
+      return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length);
+    }
+  }
+  if (expr.startsWith('np.var(')) {
+    const arr = evalPyExpr(expr.slice(7,-1), env);
+    if (Array.isArray(arr) && arr.length) {
+      const m = arr.reduce((a,b)=>a+b,0)/arr.length;
+      return arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length;
+    }
+  }
+  if (expr.startsWith('np.sqrt(')) {
+    const val = evalPyExpr(expr.slice(8,-1), env);
+    return typeof val === 'number' ? Math.sqrt(val) : Math.sqrt(val?.[0]||0);
+  }
+  if (expr.startsWith('np.corrcoef(')) {
+    return [[1.0, 0.993], [0.993, 1.0]]; // mock
+  }
+  if (expr.startsWith('np.cov(')) {
+    return [[0.00032, 0.00058],[0.00058, 0.00113]]; // mock
+  }
+  if (expr.startsWith('np.random.randn(')) return [0.01, -0.005, 0.02, -0.01, 0.015];
+  if (expr.startsWith('np.polyfit(')) return [0.0154, -0.0083];
+  if (expr.startsWith('np.maximum.accumulate(')) return [100,108,115,115,115,115,115,115,115,115,115,120];
+  if (expr.startsWith('np.cumprod(')) return [1.02, 1.00, 1.03, 0.99, 1.01];
+  if (expr.startsWith('np.where(')) return [1, 0, 1, -1, 1, -1, 1, 0];
+  if (expr.startsWith('np.convolve(')) return [105.2, 184.5, 195.3][0] || 185;
+  if (expr.startsWith('np.argsort(')) return [0, 1, 2, 3];
+  if (expr.startsWith('np.roll(')) return [0, 1, 0, 1, 1, 0, 1];
+  if (expr.startsWith('np.diff(')) {
+    const arr = evalPyExpr(expr.slice(8,-1), env);
+    if (Array.isArray(arr)) return arr.slice(1).map((v,i)=>v-arr[i]);
+    return [0.01,-0.02,0.03];
+  }
+
+  // pd.DataFrame
+  if (expr.startsWith('pd.DataFrame(')) return {__isDF:true, ticker:['AAPL','TSLA','NVDA'], price:[189,245,875], shares:[10,5,2]};
+  if (expr.startsWith('pd.merge(')) return {__isDF:true, ticker:['AAPL','TSLA'], price:[189,245], pe_ratio:[28.5,62.1]};
+  if (expr.startsWith('train_test_split(')) return [null,null,null,null];
+
+  // Sklearn mocks
+  if (expr.includes('LogisticRegression()') || expr.includes('LogisticRegression(')) return {__isModel:true};
+  if (expr.includes('RandomForestClassifier(') || expr.includes('DecisionTreeClassifier(')) return {__isModel:true};
+  if (expr.includes('ARIMA(')) return {__isArima:true};
+
+  // Arithmetic and comparisons
+  try {
+    // Replace Python-style tokens
+    let jsExpr = expr
+      .replace(/\bTrue\b/g, 'true').replace(/\bFalse\b/g, 'false').replace(/\bNone\b/g, 'null')
+      .replace(/\*\*/g, '**')
+      .replace(/\b(\w+)\b/g, (m) => {
+        if (['true','false','null','Math','NaN','Infinity'].includes(m)) return m;
+        if (m in env && typeof env[m] === 'number') return String(env[m]);
+        if (m in env && Array.isArray(env[m])) return JSON.stringify(env[m]);
+        if (!isNaN(m)) return m;
+        return m;
+      });
+    return Function(`"use strict"; return (${jsExpr})`)();
+  } catch(e) {}
+
+  // Variable lookup
+  if (env[expr] !== undefined) return env[expr];
+
+  // Number literal
+  const n = parseFloat(expr);
+  if (!isNaN(n)) return n;
+
+  return expr;
+}
+
+function simulateLoop(header, bodyLines, env, printed, printFn) {
+  // for x in list: or for ticker, price in zip(...):
+  const forMatch = header.match(/^for\s+(.+?)\s+in\s+(.+?)\s*:/);
+  if (!forMatch) return;
+
+  const varPart = forMatch[1];
+  const iterExpr = forMatch[2];
+
+  let iterable = [];
+  if (iterExpr.startsWith('zip(')) {
+    const parts = iterExpr.slice(4,-1).split(',').map(s => s.trim());
+    const arrays = parts.map(p => evalPyExpr(p, env));
+    const len = arrays[0]?.length || 3;
+    for (let i = 0; i < len; i++) iterable.push(arrays.map(a => Array.isArray(a) ? a[i] : a));
+  } else if (iterExpr.startsWith('range(')) {
+    const args = iterExpr.slice(6,-1).split(',').map(s => parseInt(evalPyExpr(s.trim(), env)));
+    const [start, end, step] = args.length===1 ? [0,args[0],1] : args.length===2 ? [args[0],args[1],1] : args;
+    for (let i = start; i < end; i += step) iterable.push(i);
+  } else {
+    const val = evalPyExpr(iterExpr, env);
+    iterable = Array.isArray(val) ? val : [val];
+  }
+
+  const vars = varPart.includes(',') ? varPart.split(',').map(v=>v.trim()) : [varPart.trim()];
+
+  for (const item of iterable) {
+    if (vars.length === 1) env[vars[0]] = item;
+    else vars.forEach((v,i) => { env[v] = Array.isArray(item) ? item[i] : item; });
+
+    for (const bline of bodyLines) {
+      const s = bline.trim();
+      if (s.startsWith('print(')) {
+        try {
+          const inner = s.slice(6,-1);
+          const val = evalPyExpr(inner, env);
+          printFn(val);
+        } catch(e) { printFn(s); }
+      } else {
+        const am = s.match(/^(\w+)\s*(\+?=)\s*(.+)$/);
+        if (am) {
+          const [, vn, op, rhs] = am;
+          try {
+            const val = evalPyExpr(rhs, env);
+            if (op === '+=') env[vn] = (env[vn] || 0) + (typeof val === 'number' ? val : 0);
+            else env[vn] = val;
+          } catch(e) {}
+        }
+      }
+    }
+  }
+}
+
+// ── DISPLAY ───────────────────────────────────────────────────────────────────
+function display(outputText, envData, errText, trial) {
+  const out = document.getElementById("output");
+  out.innerHTML = "";
+  if (errText) { out.innerHTML = `<div class="out-err fadein">${esc(errText)}</div>`; return; }
+  if (outputText) out.innerHTML += `<div class="out-line fadein">${esc(outputText)}</div>`;
+
+  const verdict = trial.validate(envData, outputText || '');
+  const vDiv = document.createElement("div");
+  vDiv.className = `${verdict.pass ? "out-pass" : "out-fail"} fadein`;
+  vDiv.style.marginTop = outputText ? "10px" : "0";
+  vDiv.style.whiteSpace = "pre-wrap";
+  vDiv.textContent = (verdict.pass ? "✓ " : "✗ ") + verdict.msg;
+  out.appendChild(vDiv);
+
+  if (verdict.pass) {
+    completed.add(trial.id); save(); buildTree();
+    const nextIdx = current + 1;
+    if (nextIdx < TRIALS.length) {
+      const nb = document.createElement("button");
+      nb.className = "next-btn fadein";
+      nb.textContent = `→ trial ${TRIALS[nextIdx].id}`;
+      nb.onclick = () => loadTrial(nextIdx);
+      out.appendChild(nb);
+    } else {
+      const fin = document.createElement("div");
+      fin.className = "out-pass fadein"; fin.style.marginTop = "12px"; fin.style.whiteSpace = "pre-wrap";
+      fin.textContent = "✓ all 47 trials complete.\nFrom lists to a full trading stack.\nYou are an Algo Architect.";
+      out.appendChild(fin);
+    }
+  }
+}
+
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+// ── PYODIDE INIT ──────────────────────────────────────────────────────────────
+async function initPyodide() {
+  try {
+    const { loadPyodide } = await import("https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js");
+    pyodide = await loadPyodide();
+
+    // Smoke test
+    const result = pyodide.runPython('1+1');
+    if (result !== 2) throw new Error('smoke test failed');
+
+    // Pre-load common packages
+    await pyodide.loadPackagesFromImports('import numpy as np\nimport pandas as pd');
+    try { await pyodide.loadPackagesFromImports('from scipy import stats'); } catch(e) {}
+    try { await pyodide.loadPackagesFromImports('from sklearn.model_selection import train_test_split'); } catch(e) {}
+
+    pyodideReady = true;
+    document.getElementById("engineDot").className = "engine-dot ready";
+    document.getElementById("engineLabel").textContent = "Pyodide ready";
+    document.getElementById("statusDot").className = "engine-dot ready";
+    document.getElementById("statusText").textContent = "Python running in browser via WebAssembly";
+    document.getElementById("runBtn").disabled = false;
+  } catch(e) {
+    console.warn("Pyodide failed:", e.message);
+    document.getElementById("engineDot").className = "engine-dot err";
+    document.getElementById("engineLabel").textContent = "simulation mode";
+    document.getElementById("statusDot").className = "engine-dot err";
+    document.getElementById("statusText").textContent = "Pyodide unavailable — JS simulation active";
+    document.getElementById("runBtn").disabled = false;
+  }
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+buildTree();
+loadTrial(0);
+initPyodide();
+</script>
+</body>
+</html>
