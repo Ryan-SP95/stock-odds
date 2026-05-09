@@ -68,7 +68,10 @@ footer { font-size: 10px; color: var(--dim); font-family: var(--mono); margin-to
 <body>
 <div id="page">
 
-  <a class="back" href="/lab">← R Lab</a>
+  <div style="display:flex;gap:20px;margin-bottom:48px;">
+    <a class="back" style="margin-bottom:0;" href="/lab">← R Lab</a>
+    <a class="back" style="margin-bottom:0;" href="/python-lab">Python Lab →</a>
+  </div>
 
   <h1>Credits & Sources</h1>
   <div class="subtitle">Full transparency · Open methodology · Open source</div>
@@ -113,7 +116,48 @@ footer { font-size: 10px; color: var(--dim); font-family: var(--mono); margin-to
     </div>
   </div>
 
+  <!-- PYTHON REFERENCES -->
+  <div class="section">
+    <div class="section-label">Python Lab — References</div>
+
+    <div class="ref-item">
+      <div class="ref-title">Python for Data Analysis <span class="ref-badge">free online</span></div>
+      <div class="ref-authors">Wes McKinney (creator of pandas)</div>
+      <div class="ref-desc">The definitive guide to pandas, NumPy, and the Python data ecosystem. Primary reference for Levels 2–4 of the Python Lab curriculum. Covers DataFrames, time series, and data wrangling in depth.</div>
+      <a class="ref-link" href="https://wesmckinney.com/book" target="_blank">wesmckinney.com/book →</a>
+    </div>
+
+    <div class="ref-item">
+      <div class="ref-title">scikit-learn Documentation <span class="ref-badge">BSD license</span></div>
+      <div class="ref-authors">The scikit-learn developers</div>
+      <div class="ref-desc">Primary reference for Level 5 (Machine Learning). Covers classification, regression, cross-validation, pipelines, and model evaluation. The most widely-used ML library in production Python environments.</div>
+      <a class="ref-link" href="https://scikit-learn.org" target="_blank">scikit-learn.org →</a>
+    </div>
+
+    <div class="ref-item">
+      <div class="ref-title">NumPy Documentation <span class="ref-badge">BSD license</span></div>
+      <div class="ref-authors">NumPy Developers</div>
+      <div class="ref-desc">Core reference for Level 1 and Level 3. NumPy underpins nearly all scientific Python computing — arrays, linear algebra, random number generation, and vectorized operations.</div>
+      <a class="ref-link" href="https://numpy.org/doc" target="_blank">numpy.org →</a>
+    </div>
+
+    <div class="ref-item">
+      <div class="ref-title">statsmodels Documentation <span class="ref-badge">BSD license</span></div>
+      <div class="ref-authors">The statsmodels developers</div>
+      <div class="ref-desc">Reference for Level 5 ARIMA and time series modeling. Provides ARIMA, OLS regression, statistical tests, and forecasting tools. Essential for quantitative finance work.</div>
+      <a class="ref-link" href="https://www.statsmodels.org" target="_blank">statsmodels.org →</a>
+    </div>
+
+    <div class="ref-item">
+      <div class="ref-title">Pyodide — Python via WebAssembly <span class="ref-badge">MPL-2.0</span></div>
+      <div class="ref-authors">The Pyodide Contributors</div>
+      <div class="ref-desc">The engine that runs real Python code (including NumPy, pandas, scikit-learn) directly in your browser with no server. A remarkable piece of open-source engineering that makes the Python Lab possible.</div>
+      <a class="ref-link" href="https://github.com/pyodide/pyodide" target="_blank">github.com/pyodide/pyodide →</a>
+    </div>
+  </div>
+
   <!-- SOFTWARE -->
+
   <div class="section">
     <div class="section-label">Software & Infrastructure</div>
 
@@ -189,10 +233,16 @@ footer { font-size: 10px; color: var(--dim); font-family: var(--mono); margin-to
     <div class="license-row"><span class="lr-name">webR</span><span class="lr-tag">MIT License</span></div>
     <div class="license-row"><span class="lr-name">R language</span><span class="lr-tag">GPL-2 / GPL-3</span></div>
     <div class="license-row"><span class="lr-name">R Lab curriculum</span><span class="lr-tag">MIT License — free to fork and build on</span></div>
+    <div class="license-row"><span class="lr-name">Pyodide</span><span class="lr-tag">Mozilla Public License 2.0</span></div>
+    <div class="license-row"><span class="lr-name">NumPy</span><span class="lr-tag">BSD 3-Clause</span></div>
+    <div class="license-row"><span class="lr-name">pandas</span><span class="lr-tag">BSD 3-Clause</span></div>
+    <div class="license-row"><span class="lr-name">scikit-learn</span><span class="lr-tag">BSD 3-Clause</span></div>
+    <div class="license-row"><span class="lr-name">statsmodels</span><span class="lr-tag">BSD 3-Clause</span></div>
+    <div class="license-row"><span class="lr-name">Python Lab curriculum</span><span class="lr-tag">MIT License — free to fork and build on</span></div>
   </div>
 
   <footer>
-    TheOddsAlgo.com · R Survival Trials · Entertainment and education only<br>
+    TheOddsAlgo.com · R Lab + Python Lab · Entertainment and education only<br>
     Not financial advice. Markets are unpredictable. Past performance is not indicative of future results.<br><br>
     Built in public. Sources open. Methods transparent.
   </footer>
