@@ -792,10 +792,11 @@ tickerInput.addEventListener("input", () => {
   analyzeBtn.disabled = !tickerInput.value.trim();
 });
 tickerInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") { currentTicker = tickerInput.value.trim(); runAnalysis(); }
+  if (e.key === "Enter") { currentTicker = tickerInput.value.trim(); if (currentTicker) gtag("event", "ticker_submitted", { ticker: currentTicker }); runAnalysis(); }
 });
 analyzeBtn.addEventListener("click", () => {
   currentTicker = tickerInput.value.trim();
+  if (currentTicker) gtag("event", "ticker_submitted", { ticker: currentTicker });
   runAnalysis();
 });
 
@@ -886,6 +887,7 @@ function scoreColor(v) {
 // --- Result ---
 function showResult(data) {
   lookupCount++;
+  gtag("event", "result_viewed", { ticker: data.ticker, direction: data.direction, score: data.overall });
   setCookie("stockodds_lookups", lookupCount, 30); // Remember for 30 days
   showPhase("result");
 
