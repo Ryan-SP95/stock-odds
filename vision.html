@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9RG8RKNVFV"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-9RG8RKNVFV');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision — The Odds Algo</title>
+<meta name="description" content="A data science project. Stocks are just the data. Factor modeling, structured pipelines, and probability scoring — built in public.">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a14;
+    --surface: #0f0f1e;
+    --border: #1a1a30;
+    --border-hover: #333;
+    --text: #f0f0f0;
+    --text-dim: #888;
+    --text-muted: #555;
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.08);
+    --green-border: rgba(34,197,94,0.2);
+    --yellow: #eab308;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    width: 100%;
+    max-width: 640px;
+    padding: 60px 24px 80px;
+  }
+
+  /* Nav */
+  .nav {
+    margin-bottom: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .nav a {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav a:hover { color: var(--green); }
+  .nav .back::before { content: "← "; }
+
+  .nav .cta {
+    background: var(--green-dim);
+    border: 1px solid var(--green-border);
+    color: var(--green);
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  .nav .cta:hover {
+    background: rgba(34,197,94,0.15);
+    color: var(--green);
+  }
+
+  /* Hero */
+  .hero {
+    margin-bottom: 64px;
+  }
+
+  .hero .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .hero h1 {
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    color: var(--text);
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  .hero h1 em {
+    font-style: normal;
+    color: var(--green);
+  }
+
+  .hero .sub {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text-dim);
+    max-width: 520px;
+  }
+
+  /* Sections */
+  .section {
+    margin-bottom: 48px;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 14px;
+  }
+
+  .section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+
+  .section p {
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--text-dim);
+  }
+
+  .section p + p {
+    margin-top: 12px;
+  }
+
+  /* Factor grid */
+  .factor-grid {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .factor {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: border-color 0.2s;
+  }
+
+  .factor:hover { border-color: var(--border-hover); }
+
+  .factor-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--green);
+    padding-top: 2px;
+    min-width: 20px;
+  }
+
+  .factor-body {}
+
+  .factor-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+
+  .factor-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* Data sources */
+  .source-list {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .source {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .source-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .source-desc {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* AI disclaimer box */
+  .ai-box {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(234,179,8,0.05);
+    border: 1px solid rgba(234,179,8,0.2);
+    border-radius: 8px;
+  }
+
+  .ai-box .ai-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--yellow);
+    margin-bottom: 10px;
+  }
+
+  .ai-box p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+
+  .ai-box p + p { margin-top: 10px; }
+
+  /* Stack list */
+  .stack-grid {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stack-row {
+    display: flex;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .stack-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    min-width: 110px;
+    padding-top: 1px;
+  }
+
+  .stack-value {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* Experiment box */
+  .experiment-box {
+    margin-top: 20px;
+    padding: 20px;
+    background: var(--green-dim);
+    border: 1px solid var(--green-border);
+    border-radius: 8px;
+  }
+
+  .experiment-box p {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text-dim);
+  }
+
+  .experiment-box p + p { margin-top: 10px; }
+
+  .experiment-box .highlight {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 48px 0;
+  }
+
+  /* Built by */
+  .built-by {
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 48px;
+  }
+
+  .built-by .built-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .built-by p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+
+  .built-by .closer {
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--green);
+    line-height: 1.6;
+  }
+
+  /* Footer */
+  .footer {
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .footer span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 20px;
+  }
+
+  .footer a {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer a:hover { color: var(--green); }
+
+  @media (max-width: 480px) {
+    .hero h1 { font-size: 32px; }
+    .nav { flex-direction: column; align-items: flex-start; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <nav class="nav">
+    <a class="back" href="/">The Odds Algo</a>
+    <a class="cta" href="/">Try It →</a>
+  </nav>
+
+  <div class="hero">
+    <div class="tag">Vision / Why This Exists</div>
+    <h1>A data science project.<br><em>Stocks are just the data.</em></h1>
+    <p class="sub">Factor modeling, structured data pipelines, and probability scoring — applied to the most publicly available, outcome-measurable dataset in the world. Built in public. Open to anyone curious enough to look under the hood.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-label">The Problem</div>
+    <p>Most retail investors make decisions based on headlines, hot takes, and gut feeling. Institutional traders don't. They use factor models — systematic frameworks that score assets across multiple independent signals and combine them into a single probability estimate.</p>
+    <p>That gap has always existed. Data science can close it. The stock market is the perfect laboratory: the data is public, the outcomes are measurable, and the feedback loop is fast. Unlike most academic datasets, people actually care about the results.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">The Model</div>
+    <h2>Five independent signals. One probability.</h2>
+    <p>Every score is generated from structured, rules-based calculations using real market data. No gut feeling. No narrative. No AI opinion dressed up as analysis. Each factor is independently sourced, weighted, and combined.</p>
+
+    <div class="factor-grid">
+      <div class="factor">
+        <div class="factor-num">01</div>
+        <div class="factor-body">
+          <div class="factor-name">Financial Health</div>
+          <div class="factor-desc">Market cap stability, average volume as a liquidity proxy, dividend discipline as a profitability signal</div>
+        </div>
+      </div>
+      <div class="factor">
+        <div class="factor-num">02</div>
+        <div class="factor-body">
+          <div class="factor-name">Catalyst Clarity</div>
+          <div class="factor-desc">Earnings surprise history, upcoming catalyst events, proximity to binary risk events</div>
+        </div>
+      </div>
+      <div class="factor">
+        <div class="factor-num">03</div>
+        <div class="factor-body">
+          <div class="factor-name">Sentiment & Momentum</div>
+          <div class="factor-desc">Analyst consensus from institutional researchers — strong buy, buy, hold, sell, strong sell — weighted and scored</div>
+        </div>
+      </div>
+      <div class="factor">
+        <div class="factor-num">04</div>
+        <div class="factor-body">
+          <div class="factor-name">Risk Assessment</div>
+          <div class="factor-desc">Beta volatility profile, 52-week price positioning, market cap tier, earnings proximity risk</div>
+        </div>
+      </div>
+      <div class="factor">
+        <div class="factor-num">05</div>
+        <div class="factor-body">
+          <div class="factor-name">Insider Activity</div>
+          <div class="factor-desc">Real SEC Form 4 filings parsed transaction by transaction — open-market buys and sells by officers and directors</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">The Data</div>
+    <h2>No black boxes. No paywalled sources.</h2>
+    <p>Every data source is named, documented, and independently auditable. Everything here can be replicated.</p>
+
+    <div class="source-list">
+      <div class="source">
+        <span class="source-name">Financial Modeling Prep</span>
+        <span class="source-desc">Price · Fundamentals · Earnings</span>
+      </div>
+      <div class="source">
+        <span class="source-name">Finnhub</span>
+        <span class="source-desc">Analyst consensus · Ratings</span>
+      </div>
+      <div class="source">
+        <span class="source-name">SEC EDGAR</span>
+        <span class="source-desc">Form 4 insider transactions</span>
+      </div>
+      <div class="source">
+        <span class="source-name">Google Gemini</span>
+        <span class="source-desc">Direction · Rationale · Target</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">A Note on AI</div>
+    <h2>AI is a tool here. Not the engine.</h2>
+
+    <div class="ai-box">
+      <div class="ai-label">⚠ AI Transparency</div>
+      <p>Google Gemini generates the directional call (LONG or SHORT), price target, time horizon, and the one-sentence rationale on the result screen. That's it.</p>
+      <p>Every weighted score in the model is derived from structured, rules-based calculations using real market data. Gemini does not control any of the five factor scores. It reads the data we've already processed and produces a human-readable output.</p>
+      <p>AI outputs can be wrong, inconsistent, or confidently mistaken. We know this. That's why the scores are anchored in data — not in what an AI thinks about a stock.</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">The Experiment</div>
+    <h2>Watching the model run in real time.</h2>
+
+    <div class="experiment-box">
+      <p>Every prediction made on this site is <span class="highlight">logged with a timestamp and entry price</span>. In 90 days, we score it — WIN, LOSS, or PUSH. Over time, that dataset becomes a public accuracy record.</p>
+      <p>The model will be wrong. The question is how often, and whether systematic analysis beats random chance. That's the experiment. You're watching it run.</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">Who This Is For</div>
+    <p>Anyone curious about how data science actually works in practice. Retail investors who want a structured alternative to noise. Aspiring analysts who want to see a live factor model. Students who learn better by building than by reading.</p>
+    <p>If you're interested in the methodology, the data, or the craft behind this — follow along. The model is an open experiment, not a closed product.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="built-by">
+    <div class="built-label">Built By</div>
+    <p>A data scientist with an MS in Data Science, specialized in business analytics. The Odds Algo is a continuation of that craft — applying factor modeling and structured data analysis to a domain that most people navigate on instinct.</p>
+    <p>The entire stack is built with the assistance of Claude (Anthropic) — for architecture decisions, code review, debugging, and feature development. Every meaningful decision is made by a human. Claude is the engineering partner that helps execute faster and more rigorously.</p>
+    <div class="closer">This is what building with AI looks like in 2026.<br>Not replacing the engineer. Augmenting one.</div>
+  </div>
+
+  <div class="footer">
+    <span>© 2026 The Odds Algo</span>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/terms.html">Terms</a>
+      <a href="/privacy.html">Privacy</a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
