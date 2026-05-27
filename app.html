@@ -805,14 +805,6 @@ analyzeBtn.addEventListener("click", () => {
   runAnalysis();
 });
 
-// --- How It Works ---
-$("how-link").addEventListener("click", () => {
-  document.getElementById("how-overlay").classList.add("visible");
-});
-$("how-close").addEventListener("click", () => {
-  document.getElementById("how-overlay").classList.remove("visible");
-});
-
 // --- Analysis flow ---
 function runAnalysis() {
   if (!currentTicker) return;
