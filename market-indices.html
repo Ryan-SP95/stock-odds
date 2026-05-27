@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Odds Algo — Market Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a14;
+    --surface: #0f0f1e;
+    --border: #1a1a30;
+    --border-hover: #333;
+    --text: #f0f0f0;
+    --text-dim: #888;
+    --text-muted: #555;
+    --text-ghost: #333;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+
+    --spy:  #4B8FD4;
+    --qqq:  #7B6FD0;
+    --dia:  #3AAFAD;
+    --iwm:  #6B9EC8;
+    --vix:  #C0504A;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── Layout ─────────────────────────────────────────── */
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px 48px;
+  }
+
+  /* ─── Top bar ─────────────────────────────────────────── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .brand {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+  .brand:hover { color: var(--text-dim); }
+
+  /* ─── Range tabs ──────────────────────────────────────── */
+  .range-tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .range-btn {
+    padding: 5px 14px;
+    font-size: 11px;
+    font-family: var(--mono);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .range-btn:hover { color: var(--text-dim); border-color: var(--border-hover); }
+  .range-btn.active {
+    color: var(--text);
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.12);
+  }
+
+  /* ─── Chart container ─────────────────────────────────── */
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 360px;
+    margin-bottom: 20px;
+  }
+
+  canvas#chart {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ─── Tooltip ─────────────────────────────────────────── */
+  #tooltip {
+    position: absolute;
+    pointer-events: none;
+    display: none;
+    background: #0d0d1f;
+    border: 0.5px solid #2a2a48;
+    border-radius: 7px;
+    padding: 10px 14px;
+    min-width: 140px;
+  }
+  #tooltip .tt-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  #tooltip .tt-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 3px;
+  }
+  #tooltip .tt-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  #tooltip .tt-price {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  #tooltip .tt-pct {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  #tooltip .tt-pct.pos { color: #22c55e; }
+  #tooltip .tt-pct.neg { color: #ef4444; }
+
+  /* ─── Legend ──────────────────────────────────────────── */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 0;
+    transition: opacity 0.2s;
+  }
+  .legend-item.faded { opacity: 0.28; }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-name {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  /* ─── Loading / error states ──────────────────────────── */
+  .state-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+  }
+  .state-overlay.hidden { display: none; }
+
+  .loader {
+    width: 28px;
+    height: 28px;
+    border: 1.5px solid var(--border);
+    border-top-color: var(--text-muted);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .err-msg {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  /* ─── Enter-app link ──────────────────────────────────── */
+  .enter-wrap {
+    margin-top: 36px;
+    text-align: center;
+  }
+  .enter-link {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--border);
+    padding-bottom: 2px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .enter-link:hover { color: var(--text-dim); border-color: var(--border-hover); }
+
+  /* ─── Mobile tweaks ───────────────────────────────────── */
+  @media (max-width: 500px) {
+    .page { padding: 20px 16px 36px; }
+    .chart-wrap { height: 260px; }
+    .legend { gap: 14px; }
+    .legend-name { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <a class="brand" href="/">The Odds Algo</a>
+    <div class="range-tabs">
+      <button class="range-btn active" data-range="day">Day</button>
+      <button class="range-btn" data-range="month">Month</button>
+      <button class="range-btn" data-range="year">Year</button>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-wrap">
+    <canvas id="chart"></canvas>
+
+    <div class="state-overlay" id="loading-state">
+      <div class="loader"></div>
+    </div>
+
+    <div class="state-overlay hidden" id="error-state">
+      <div class="err-msg" id="error-msg">Could not load market data.<br>Check your connection and try again.</div>
+    </div>
+
+    <div id="tooltip">
+      <div class="tt-label" id="tt-label">—</div>
+      <div id="tt-rows"></div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend" id="legend">
+    <div class="legend-item" data-ticker="SPY">
+      <div class="legend-dot" style="background:var(--spy)"></div>
+      <span class="legend-name">SPY</span>
+    </div>
+    <div class="legend-item" data-ticker="QQQ">
+      <div class="legend-dot" style="background:var(--qqq)"></div>
+      <span class="legend-name">QQQ</span>
+    </div>
+    <div class="legend-item" data-ticker="DIA">
+      <div class="legend-dot" style="background:var(--dia)"></div>
+      <span class="legend-name">DIA</span>
+    </div>
+    <div class="legend-item" data-ticker="IWM">
+      <div class="legend-dot" style="background:var(--iwm)"></div>
+      <span class="legend-name">IWM</span>
+    </div>
+    <div class="legend-item" data-ticker="VIX">
+      <div class="legend-dot" style="background:var(--vix)"></div>
+      <span class="legend-name">VIX</span>
+    </div>
+  </div>
+
+  <!-- Enter app -->
+  <div class="enter-wrap">
+    <a class="enter-link" href="/app">Run The Odds &rarr;</a>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// Config
+// ─────────────────────────────────────────────────────────────────────────────
+const BACKEND = 'https://stock-odds-backend-production.up.railway.app';
+
+const INDICES = [
+  { ticker: 'SPY',  label: 'SPY',  cssVar: '--spy'  },
+  { ticker: 'QQQ',  label: 'QQQ',  cssVar: '--qqq'  },
+  { ticker: 'DIA',  label: 'DIA',  cssVar: '--dia'  },
+  { ticker: 'IWM',  label: 'IWM',  cssVar: '--iwm'  },
+  { ticker: 'VIX',  label: 'VIX',  cssVar: '--vix'  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────────────────────
+let activeRange  = 'day';
+let isolatedTick = null;        // null = show all
+let allSeriesData = {};         // { SPY: [{t, price, pct},...], ... }
+let animFrame    = null;
+let hoverX       = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOM refs
+// ─────────────────────────────────────────────────────────────────────────────
+const canvas      = document.getElementById('chart');
+const ctx         = canvas.getContext('2d');
+const tooltip     = document.getElementById('tooltip');
+const ttLabel     = document.getElementById('tt-label');
+const ttRows      = document.getElementById('tt-rows');
+const loadState   = document.getElementById('loading-state');
+const errState    = document.getElementById('error-state');
+const errMsg      = document.getElementById('error-msg');
+const legendEl    = document.getElementById('legend');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+function cssColor(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+function showLoading(on) {
+  loadState.classList.toggle('hidden', !on);
+  if (on) errState.classList.add('hidden');
+}
+
+function showError(msg) {
+  errState.classList.remove('hidden');
+  loadState.classList.add('hidden');
+  errMsg.innerHTML = msg;
+}
+
+function fmt(n, decimals = 2) {
+  return n.toFixed(decimals);
+}
+
+function fmtPrice(n) {
+  if (n >= 100) return '$' + fmt(n, 2);
+  return '$' + fmt(n, 2);
+}
+
+function fmtPct(n) {
+  const sign = n >= 0 ? '+' : '';
+  return sign + fmt(n, 2) + '%';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Canvas DPI scaling
+// ─────────────────────────────────────────────────────────────────────────────
+function resizeCanvas() {
+  const dpr  = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width  * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Data fetching — calls backend which owns the FMP key + cache
+// ─────────────────────────────────────────────────────────────────────────────
+async function fetchIndices(range) {
+  showLoading(true);
+  allSeriesData = {};
+
+  try {
+    const res = await fetch(`${BACKEND}/api/indices?range=${range}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    // json = { SPY: [{t, price},...], QQQ: [...], ... }
+    // Normalize each series to percentage change from first data point
+    for (const [ticker, raw] of Object.entries(json)) {
+      if (!Array.isArray(raw) || raw.length === 0) continue;
+      const base = raw[0].price;
+      allSeriesData[ticker] = raw.map(pt => ({
+        t:     pt.t,
+        price: pt.price,
+        pct:   ((pt.price - base) / base) * 100,
+      }));
+    }
+
+    showLoading(false);
+    drawChart();
+
+  } catch (err) {
+    console.error('Fetch error:', err);
+    showError('Could not load market data.<br>Check connection and try again.');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Chart drawing
+// ─────────────────────────────────────────────────────────────────────────────
+const PAD = { top: 20, right: 16, bottom: 28, left: 52 };
+
+function drawChart(hX) {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  animFrame = requestAnimationFrame(() => _draw(hX));
+}
+
+function _draw(hX) {
+  const dpr  = window.devicePixelRatio || 1;
+  const W    = canvas.width  / dpr;
+  const H    = canvas.height / dpr;
+  const cW   = W - PAD.left - PAD.right;
+  const cH   = H - PAD.top  - PAD.bottom;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Determine which series are visible
+  const visibleTickers = isolatedTick
+    ? INDICES.filter(i => i.ticker === isolatedTick)
+    : INDICES;
+
+  // Collect all pct values across all visible series to set Y scale
+  let allPcts = [];
+  for (const { ticker } of visibleTickers) {
+    const s = allSeriesData[ticker];
+    if (!s) continue;
+    allPcts = allPcts.concat(s.map(p => p.pct));
+  }
+
+  if (allPcts.length === 0) return;
+
+  const pctMin = Math.min(...allPcts);
+  const pctMax = Math.max(...allPcts);
+  const pctRange = pctMax - pctMin || 0.01;
+  const pctPad = pctRange * 0.12;
+  const yMin = pctMin - pctPad;
+  const yMax = pctMax + pctPad;
+
+  // Longest series defines X axis
+  let maxLen = 0;
+  for (const { ticker } of visibleTickers) {
+    const s = allSeriesData[ticker];
+    if (s && s.length > maxLen) maxLen = s.length;
+  }
+  if (maxLen === 0) return;
+
+  // Helper: data → pixel
+  function xPx(i) { return PAD.left + (i / (maxLen - 1)) * cW; }
+  function yPx(v) { return PAD.top  + (1 - (v - yMin) / (yMax - yMin)) * cH; }
+
+  // ── Grid lines ─────────────────────────────────────────
+  ctx.save();
+  // Determine clean Y tick values
+  const tickCount = 5;
+  const step = (yMax - yMin) / (tickCount - 1);
+  for (let i = 0; i < tickCount; i++) {
+    const val = yMin + step * i;
+    const py  = yPx(val);
+
+    // Grid line
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 0.5;
+    ctx.setLineDash([]);
+    ctx.moveTo(PAD.left, py);
+    ctx.lineTo(W - PAD.right, py);
+    ctx.stroke();
+
+    // Y-axis label
+    const sign = val >= 0 ? (val > 0 ? '+' : '') : '';
+    ctx.fillStyle = '#444';
+    ctx.font = `400 10px 'Space Mono', monospace`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(sign + val.toFixed(1) + '%', PAD.left - 6, py);
+  }
+
+  // Zero line — slightly brighter
+  const zeroY = yPx(0);
+  if (zeroY >= PAD.top && zeroY <= PAD.top + cH) {
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+    ctx.lineWidth = 0.5;
+    ctx.moveTo(PAD.left, zeroY);
+    ctx.lineTo(W - PAD.right, zeroY);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // ── X-axis time labels ──────────────────────────────────
+  // Sample a few ticks across the series
+  const referenceData = allSeriesData[visibleTickers[0]?.ticker];
+  if (referenceData && referenceData.length > 1) {
+    const xTickCount = Math.min(5, referenceData.length);
+    const step = Math.floor((referenceData.length - 1) / (xTickCount - 1));
+    ctx.save();
+    ctx.fillStyle = '#444';
+    ctx.font = `400 9px 'Space Mono', monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let i = 0; i < xTickCount; i++) {
+      const idx = i * step;
+      const pt  = referenceData[idx];
+      if (!pt) continue;
+      const px = PAD.left + (idx / (referenceData.length - 1)) * cW;
+      const label = formatTimeLabel(pt.t, activeRange);
+      ctx.fillText(label, px, PAD.top + cH + 6);
+    }
+    ctx.restore();
+  }
+
+  // ── Series lines ────────────────────────────────────────
+  for (const { ticker, cssVar } of INDICES) {
+    const s = allSeriesData[ticker];
+    if (!s || s.length < 2) continue;
+
+    const color = cssColor(cssVar);
+    const isIsolated = isolatedTick === ticker;
+    const isFaded    = isolatedTick && !isIsolated;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = isFaded ? 1 : (isIsolated || !isolatedTick ? 1.5 : 1.5);
+    ctx.globalAlpha = isFaded ? 0.08 : 1;
+    ctx.lineJoin = 'round';
+    ctx.lineCap  = 'round';
+
+    s.forEach((pt, i) => {
+      const px = PAD.left + (i / (s.length - 1)) * cW;
+      const py = yPx(pt.pct);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+    ctx.restore();
+
+    // If isolated, boost to 2.5px
+    if (isIsolated) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 2.5;
+      ctx.lineJoin = 'round';
+      ctx.lineCap  = 'round';
+      s.forEach((pt, i) => {
+        const px = PAD.left + (i / (s.length - 1)) * cW;
+        const py = yPx(pt.pct);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // ── Hairline + dots on hover ────────────────────────────
+  if (hX !== undefined && hX !== null) {
+    // Clamp to chart area
+    const clampedX = Math.max(PAD.left, Math.min(W - PAD.right, hX));
+
+    // Vertical hairline
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 0.5;
+    ctx.setLineDash([3, 3]);
+    ctx.moveTo(clampedX, PAD.top);
+    ctx.lineTo(clampedX, PAD.top + cH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // Dots on each visible line
+    const activeTickers = isolatedTick
+      ? INDICES.filter(i => i.ticker === isolatedTick)
+      : INDICES;
+
+    for (const { ticker, cssVar } of activeTickers) {
+      const s = allSeriesData[ticker];
+      if (!s || s.length < 2) continue;
+      const relX = (clampedX - PAD.left) / cW;
+      const idx = Math.round(relX * (s.length - 1));
+      const pt  = s[Math.min(Math.max(idx, 0), s.length - 1)];
+      if (!pt) continue;
+      const px = PAD.left + (idx / (s.length - 1)) * cW;
+      const py = yPx(pt.pct);
+      const color = cssColor(cssVar);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Time label formatting
+// ─────────────────────────────────────────────────────────────────────────────
+function formatTimeLabel(t, range) {
+  const d = new Date(t);
+  if (range === 'day') {
+    // HH:MM
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  } else if (range === 'month') {
+    // May 1
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  } else {
+    // Jun '24
+    return d.toLocaleDateString([], { month: 'short', year: '2-digit' });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tooltip positioning & content
+// ─────────────────────────────────────────────────────────────────────────────
+function updateTooltip(mouseX, mouseY, chartLeft) {
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvas.width / dpr;
+  const cW  = W - PAD.left - PAD.right;
+
+  const relX = (mouseX - PAD.left) / cW;
+  if (relX < 0 || relX > 1) {
+    tooltip.style.display = 'none';
+    return;
+  }
+
+  const activeTickers = isolatedTick
+    ? INDICES.filter(i => i.ticker === isolatedTick)
+    : INDICES;
+
+  // Get time label from first available series
+  let timeLabel = '';
+  for (const { ticker } of activeTickers) {
+    const s = allSeriesData[ticker];
+    if (!s || s.length < 2) continue;
+    const idx = Math.round(relX * (s.length - 1));
+    const pt  = s[Math.min(Math.max(idx, 0), s.length - 1)];
+    if (pt) { timeLabel = formatTimeLabel(pt.t, activeRange); break; }
+  }
+
+  ttLabel.textContent = timeLabel || '—';
+  ttRows.innerHTML = '';
+
+  for (const { ticker, cssVar } of activeTickers) {
+    const s = allSeriesData[ticker];
+    if (!s || s.length < 2) continue;
+    const idx = Math.round(relX * (s.length - 1));
+    const pt  = s[Math.min(Math.max(idx, 0), s.length - 1)];
+    if (!pt) continue;
+
+    const color = cssColor(cssVar);
+    const pctClass = pt.pct >= 0 ? 'pos' : 'neg';
+    const row = document.createElement('div');
+    row.className = 'tt-row';
+    row.innerHTML = `
+      <span class="tt-name" style="color:${color}">${ticker}</span>
+      <span class="tt-price">${fmtPrice(pt.price)}</span>
+      <span class="tt-pct ${pctClass}">${fmtPct(pt.pct)}</span>
+    `;
+    ttRows.appendChild(row);
+  }
+
+  // Position tooltip — avoid overflow
+  const wrapRect = canvas.parentElement.getBoundingClientRect();
+  const ttW = 170;
+  const ttH = 28 + activeTickers.length * 22;
+  let left = mouseX + 14;
+  let top  = mouseY - 16;
+
+  if (left + ttW > wrapRect.width) left = mouseX - ttW - 14;
+  if (top + ttH  > wrapRect.height) top = mouseY - ttH;
+  if (top < 0) top = 4;
+
+  tooltip.style.left    = left + 'px';
+  tooltip.style.top     = top  + 'px';
+  tooltip.style.display = 'block';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mouse events
+// ─────────────────────────────────────────────────────────────────────────────
+function getMousePos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top,
+  };
+}
+
+canvas.addEventListener('mousemove', e => {
+  const pos = getMousePos(e);
+  hoverX = pos.x;
+  drawChart(hoverX);
+  updateTooltip(pos.x, pos.y);
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoverX = null;
+  tooltip.style.display = 'none';
+  drawChart();
+});
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const pos = getMousePos(e);
+  hoverX = pos.x;
+  drawChart(hoverX);
+  updateTooltip(pos.x, pos.y);
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => {
+  hoverX = null;
+  tooltip.style.display = 'none';
+  drawChart();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Legend isolation
+// ─────────────────────────────────────────────────────────────────────────────
+legendEl.addEventListener('click', e => {
+  const item = e.target.closest('.legend-item');
+  if (!item) return;
+  const ticker = item.dataset.ticker;
+
+  if (isolatedTick === ticker) {
+    isolatedTick = null;
+  } else {
+    isolatedTick = ticker;
+  }
+
+  // Update visual state of legend items
+  document.querySelectorAll('.legend-item').forEach(el => {
+    if (isolatedTick === null) {
+      el.classList.remove('faded');
+    } else {
+      el.classList.toggle('faded', el.dataset.ticker !== isolatedTick);
+    }
+  });
+
+  drawChart(hoverX);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Range tab switching
+// ─────────────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.range-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.range === activeRange) return;
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeRange = btn.dataset.range;
+    isolatedTick = null;
+    document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('faded'));
+    fetchIndices(activeRange);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Resize
+// ─────────────────────────────────────────────────────────────────────────────
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    resizeCanvas();
+    drawChart(hoverX);
+  }, 100);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────────────────────
+resizeCanvas();
+fetchIndices('day');
+</script>
+
+</body>
+</html>
