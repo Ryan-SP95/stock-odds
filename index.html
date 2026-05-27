@@ -3,245 +3,325 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Odds Algo — Market Overview</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>The Odds Algo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --bg: #0a0a14;
-    --surface: #0f0f1e;
-    --border: #1a1a30;
-    --border-hover: #333;
-    --text: #f0f0f0;
-    --text-dim: #888;
-    --text-muted: #555;
-    --text-ghost: #333;
-    --mono: 'Space Mono', monospace;
-    --sans: 'Space Grotesk', sans-serif;
+:root {
+  --bg:           #080810;
+  --surface:      #0e0e1c;
+  --surface2:     #13132a;
+  --border:       rgba(255,255,255,0.06);
+  --border-active:rgba(255,255,255,0.14);
+  --text:         #e8e8f0;
+  --text-dim:     #6b6b88;
+  --text-muted:   #3a3a52;
+  --mono:         'DM Mono', monospace;
+  --sans:         'Syne', sans-serif;
+  --spy:  #4B8FD4;
+  --qqq:  #7B6FD0;
+  --dia:  #3AAFAD;
+  --iwm:  #6B9EC8;
+  --vix:  #C0504A;
+}
 
-    --spy:  #4B8FD4;
-    --qqq:  #7B6FD0;
-    --dia:  #3AAFAD;
-    --iwm:  #6B9EC8;
-    --vix:  #C0504A;
-  }
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
 
-  html, body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-  }
+/* subtle grid texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
 
-  /* ─── Layout ─────────────────────────────────────────── */
-  .page {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 32px 24px 48px;
-  }
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 36px 32px 56px;
+}
 
-  /* ─── Top bar ─────────────────────────────────────────── */
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 28px;
-  }
+/* ── Top bar ─────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 36px;
+}
 
-  .brand {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    text-decoration: none;
-  }
-  .brand:hover { color: var(--text-dim); }
+.brand {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.brand:hover { color: var(--text); }
 
-  /* ─── Range tabs ──────────────────────────────────────── */
-  .range-tabs {
-    display: flex;
-    gap: 4px;
-  }
+.brand span {
+  color: var(--spy);
+}
 
-  .range-btn {
-    padding: 5px 14px;
-    font-size: 11px;
-    font-family: var(--mono);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    background: transparent;
-    border: 0.5px solid var(--border);
-    border-radius: 5px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .range-btn:hover { color: var(--text-dim); border-color: var(--border-hover); }
-  .range-btn.active {
-    color: var(--text);
-    background: rgba(255,255,255,0.06);
-    border-color: rgba(255,255,255,0.12);
-  }
+/* ── Range tabs ──────────────────────────────────── */
+.range-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+}
 
-  /* ─── Chart container ─────────────────────────────────── */
-  .chart-wrap {
-    position: relative;
-    width: 100%;
-    height: 360px;
-    margin-bottom: 20px;
-  }
+.range-btn {
+  padding: 5px 18px;
+  font-size: 11px;
+  font-family: var(--mono);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.range-btn:hover { color: var(--text); }
+.range-btn.active {
+  color: var(--text);
+  background: var(--surface2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
 
-  canvas#chart {
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
 
-  /* ─── Tooltip ─────────────────────────────────────────── */
-  #tooltip {
-    position: absolute;
-    pointer-events: none;
-    display: none;
-    background: #0d0d1f;
-    border: 0.5px solid #2a2a48;
-    border-radius: 7px;
-    padding: 10px 14px;
-    min-width: 140px;
-  }
-  #tooltip .tt-label {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-  }
-  #tooltip .tt-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 3px;
-  }
-  #tooltip .tt-name {
-    font-family: var(--mono);
-    font-size: 12px;
-    font-weight: 700;
-  }
-  #tooltip .tt-price {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--text-dim);
-  }
-  #tooltip .tt-pct {
-    font-family: var(--mono);
-    font-size: 12px;
-    font-weight: 700;
-  }
-  #tooltip .tt-pct.pos { color: #22c55e; }
-  #tooltip .tt-pct.neg { color: #ef4444; }
+/* ── Chart container ─────────────────────────────── */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 380px;
+  margin-bottom: 0;
+}
 
-  /* ─── Legend ──────────────────────────────────────────── */
-  .legend {
-    display: flex;
-    justify-content: center;
-    gap: 24px;
-    flex-wrap: wrap;
-  }
+canvas#chart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    padding: 4px 0;
-    transition: opacity 0.2s;
-  }
-  .legend-item.faded { opacity: 0.28; }
+/* ── Tooltip ─────────────────────────────────────── */
+#tooltip {
+  position: absolute;
+  pointer-events: none;
+  display: none;
+  background: rgba(10,10,22,0.95);
+  border: 0.5px solid var(--border-active);
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-width: 160px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+#tooltip .tt-time {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+#tooltip .tt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+#tooltip .tt-row:last-child { margin-bottom: 0; }
+.tt-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+#tooltip .tt-name {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  flex: 1;
+}
+#tooltip .tt-vals {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+#tooltip .tt-price {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+#tooltip .tt-pct {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  min-width: 52px;
+  text-align: right;
+}
+#tooltip .tt-pct.pos { color: #22c55e; }
+#tooltip .tt-pct.neg { color: #ef4444; }
 
-  .legend-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+/* ── Divider ─────────────────────────────────────── */
+.divider {
+  height: 0.5px;
+  background: var(--border);
+  margin: 20px 0;
+}
 
-  .legend-name {
-    font-family: var(--mono);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--text-dim);
-    text-transform: uppercase;
-  }
+/* ── Legend ──────────────────────────────────────── */
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
 
-  /* ─── Loading / error states ──────────────────────────── */
-  .state-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 10px;
-    pointer-events: none;
-  }
-  .state-overlay.hidden { display: none; }
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: opacity 0.2s;
+}
+.legend-item.faded { opacity: 0.22; }
 
-  .loader {
-    width: 28px;
-    height: 28px;
-    border: 1.5px solid var(--border);
-    border-top-color: var(--text-muted);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+.legend-pip {
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
 
-  .err-msg {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text-muted);
-    text-align: center;
-    line-height: 1.6;
-  }
+.legend-name {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.legend-item:hover .legend-name { color: var(--text); }
 
-  /* ─── Enter-app link ──────────────────────────────────── */
-  .enter-wrap {
-    margin-top: 36px;
-    text-align: center;
-  }
-  .enter-link {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    text-decoration: none;
-    border-bottom: 0.5px solid var(--border);
-    padding-bottom: 2px;
-    transition: color 0.2s, border-color 0.2s;
-  }
-  .enter-link:hover { color: var(--text-dim); border-color: var(--border-hover); }
+/* ── Enter link ──────────────────────────────────── */
+.enter-wrap {
+  margin-top: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.enter-link {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border: 0.5px solid var(--border);
+  border-radius: 7px;
+  transition: all 0.2s;
+}
+.enter-link:hover {
+  color: var(--text);
+  border-color: var(--border-active);
+  background: var(--surface);
+}
+.enter-arrow {
+  display: inline-block;
+  transition: transform 0.2s;
+}
+.enter-link:hover .enter-arrow { transform: translateX(4px); }
 
-  /* ─── Mobile tweaks ───────────────────────────────────── */
-  @media (max-width: 500px) {
-    .page { padding: 20px 16px 36px; }
-    .chart-wrap { height: 260px; }
-    .legend { gap: 14px; }
-    .legend-name { font-size: 10px; }
-  }
+/* ── Loading / error ─────────────────────────────── */
+.state-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+.state-overlay.hidden { display: none; }
+
+.loader {
+  width: 24px; height: 24px;
+  border: 1.5px solid var(--border);
+  border-top-color: var(--text-dim);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.err-msg {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.7;
+}
+
+/* ── Fade in ─────────────────────────────────────── */
+.chart-wrap, .legend, .enter-wrap {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.5s, transform 0.5s;
+}
+.chart-wrap.ready, .legend.ready, .enter-wrap.ready {
+  opacity: 1;
+  transform: translateY(0);
+}
+.legend.ready { transition-delay: 0.08s; }
+.enter-wrap.ready { transition-delay: 0.14s; }
+
+/* ── Mobile ──────────────────────────────────────── */
+@media (max-width: 640px) {
+  .page { padding: 20px 16px 40px; }
+  .chart-wrap { height: 260px; }
+  .legend { gap: 16px; }
+  .topbar { margin-bottom: 24px; }
+}
 </style>
 </head>
 <body>
 
 <div class="page">
 
-  <!-- Top bar -->
   <div class="topbar">
-    <a class="brand" href="/">The Odds Algo</a>
+    <a class="brand" href="/">THE ODDS<span>.</span>ALGO</a>
     <div class="range-tabs">
       <button class="range-btn active" data-range="day">Day</button>
       <button class="range-btn" data-range="month">Month</button>
@@ -249,162 +329,116 @@
     </div>
   </div>
 
-  <!-- Chart -->
-  <div class="chart-wrap">
+  <div class="chart-wrap" id="chart-wrap">
     <canvas id="chart"></canvas>
-
-    <div class="state-overlay" id="loading-state">
-      <div class="loader"></div>
-    </div>
-
+    <div class="state-overlay" id="loading-state"><div class="loader"></div></div>
     <div class="state-overlay hidden" id="error-state">
-      <div class="err-msg" id="error-msg">Could not load market data.<br>Check your connection and try again.</div>
+      <div class="err-msg" id="error-msg">Could not load market data.<br>Please try again.</div>
     </div>
-
     <div id="tooltip">
-      <div class="tt-label" id="tt-label">—</div>
+      <div class="tt-time" id="tt-time">—</div>
       <div id="tt-rows"></div>
     </div>
   </div>
 
-  <!-- Legend -->
+  <div class="divider"></div>
+
   <div class="legend" id="legend">
     <div class="legend-item" data-ticker="SPY">
-      <div class="legend-dot" style="background:var(--spy)"></div>
+      <div class="legend-pip" style="background:var(--spy)"></div>
       <span class="legend-name">SPY</span>
     </div>
     <div class="legend-item" data-ticker="QQQ">
-      <div class="legend-dot" style="background:var(--qqq)"></div>
+      <div class="legend-pip" style="background:var(--qqq)"></div>
       <span class="legend-name">QQQ</span>
     </div>
     <div class="legend-item" data-ticker="DIA">
-      <div class="legend-dot" style="background:var(--dia)"></div>
+      <div class="legend-pip" style="background:var(--dia)"></div>
       <span class="legend-name">DIA</span>
     </div>
     <div class="legend-item" data-ticker="IWM">
-      <div class="legend-dot" style="background:var(--iwm)"></div>
+      <div class="legend-pip" style="background:var(--iwm)"></div>
       <span class="legend-name">IWM</span>
     </div>
     <div class="legend-item" data-ticker="VIX">
-      <div class="legend-dot" style="background:var(--vix)"></div>
+      <div class="legend-pip" style="background:var(--vix)"></div>
       <span class="legend-name">VIX</span>
     </div>
   </div>
 
-  <!-- Enter app -->
-  <div class="enter-wrap">
-    <a class="enter-link" href="/app">Run The Odds &rarr;</a>
+  <div class="enter-wrap" id="enter-wrap">
+    <a class="enter-link" href="/app">Run The Odds <span class="enter-arrow">→</span></a>
   </div>
 
-</div><!-- /page -->
+</div>
 
 <script>
-// ─────────────────────────────────────────────────────────────────────────────
-// Config
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Config ──────────────────────────────────────────────────────────────────
 const BACKEND = 'https://stock-odds-backend-production.up.railway.app';
 
 const INDICES = [
-  { ticker: 'SPY',  label: 'SPY',  cssVar: '--spy'  },
-  { ticker: 'QQQ',  label: 'QQQ',  cssVar: '--qqq'  },
-  { ticker: 'DIA',  label: 'DIA',  cssVar: '--dia'  },
-  { ticker: 'IWM',  label: 'IWM',  cssVar: '--iwm'  },
-  { ticker: 'VIX',  label: 'VIX',  cssVar: '--vix'  },
+  { ticker: 'SPY', cssVar: '--spy', color: '#4B8FD4' },
+  { ticker: 'QQQ', cssVar: '--qqq', color: '#7B6FD0' },
+  { ticker: 'DIA', cssVar: '--dia', color: '#3AAFAD' },
+  { ticker: 'IWM', cssVar: '--iwm', color: '#6B9EC8' },
+  { ticker: 'VIX', cssVar: '--vix', color: '#C0504A' },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// State
-// ─────────────────────────────────────────────────────────────────────────────
-let activeRange  = 'day';
-let isolatedTick = null;        // null = show all
-let allSeriesData = {};         // { SPY: [{t, price, pct},...], ... }
-let animFrame    = null;
-let hoverX       = null;
+// VIX is on its own right-axis (raw price, not % change)
+const VIX_SEPARATE_AXIS = true;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DOM refs
-// ─────────────────────────────────────────────────────────────────────────────
-const canvas      = document.getElementById('chart');
-const ctx         = canvas.getContext('2d');
-const tooltip     = document.getElementById('tooltip');
-const ttLabel     = document.getElementById('tt-label');
-const ttRows      = document.getElementById('tt-rows');
-const loadState   = document.getElementById('loading-state');
-const errState    = document.getElementById('error-state');
-const errMsg      = document.getElementById('error-msg');
-const legendEl    = document.getElementById('legend');
+// ─── State ────────────────────────────────────────────────────────────────────
+let activeRange   = 'day';
+let isolatedTick  = null;
+let allSeries     = {};   // { SPY: [{t,price,pct},...], ... }
+let hoverX        = null;
+let rafId         = null;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-function cssColor(varName) {
-  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-}
+// ─── DOM ─────────────────────────────────────────────────────────────────────
+const canvas     = document.getElementById('chart');
+const ctx        = canvas.getContext('2d');
+const tooltip    = document.getElementById('tooltip');
+const ttTime     = document.getElementById('tt-time');
+const ttRows     = document.getElementById('tt-rows');
+const loadState  = document.getElementById('loading-state');
+const errState   = document.getElementById('error-state');
+const errMsg     = document.getElementById('error-msg');
+const legendEl   = document.getElementById('legend');
 
-function showLoading(on) {
-  loadState.classList.toggle('hidden', !on);
-  if (on) errState.classList.add('hidden');
-}
-
-function showError(msg) {
-  errState.classList.remove('hidden');
-  loadState.classList.add('hidden');
-  errMsg.innerHTML = msg;
-}
-
-function fmt(n, decimals = 2) {
-  return n.toFixed(decimals);
-}
-
-function fmtPrice(n) {
-  if (n >= 100) return '$' + fmt(n, 2);
-  return '$' + fmt(n, 2);
-}
-
-function fmtPct(n) {
-  const sign = n >= 0 ? '+' : '';
-  return sign + fmt(n, 2) + '%';
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Canvas DPI scaling
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Canvas scaling ───────────────────────────────────────────────────────────
 function resizeCanvas() {
   const dpr  = window.devicePixelRatio || 1;
   const rect = canvas.parentElement.getBoundingClientRect();
-  canvas.width  = rect.width  * dpr;
-  canvas.height = rect.height * dpr;
+  canvas.width        = rect.width  * dpr;
+  canvas.height       = rect.height * dpr;
   canvas.style.width  = rect.width  + 'px';
   canvas.style.height = rect.height + 'px';
   ctx.scale(dpr, dpr);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Data fetching — calls backend which owns the FMP key + cache
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Fetch ────────────────────────────────────────────────────────────────────
 async function fetchIndices(range) {
   showLoading(true);
-  allSeriesData = {};
+  allSeries = {};
 
   try {
     const res = await fetch(`${BACKEND}/api/indices?range=${range}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
 
-    // json = { SPY: [{t, price},...], QQQ: [...], ... }
-    // Normalize each series to percentage change from first data point
     for (const [ticker, raw] of Object.entries(json)) {
       if (!Array.isArray(raw) || raw.length === 0) continue;
       const base = raw[0].price;
-      allSeriesData[ticker] = raw.map(pt => ({
+      allSeries[ticker] = raw.map(pt => ({
         t:     pt.t,
         price: pt.price,
-        pct:   ((pt.price - base) / base) * 100,
+        pct:   base > 0 ? ((pt.price - base) / base) * 100 : 0,
       }));
     }
 
     showLoading(false);
-    drawChart();
+    revealUI();
+    schedDraw();
 
   } catch (err) {
     console.error('Fetch error:', err);
@@ -412,288 +446,288 @@ async function fetchIndices(range) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Chart drawing
-// ─────────────────────────────────────────────────────────────────────────────
-const PAD = { top: 20, right: 16, bottom: 28, left: 52 };
-
-function drawChart(hX) {
-  if (animFrame) cancelAnimationFrame(animFrame);
-  animFrame = requestAnimationFrame(() => _draw(hX));
+// ─── UI reveal ────────────────────────────────────────────────────────────────
+function revealUI() {
+  document.getElementById('chart-wrap').classList.add('ready');
+  document.getElementById('legend').classList.add('ready');
+  document.getElementById('enter-wrap').classList.add('ready');
 }
 
-function _draw(hX) {
-  const dpr  = window.devicePixelRatio || 1;
-  const W    = canvas.width  / dpr;
-  const H    = canvas.height / dpr;
-  const cW   = W - PAD.left - PAD.right;
-  const cH   = H - PAD.top  - PAD.bottom;
+// ─── Loading / error ──────────────────────────────────────────────────────────
+function showLoading(on) {
+  loadState.classList.toggle('hidden', !on);
+  if (on) errState.classList.add('hidden');
+}
+function showError(msg) {
+  errState.classList.remove('hidden');
+  loadState.classList.add('hidden');
+  errMsg.innerHTML = msg;
+}
+
+// ─── Draw ─────────────────────────────────────────────────────────────────────
+const PAD = { top: 24, right: 56, bottom: 32, left: 58 };
+
+function schedDraw(hX) {
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(() => draw(hX));
+}
+
+function draw(hX) {
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvas.width  / dpr;
+  const H   = canvas.height / dpr;
+  const cW  = W - PAD.left - PAD.right;
+  const cH  = H - PAD.top  - PAD.bottom;
 
   ctx.clearRect(0, 0, W, H);
 
-  // Determine which series are visible
-  const visibleTickers = isolatedTick
-    ? INDICES.filter(i => i.ticker === isolatedTick)
-    : INDICES;
+  if (Object.keys(allSeries).length === 0) return;
 
-  // Collect all pct values across all visible series to set Y scale
+  // Which tickers to show on primary axis (pct)
+  const primaryTickers = isolatedTick
+    ? INDICES.filter(i => i.ticker === isolatedTick && i.ticker !== 'VIX')
+    : INDICES.filter(i => i.ticker !== 'VIX');
+
+  const showVIX = !isolatedTick || isolatedTick === 'VIX';
+
+  // ── Compute Y scales ───────────────────────────────────
+  // Primary: % change
   let allPcts = [];
-  for (const { ticker } of visibleTickers) {
-    const s = allSeriesData[ticker];
+  for (const { ticker } of primaryTickers) {
+    const s = allSeries[ticker];
     if (!s) continue;
     allPcts = allPcts.concat(s.map(p => p.pct));
   }
 
+  // If isolated to VIX only, use VIX pct
+  if (isolatedTick === 'VIX') {
+    const s = allSeries['VIX'];
+    if (s) allPcts = s.map(p => p.pct);
+  }
+
   if (allPcts.length === 0) return;
 
-  const pctMin = Math.min(...allPcts);
-  const pctMax = Math.max(...allPcts);
-  const pctRange = pctMax - pctMin || 0.01;
-  const pctPad = pctRange * 0.12;
-  const yMin = pctMin - pctPad;
-  const yMax = pctMax + pctPad;
+  const rawMin = Math.min(...allPcts);
+  const rawMax = Math.max(...allPcts);
+  const span   = rawMax - rawMin || 0.5;
+  const pad    = span * 0.15;
+  const yMin   = rawMin - pad;
+  const yMax   = rawMax + pad;
 
-  // Longest series defines X axis
-  let maxLen = 0;
-  for (const { ticker } of visibleTickers) {
-    const s = allSeriesData[ticker];
+  // VIX secondary scale (raw price)
+  let vixMin = 0, vixMax = 100;
+  const vixSeries = allSeries['VIX'];
+  if (vixSeries && showVIX && !isolatedTick) {
+    const prices = vixSeries.map(p => p.price);
+    const vspan  = Math.max(...prices) - Math.min(...prices) || 5;
+    vixMin = Math.min(...prices) - vspan * 0.15;
+    vixMax = Math.max(...prices) + vspan * 0.15;
+  }
+
+  // Max data length for X axis
+  let maxLen = 1;
+  for (const { ticker } of INDICES) {
+    const s = allSeries[ticker];
     if (s && s.length > maxLen) maxLen = s.length;
   }
-  if (maxLen === 0) return;
 
-  // Helper: data → pixel
-  function xPx(i) { return PAD.left + (i / (maxLen - 1)) * cW; }
-  function yPx(v) { return PAD.top  + (1 - (v - yMin) / (yMax - yMin)) * cH; }
+  // ── Coordinate helpers ─────────────────────────────────
+  function yPx(v)    { return PAD.top + (1 - (v - yMin)   / (yMax - yMin))   * cH; }
+  function yVix(v)   { return PAD.top + (1 - (v - vixMin) / (vixMax - vixMin)) * cH; }
+  function xPx(i, len) { return PAD.left + (i / Math.max(len - 1, 1)) * cW; }
 
-  // ── Grid lines ─────────────────────────────────────────
+  // ── Grid + Y labels ────────────────────────────────────
   ctx.save();
-  // Determine clean Y tick values
-  const tickCount = 5;
-  const step = (yMax - yMin) / (tickCount - 1);
-  for (let i = 0; i < tickCount; i++) {
-    const val = yMin + step * i;
-    const py  = yPx(val);
+  const gridTicks = 5;
+  for (let i = 0; i < gridTicks; i++) {
+    const v  = yMin + (yMax - yMin) * (i / (gridTicks - 1));
+    const py = yPx(v);
 
-    // Grid line
+    // grid line
     ctx.beginPath();
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-    ctx.lineWidth = 0.5;
-    ctx.setLineDash([]);
+    ctx.lineWidth   = 0.5;
     ctx.moveTo(PAD.left, py);
     ctx.lineTo(W - PAD.right, py);
     ctx.stroke();
 
-    // Y-axis label
-    const sign = val >= 0 ? (val > 0 ? '+' : '') : '';
-    ctx.fillStyle = '#444';
-    ctx.font = `400 10px 'Space Mono', monospace`;
-    ctx.textAlign = 'right';
+    // Left label (% change)
+    const sign = v > 0 ? '+' : '';
+    ctx.fillStyle    = '#3a3a52';
+    ctx.font         = `400 9.5px 'DM Mono', monospace`;
+    ctx.textAlign    = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillText(sign + val.toFixed(1) + '%', PAD.left - 6, py);
+    ctx.fillText(sign + v.toFixed(1) + '%', PAD.left - 8, py);
+
+    // Right label (VIX raw price) — only when VIX is visible and not isolated
+    if (showVIX && !isolatedTick) {
+      const vv  = vixMin + (vixMax - vixMin) * (i / (gridTicks - 1));
+      ctx.fillStyle    = 'rgba(192,80,74,0.35)';
+      ctx.textAlign    = 'left';
+      ctx.fillText(vv.toFixed(1), W - PAD.right + 8, py);
+    }
   }
 
-  // Zero line — slightly brighter
-  const zeroY = yPx(0);
-  if (zeroY >= PAD.top && zeroY <= PAD.top + cH) {
+  // Zero line
+  if (yMin < 0 && yMax > 0) {
+    const zy = yPx(0);
     ctx.beginPath();
-    ctx.strokeStyle = 'rgba(255,255,255,0.10)';
-    ctx.lineWidth = 0.5;
-    ctx.moveTo(PAD.left, zeroY);
-    ctx.lineTo(W - PAD.right, zeroY);
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth   = 0.5;
+    ctx.moveTo(PAD.left, zy);
+    ctx.lineTo(W - PAD.right, zy);
     ctx.stroke();
   }
   ctx.restore();
 
-  // ── X-axis time labels ──────────────────────────────────
-  // Sample a few ticks across the series
-  const referenceData = allSeriesData[visibleTickers[0]?.ticker];
-  if (referenceData && referenceData.length > 1) {
-    const xTickCount = Math.min(5, referenceData.length);
-    const step = Math.floor((referenceData.length - 1) / (xTickCount - 1));
+  // ── X-axis labels ──────────────────────────────────────
+  const refTicker = INDICES.find(i => allSeries[i.ticker])?.ticker;
+  const refData   = refTicker ? allSeries[refTicker] : null;
+  if (refData && refData.length > 1) {
+    const xTicks = Math.min(6, refData.length);
     ctx.save();
-    ctx.fillStyle = '#444';
-    ctx.font = `400 9px 'Space Mono', monospace`;
-    ctx.textAlign = 'center';
+    ctx.fillStyle    = '#3a3a52';
+    ctx.font         = `400 9px 'DM Mono', monospace`;
+    ctx.textAlign    = 'center';
     ctx.textBaseline = 'top';
-    for (let i = 0; i < xTickCount; i++) {
-      const idx = i * step;
-      const pt  = referenceData[idx];
+    for (let i = 0; i < xTicks; i++) {
+      const idx = Math.round(i / (xTicks - 1) * (refData.length - 1));
+      const pt  = refData[idx];
       if (!pt) continue;
-      const px = PAD.left + (idx / (referenceData.length - 1)) * cW;
-      const label = formatTimeLabel(pt.t, activeRange);
-      ctx.fillText(label, px, PAD.top + cH + 6);
+      const px = PAD.left + (idx / (refData.length - 1)) * cW;
+      ctx.fillText(fmtTime(pt.t, activeRange), px, PAD.top + cH + 8);
     }
     ctx.restore();
   }
 
-  // ── Series lines ────────────────────────────────────────
-  for (const { ticker, cssVar } of INDICES) {
-    const s = allSeriesData[ticker];
+  // ── Draw series lines ──────────────────────────────────
+  for (const { ticker, color } of INDICES) {
+    const s = allSeries[ticker];
     if (!s || s.length < 2) continue;
 
-    const color = cssColor(cssVar);
+    const isVIX      = ticker === 'VIX';
     const isIsolated = isolatedTick === ticker;
     const isFaded    = isolatedTick && !isIsolated;
 
-    ctx.save();
-    ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.lineWidth   = isFaded ? 1 : (isIsolated || !isolatedTick ? 1.5 : 1.5);
-    ctx.globalAlpha = isFaded ? 0.08 : 1;
-    ctx.lineJoin = 'round';
-    ctx.lineCap  = 'round';
+    // Skip VIX on primary axis if isolated to something else
+    if (isVIX && isolatedTick && !isIsolated) continue;
 
+    ctx.save();
+    ctx.globalAlpha = isFaded ? 0.07 : 1;
+    ctx.lineJoin    = 'round';
+    ctx.lineCap     = 'round';
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = isIsolated ? 2.5 : 1.5;
+
+    // VIX dashed when not isolated
+    if (isVIX && !isolatedTick) {
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1.5;
+    }
+
+    ctx.beginPath();
     s.forEach((pt, i) => {
-      const px = PAD.left + (i / (s.length - 1)) * cW;
-      const py = yPx(pt.pct);
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
+      const px = xPx(i, s.length);
+      const py = (isVIX && !isolatedTick) ? yVix(pt.price) : yPx(pt.pct);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
     });
     ctx.stroke();
     ctx.restore();
-
-    // If isolated, boost to 2.5px
-    if (isIsolated) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth   = 2.5;
-      ctx.lineJoin = 'round';
-      ctx.lineCap  = 'round';
-      s.forEach((pt, i) => {
-        const px = PAD.left + (i / (s.length - 1)) * cW;
-        const py = yPx(pt.pct);
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      });
-      ctx.stroke();
-      ctx.restore();
-    }
   }
 
-  // ── Hairline + dots on hover ────────────────────────────
-  if (hX !== undefined && hX !== null) {
-    // Clamp to chart area
-    const clampedX = Math.max(PAD.left, Math.min(W - PAD.right, hX));
+  // ── Hover hairline + dots ──────────────────────────────
+  if (hX != null) {
+    const cx = Math.max(PAD.left, Math.min(W - PAD.right, hX));
 
-    // Vertical hairline
     ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth   = 0.5;
+    ctx.setLineDash([4, 4]);
     ctx.beginPath();
-    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-    ctx.lineWidth = 0.5;
-    ctx.setLineDash([3, 3]);
-    ctx.moveTo(clampedX, PAD.top);
-    ctx.lineTo(clampedX, PAD.top + cH);
+    ctx.moveTo(cx, PAD.top);
+    ctx.lineTo(cx, PAD.top + cH);
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();
 
-    // Dots on each visible line
     const activeTickers = isolatedTick
       ? INDICES.filter(i => i.ticker === isolatedTick)
       : INDICES;
 
-    for (const { ticker, cssVar } of activeTickers) {
-      const s = allSeriesData[ticker];
+    for (const { ticker, color } of activeTickers) {
+      const s = allSeries[ticker];
       if (!s || s.length < 2) continue;
-      const relX = (clampedX - PAD.left) / cW;
-      const idx = Math.round(relX * (s.length - 1));
-      const pt  = s[Math.min(Math.max(idx, 0), s.length - 1)];
+      const isVIX = ticker === 'VIX';
+      const relX  = (cx - PAD.left) / cW;
+      const idx   = Math.min(Math.max(Math.round(relX * (s.length - 1)), 0), s.length - 1);
+      const pt    = s[idx];
       if (!pt) continue;
-      const px = PAD.left + (idx / (s.length - 1)) * cW;
-      const py = yPx(pt.pct);
-      const color = cssColor(cssVar);
+      const px = xPx(idx, s.length);
+      const py = (isVIX && !isolatedTick) ? yVix(pt.price) : yPx(pt.pct);
+
       ctx.save();
       ctx.beginPath();
-      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+      ctx.arc(px, py, 4, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
-      ctx.beginPath();
-      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth   = 1;
       ctx.stroke();
       ctx.restore();
     }
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Time label formatting
-// ─────────────────────────────────────────────────────────────────────────────
-function formatTimeLabel(t, range) {
-  const d = new Date(t);
-  if (range === 'day') {
-    // HH:MM
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-  } else if (range === 'month') {
-    // May 1
-    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  } else {
-    // Jun '24
-    return d.toLocaleDateString([], { month: 'short', year: '2-digit' });
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Tooltip positioning & content
-// ─────────────────────────────────────────────────────────────────────────────
-function updateTooltip(mouseX, mouseY, chartLeft) {
+// ─── Tooltip update ───────────────────────────────────────────────────────────
+function updateTooltip(mouseX, mouseY) {
   const dpr = window.devicePixelRatio || 1;
   const W   = canvas.width / dpr;
   const cW  = W - PAD.left - PAD.right;
-
   const relX = (mouseX - PAD.left) / cW;
-  if (relX < 0 || relX > 1) {
-    tooltip.style.display = 'none';
-    return;
-  }
+
+  if (relX < 0 || relX > 1) { tooltip.style.display = 'none'; return; }
 
   const activeTickers = isolatedTick
     ? INDICES.filter(i => i.ticker === isolatedTick)
     : INDICES;
 
-  // Get time label from first available series
+  // Time label from first available series
   let timeLabel = '';
   for (const { ticker } of activeTickers) {
-    const s = allSeriesData[ticker];
+    const s = allSeries[ticker];
     if (!s || s.length < 2) continue;
-    const idx = Math.round(relX * (s.length - 1));
-    const pt  = s[Math.min(Math.max(idx, 0), s.length - 1)];
-    if (pt) { timeLabel = formatTimeLabel(pt.t, activeRange); break; }
+    const idx = Math.min(Math.max(Math.round(relX * (s.length - 1)), 0), s.length - 1);
+    timeLabel = fmtTime(s[idx].t, activeRange);
+    break;
   }
-
-  ttLabel.textContent = timeLabel || '—';
+  ttTime.textContent = timeLabel;
   ttRows.innerHTML = '';
 
-  for (const { ticker, cssVar } of activeTickers) {
-    const s = allSeriesData[ticker];
+  for (const { ticker, color } of activeTickers) {
+    const s = allSeries[ticker];
     if (!s || s.length < 2) continue;
-    const idx = Math.round(relX * (s.length - 1));
-    const pt  = s[Math.min(Math.max(idx, 0), s.length - 1)];
-    if (!pt) continue;
+    const idx = Math.min(Math.max(Math.round(relX * (s.length - 1)), 0), s.length - 1);
+    const pt  = s[idx];
+    const pctCls = pt.pct >= 0 ? 'pos' : 'neg';
 
-    const color = cssColor(cssVar);
-    const pctClass = pt.pct >= 0 ? 'pos' : 'neg';
     const row = document.createElement('div');
     row.className = 'tt-row';
     row.innerHTML = `
-      <span class="tt-name" style="color:${color}">${ticker}</span>
-      <span class="tt-price">${fmtPrice(pt.price)}</span>
-      <span class="tt-pct ${pctClass}">${fmtPct(pt.pct)}</span>
-    `;
+      <div class="tt-dot" style="background:${color}"></div>
+      <span class="tt-name">${ticker}</span>
+      <div class="tt-vals">
+        <span class="tt-price">$${pt.price.toFixed(2)}</span>
+        <span class="tt-pct ${pctCls}">${pt.pct >= 0 ? '+' : ''}${pt.pct.toFixed(2)}%</span>
+      </div>`;
     ttRows.appendChild(row);
   }
 
-  // Position tooltip — avoid overflow
+  // Position
   const wrapRect = canvas.parentElement.getBoundingClientRect();
-  const ttW = 170;
-  const ttH = 28 + activeTickers.length * 22;
-  let left = mouseX + 14;
-  let top  = mouseY - 16;
-
-  if (left + ttW > wrapRect.width) left = mouseX - ttW - 14;
-  if (top + ttH  > wrapRect.height) top = mouseY - ttH;
+  const ttW = 185, ttH = 28 + activeTickers.length * 24;
+  let left = mouseX + 16, top = mouseY - 20;
+  if (left + ttW > wrapRect.width)  left = mouseX - ttW - 16;
+  if (top  + ttH > wrapRect.height) top  = mouseY - ttH;
   if (top < 0) top = 4;
 
   tooltip.style.left    = left + 'px';
@@ -701,105 +735,57 @@ function updateTooltip(mouseX, mouseY, chartLeft) {
   tooltip.style.display = 'block';
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Mouse events
-// ─────────────────────────────────────────────────────────────────────────────
-function getMousePos(e) {
-  const rect = canvas.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  return {
-    x: clientX - rect.left,
-    y: clientY - rect.top,
-  };
+// ─── Time formatting ──────────────────────────────────────────────────────────
+function fmtTime(t, range) {
+  const d = new Date(t);
+  if (range === 'day')   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  if (range === 'month') return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString([], { month: 'short', year: '2-digit' });
+}
+
+// ─── Mouse events ─────────────────────────────────────────────────────────────
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - r.left, y: src.clientY - r.top };
 }
 
 canvas.addEventListener('mousemove', e => {
-  const pos = getMousePos(e);
-  hoverX = pos.x;
-  drawChart(hoverX);
-  updateTooltip(pos.x, pos.y);
+  const p = getPos(e);
+  hoverX = p.x;
+  schedDraw(hoverX);
+  updateTooltip(p.x, p.y);
 });
-
 canvas.addEventListener('mouseleave', () => {
   hoverX = null;
   tooltip.style.display = 'none';
-  drawChart();
+  schedDraw();
 });
-
 canvas.addEventListener('touchmove', e => {
   e.preventDefault();
-  const pos = getMousePos(e);
-  hoverX = pos.x;
-  drawChart(hoverX);
-  updateTooltip(pos.x, pos.y);
+  const p = getPos(e);
+  hoverX = p.x;
+  schedDraw(hoverX);
+  updateTooltip(p.x, p.y);
 }, { passive: false });
-
 canvas.addEventListener('touchend', () => {
   hoverX = null;
   tooltip.style.display = 'none';
-  drawChart();
+  schedDraw();
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Legend isolation
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Legend + stat bar isolation ──────────────────────────────────────────────
+function setIsolation(ticker) {
+  isolatedTick = isolatedTick === ticker ? null : ticker;
+
+  document.querySelectorAll('.legend-item').forEach(el => {
+    el.classList.toggle('faded', isolatedTick && el.dataset.ticker !== isolatedTick);
+  });
+
+  schedDraw(hoverX);
+}
+
 legendEl.addEventListener('click', e => {
   const item = e.target.closest('.legend-item');
-  if (!item) return;
-  const ticker = item.dataset.ticker;
-
-  if (isolatedTick === ticker) {
-    isolatedTick = null;
-  } else {
-    isolatedTick = ticker;
-  }
-
-  // Update visual state of legend items
-  document.querySelectorAll('.legend-item').forEach(el => {
-    if (isolatedTick === null) {
-      el.classList.remove('faded');
-    } else {
-      el.classList.toggle('faded', el.dataset.ticker !== isolatedTick);
-    }
-  });
-
-  drawChart(hoverX);
+  if (item) setIsolation(item.dataset.ticker);
 });
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Range tab switching
-// ─────────────────────────────────────────────────────────────────────────────
-document.querySelectorAll('.range-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (btn.dataset.range === activeRange) return;
-    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeRange = btn.dataset.range;
-    isolatedTick = null;
-    document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('faded'));
-    fetchIndices(activeRange);
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Resize
-// ─────────────────────────────────────────────────────────────────────────────
-let resizeTimer;
-window.addEventListener('resize', () => {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    resizeCanvas();
-    drawChart(hoverX);
-  }, 100);
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Init
-// ─────────────────────────────────────────────────────────────────────────────
-resizeCanvas();
-fetchIndices('day');
-</script>
-
-</body>
-</html>
