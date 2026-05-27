@@ -750,10 +750,9 @@ let lookupCount = parseInt(getCookie("stockodds_lookups") || "0");
 let currentTicker = "";
 
 // --- DOM ---
-const $ = (id) => document.getElementById(id);
+const $ = (id) => document.getElementById(id) || document.createElement("div");
 const app = $("app");
 const title = $("title");
-const subtitle = $("subtitle");
 const tickerInput = $("ticker-input");
 const analyzeBtn = $("analyze-btn");
 const freeBadge = $("free-badge");
@@ -772,13 +771,12 @@ function showPhase(name) {
   if (name === "input") {
     app.classList.add("centered");
     title.classList.remove("small");
-    subtitle.style.display = "";
   } else {
     app.classList.remove("centered");
     title.classList.add("small");
-    subtitle.style.display = "none";
   }
 }
+
 
 // --- Input handling ---
 tickerInput.addEventListener("input", () => {
@@ -793,6 +791,8 @@ analyzeBtn.addEventListener("click", () => {
   if (currentTicker) gtag("event", "ticker_submitted", { ticker: currentTicker });
   runAnalysis();
 });
+
+// --- How It Works ---
 
 // --- Analysis flow ---
 function runAnalysis() {
