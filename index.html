@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Odds Algo - Market</title>
+<title>The Odds Algo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -346,23 +346,7 @@ canvas#chart {
   <div class="legend" id="legend">
     <div class="legend-item" data-ticker="SPY">
       <div class="legend-pip" style="background:var(--spy)"></div>
-      <span class="legend-name">SPY</span>
-    </div>
-    <div class="legend-item" data-ticker="QQQ">
-      <div class="legend-pip" style="background:var(--qqq)"></div>
-      <span class="legend-name">QQQ</span>
-    </div>
-    <div class="legend-item" data-ticker="DIA">
-      <div class="legend-pip" style="background:var(--dia)"></div>
-      <span class="legend-name">DIA</span>
-    </div>
-    <div class="legend-item" data-ticker="IWM">
-      <div class="legend-pip" style="background:var(--iwm)"></div>
-      <span class="legend-name">IWM</span>
-    </div>
-    <div class="legend-item" data-ticker="VIX">
-      <div class="legend-pip" style="background:var(--vix)"></div>
-      <span class="legend-name">VIX</span>
+      <span class="legend-name">S&amp;P 500</span>
     </div>
   </div>
 
@@ -378,14 +362,8 @@ const BACKEND = 'https://stock-odds-backend-production.up.railway.app';
 
 const INDICES = [
   { ticker: 'SPY', cssVar: '--spy', color: '#4B8FD4' },
-  { ticker: 'QQQ', cssVar: '--qqq', color: '#7B6FD0' },
-  { ticker: 'DIA', cssVar: '--dia', color: '#3AAFAD' },
-  { ticker: 'IWM', cssVar: '--iwm', color: '#6B9EC8' },
-  { ticker: 'VIX', cssVar: '--vix', color: '#C0504A' },
 ];
 
-// VIX is on its own right-axis (raw price, not % change)
-const VIX_SEPARATE_AXIS = true;
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let activeRange   = 'day';
@@ -465,7 +443,7 @@ function showError(msg) {
 }
 
 // ─── Draw ─────────────────────────────────────────────────────────────────────
-const PAD = { top: 24, right: 56, bottom: 32, left: 58 };
+const PAD = { top: 24, right: 24, bottom: 32, left: 58 };
 
 function schedDraw(hX) {
   if (rafId) cancelAnimationFrame(rafId);
@@ -483,26 +461,16 @@ function draw(hX) {
 
   if (Object.keys(allSeries).length === 0) return;
 
-  // Which tickers to show on primary axis (pct)
-  const primaryTickers = isolatedTick
-    ? INDICES.filter(i => i.ticker === isolatedTick && i.ticker !== 'VIX')
-    : INDICES.filter(i => i.ticker !== 'VIX');
-
-  const showVIX = !isolatedTick || isolatedTick === 'VIX';
+  // SPY only
+  const primaryTickers = INDICES;
+  const showVIX = false;
 
   // ── Compute Y scales ───────────────────────────────────
-  // Primary: % change
   let allPcts = [];
   for (const { ticker } of primaryTickers) {
     const s = allSeries[ticker];
     if (!s) continue;
     allPcts = allPcts.concat(s.map(p => p.pct));
-  }
-
-  // If isolated to VIX only, use VIX pct
-  if (isolatedTick === 'VIX') {
-    const s = allSeries['VIX'];
-    if (s) allPcts = s.map(p => p.pct);
   }
 
   if (allPcts.length === 0) return;
@@ -514,15 +482,7 @@ function draw(hX) {
   const yMin   = rawMin - pad;
   const yMax   = rawMax + pad;
 
-  // VIX secondary scale (raw price)
-  let vixMin = 0, vixMax = 100;
-  const vixSeries = allSeries['VIX'];
-  if (vixSeries && showVIX && !isolatedTick) {
-    const prices = vixSeries.map(p => p.price);
-    const vspan  = Math.max(...prices) - Math.min(...prices) || 5;
-    vixMin = Math.min(...prices) - vspan * 0.15;
-    vixMax = Math.max(...prices) + vspan * 0.15;
-  }
+
 
   // Max data length for X axis
   let maxLen = 1;
@@ -533,7 +493,6 @@ function draw(hX) {
 
   // ── Coordinate helpers ─────────────────────────────────
   function yPx(v)    { return PAD.top + (1 - (v - yMin)   / (yMax - yMin))   * cH; }
-  function yVix(v)   { return PAD.top + (1 - (v - vixMin) / (vixMax - vixMin)) * cH; }
   function xPx(i, len) { return PAD.left + (i / Math.max(len - 1, 1)) * cW; }
 
   // ── Grid + Y labels ────────────────────────────────────
@@ -559,13 +518,7 @@ function draw(hX) {
     ctx.textBaseline = 'middle';
     ctx.fillText(sign + v.toFixed(1) + '%', PAD.left - 8, py);
 
-    // Right label (VIX raw price) — only when VIX is visible and not isolated
-    if (showVIX && !isolatedTick) {
-      const vv  = vixMin + (vixMax - vixMin) * (i / (gridTicks - 1));
-      ctx.fillStyle    = 'rgba(192,80,74,0.35)';
-      ctx.textAlign    = 'left';
-      ctx.fillText(vv.toFixed(1), W - PAD.right + 8, py);
-    }
+
   }
 
   // Zero line
@@ -605,30 +558,17 @@ function draw(hX) {
     const s = allSeries[ticker];
     if (!s || s.length < 2) continue;
 
-    const isVIX      = ticker === 'VIX';
-    const isIsolated = isolatedTick === ticker;
-    const isFaded    = isolatedTick && !isIsolated;
-
-    // Skip VIX on primary axis if isolated to something else
-    if (isVIX && isolatedTick && !isIsolated) continue;
-
     ctx.save();
-    ctx.globalAlpha = isFaded ? 0.07 : 1;
+    ctx.globalAlpha = 1;
     ctx.lineJoin    = 'round';
     ctx.lineCap     = 'round';
     ctx.strokeStyle = color;
-    ctx.lineWidth   = isIsolated ? 2.5 : 1.5;
-
-    // VIX dashed when not isolated
-    if (isVIX && !isolatedTick) {
-      ctx.setLineDash([4, 4]);
-      ctx.lineWidth = 1.5;
-    }
+    ctx.lineWidth   = 2;
 
     ctx.beginPath();
     s.forEach((pt, i) => {
       const px = xPx(i, s.length);
-      const py = (isVIX && !isolatedTick) ? yVix(pt.price) : yPx(pt.pct);
+      const py = yPx(pt.pct);
       i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
     });
     ctx.stroke();
@@ -657,13 +597,12 @@ function draw(hX) {
     for (const { ticker, color } of activeTickers) {
       const s = allSeries[ticker];
       if (!s || s.length < 2) continue;
-      const isVIX = ticker === 'VIX';
       const relX  = (cx - PAD.left) / cW;
       const idx   = Math.min(Math.max(Math.round(relX * (s.length - 1)), 0), s.length - 1);
       const pt    = s[idx];
       if (!pt) continue;
       const px = xPx(idx, s.length);
-      const py = (isVIX && !isolatedTick) ? yVix(pt.price) : yPx(pt.pct);
+      const py = yPx(pt.pct);
 
       ctx.save();
       ctx.beginPath();
