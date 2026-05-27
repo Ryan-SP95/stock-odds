@@ -1,9 +1,9 @@
 {
   "rewrites": [
-    { "source": "/",            "destination": "/market-indices.html" },
-    { "source": "/app",         "destination": "/index.html" },
-    { "source": "/lab",         "destination": "/lab.html" },
-    { "source": "/references",  "destination": "/references.html" },
-    { "source": "/python-lab",  "destination": "/python-lab.html" }
+    { "source": "/",           "destination": "/market-indices.html" },
+    { "source": "/app",        "destination": "/index.html" },
+    { "source": "/lab",        "destination": "/lab.html" },
+    { "source": "/references", "destination": "/references.html" },
+    { "source": "/python-lab", "destination": "/python-lab.html" }
   ]
 }
