@@ -399,6 +399,7 @@ function revealUI() {
 function showLoading(on) {
   loadState.classList.toggle('hidden', !on);
   if (on) errState.classList.add('hidden');
+  if (!on) errState.classList.add('hidden');
 }
 function showError(msg) {
   errState.classList.remove('hidden');
