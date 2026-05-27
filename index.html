@@ -323,9 +323,9 @@ canvas#chart {
   <div class="topbar">
     <a class="brand" href="/">THE ODDS<span>.</span>ALGO</a>
     <div class="range-tabs">
-      <button class="range-btn active" data-range="day">Day</button>
+      <button class="range-btn" data-range="day">Day</button>
       <button class="range-btn" data-range="month">Month</button>
-      <button class="range-btn" data-range="year">Year</button>
+      <button class="range-btn active" data-range="year">Year</button>
     </div>
   </div>
 
@@ -366,7 +366,7 @@ const INDICES = [
 
 
 // ─── State ────────────────────────────────────────────────────────────────────
-let activeRange   = 'day';
+let activeRange   = 'year';
 let isolatedTick  = null;
 let allSeries     = {};   // { SPY: [{t,price,pct},...], ... }
 let hoverX        = null;
@@ -728,3 +728,30 @@ legendEl.addEventListener('click', e => {
   const item = e.target.closest('.legend-item');
   if (item) setIsolation(item.dataset.ticker);
 });
+
+// ─── Range tabs ───────────────────────────────────────────────────────────────
+document.querySelectorAll('.range-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.range === activeRange) return;
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeRange = btn.dataset.range;
+    isolatedTick = null;
+    document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('faded'));
+    fetchIndices(activeRange);
+  });
+});
+
+// ─── Resize ───────────────────────────────────────────────────────────────────
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { resizeCanvas(); schedDraw(hoverX); }, 100);
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+resizeCanvas();
+fetchIndices('year');
+</script>
+</body>
+</html>
