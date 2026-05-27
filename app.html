@@ -780,17 +780,6 @@ function showPhase(name) {
   }
 }
 
-// --- Popular chips ---
-const popular = ["AAPL", "TSLA", "NVDA", "AMZN", "GOOG", "META"];
-const chipsEl = $("chips");
-popular.forEach(t => {
-  const btn = document.createElement("button");
-  btn.className = "chip";
-  btn.textContent = t;
-  btn.onclick = () => { currentTicker = t; tickerInput.value = t; runAnalysis(); };
-  chipsEl.appendChild(btn);
-});
-
 // --- Input handling ---
 tickerInput.addEventListener("input", () => {
   tickerInput.value = tickerInput.value.toUpperCase();
