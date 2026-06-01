@@ -1314,6 +1314,7 @@ function loadTrial(idx, animate) {
   closeHint();
   document.getElementById('hint-line').classList.remove('visible');
   if (typeof refreshCheat === 'function') refreshCheat();
+  if (typeof refreshTicker === 'function') refreshTicker();
 
   const t = TRIALS[idx];
   const pt = document.getElementById("problem-text");
@@ -1646,33 +1647,61 @@ function insertAtCursor(text) {
 }
 
 // ── TICKER ──────────────────────────────────────────────────────────────────
+// [fn, desc, unlock_at_level] — mirrors CHEAT_FNS gates
 const TICKER_ITEMS = [
-  ["c()", "combine values"],
-  ["mean(x)", "average"],
-  ["sd(x)", "standard deviation"],
-  ["sum(x)", "total"],
-  ["diff(x)", "consecutive differences"],
-  ["cumprod(1 + x)", "cumulative growth"],
-  ["cummax(x)", "running maximum"],
-  ["min(x)", "minimum"],
-  ["max(x)", "maximum"],
-  ["which.min(x)", "index of minimum"],
-  ["which.max(x)", "index of maximum"],
-  ["length(x)", "count elements"],
-  ["seq(a, b, by=n)", "generate sequence"],
-  ["ifelse(cond, a, b)", "vectorised if"],
-  ["lm(y ~ x, data)", "linear model"],
-  ["cor(x, y)", "correlation"],
-  ["subset(df, cond)", "filter rows"],
-  ["order(-x)", "sort descending"],
-  ["round(x, n)", "round digits"],
-  ["prod(x)", "product of all"],
+  ["c()",                    "combine values",             0],
+  ["length(x)",              "count elements",             0],
+  ["sqrt(x)",                "square root",                0],
+  ["seq(a, b, by=n)",        "generate sequence",          0],
+  ["matrix(x, nrow, ncol)",  "build a matrix",             0],
+  ["ifelse(cond, a, b)",     "vectorised if",              1],
+  ["mean(x)",                "average",                    1],
+  ["sum(x)",                 "total",                      1],
+  ["min(x)",                 "minimum",                    1],
+  ["max(x)",                 "maximum",                    1],
+  ["which.min(x)",           "index of minimum",           1],
+  ["which.max(x)",           "index of maximum",           1],
+  ["abs(x)",                 "absolute value",             1],
+  ["data.frame(...)",        "build a table",              2],
+  ["nrow(df)",               "row count",                  2],
+  ["subset(df, cond)",       "filter rows",                2],
+  ["order(-x)",              "sort descending",            2],
+  ["sd(x)",                  "standard deviation",         3],
+  ["cor(x, y)",              "correlation",                3],
+  ["lm(y ~ x, data)",        "linear model",               3],
+  ["predict(model, newdata)","predictions",                3],
+  ["round(x, n)",            "round digits",               3],
+  ["diff(x)",                "consecutive differences",    5],
+  ["cumprod(1 + x)",         "cumulative growth",          5],
+  ["cummax(x)",              "running maximum",            5],
+  ["cumsum(x)",              "running sum",                5],
+  ["prod(x)",                "product of all",             5],
+  ["acf(x)",                 "autocorrelation",            5],
+  ["glm(..., family=binomial)", "logistic model",          6],
+  ["table(a, b)",            "confusion matrix",           6],
+  ["arima(x, order=c(p,d,q))","ARIMA model",              6],
 ];
 
 function buildTicker() {
+  refreshTicker();
+}
+
+function refreshTicker() {
   const track = document.getElementById("ticker-track");
-  const doubled = [...TICKER_ITEMS, ...TICKER_ITEMS];
-  track.innerHTML = doubled.map(([fn, desc]) =>
+  const unlockedLevel = getUnlockedLevel();
+  const visible = TICKER_ITEMS.filter(([,,lvl]) => lvl <= unlockedLevel);
+
+  // need at least a few items to scroll — pad with a placeholder if empty
+  if (visible.length === 0) {
+    track.innerHTML = "";
+    return;
+  }
+
+  // double for seamless loop — need enough items to fill the width
+  const copies = visible.length < 6 ? 4 : 2;
+  const items = Array(copies).fill(visible).flat();
+
+  track.innerHTML = items.map(([fn, desc]) =>
     `<span class="tick-item" onclick="insertAtCursor('${fn.split('(')[0]}(')">` +
     `<span class="tick-fn">${fn}</span>` +
     `<span class="tick-sep"></span>` +
