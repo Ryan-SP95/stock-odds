@@ -187,6 +187,36 @@ html, body {
 #runBtn.running { border-color: var(--green); color: var(--green); opacity: 0.6; }
 
 .kb { font-size: 10px; color: var(--muted); opacity: 0.5; }
+/* ── OUTPUT ── */
+#output-area {
+  width: 100%;
+  max-width: 600px;
+  margin-top: 10px;
+  min-height: 22px;
+}
+#output-line {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+#output-line.visible { opacity: 1; }
+#output-line.is-error { color: #6b3333; }
+#commentary-line {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: #2a2a3f;
+  margin-top: 6px;
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  font-style: italic;
+}
+#commentary-line.visible { opacity: 1; color: #383858; }
+
 
 /* ── HINT ── */
 #hint-trigger {
@@ -306,6 +336,11 @@ html, body {
       <span class="kb">ctrl+enter</span>
     </div>
   </div>
+</div>
+
+<div id="output-area">
+  <div id="output-line"></div>
+  <div id="commentary-line"></div>
 </div>
 
 <button id="hint-trigger" onclick="toggleHint()">?</button>
@@ -1096,6 +1131,52 @@ const TRIALS = [
   }
 
 ];
+
+// ── COMMENTARY ─────────────────────────────────────────────────────────────
+const COMMENTARY = {
+  "0.1": "a spread of $27 between the high and low — that range is the market's opinion.",
+  "1.0": "the -300 favourite is 75% implied probability. the house always builds in the edge.",
+  "1.1": "3% over 7 days. compounded daily that's a different number than it looks.",
+  "1.2": "position 3 returned 8.7%. position 4 lost 5.2%. same portfolio, very different outcomes.",
+  "1.3": "4 of 7 passed the filter. 57% of positions are above $150.",
+  "2.1": "189×10 + 245×5 + 875×2 = $4,915. NVDA's 2 shares outweigh AAPL's 10.",
+  "2.2": "NVDA at $875 leads. sorting reveals concentration — most value in one name.",
+  "2.3": "2 of 3 positions are above $200. AAPL at $189 doesn't make the cut.",
+  "3.0": "4.5% daily vol. annualised, that's over 70%. something here is very restless.",
+  "3.1": "r ≈ 0.99 — nearly perfect co-movement. diversification between these two is mostly an illusion.",
+  "3.2": "the line is fitted. whether it means anything depends on what comes next.",
+  "3.3": "the model thinks volume=2.0 generates a positive return. it could be right.",
+  "3.4": "R² above 0.97 — volume explains almost all the variance. in real markets, be suspicious of that.",
+  "4.1": "3 of 6 days were positive. a coin flip dressed as a portfolio.",
+  "4.3": "daily PnL is now in the frame. NVDA's 2 shares at +3.1% still beats AAPL's 10 at +1.2%.",
+  "4.4": "NVDA leads the ranking. returns sorted like this are how factor models start.",
+  "4.5": "AAPL averaged +1.0%. TSLA averaged +0.83%. 6 days is not a thesis.",
+  "4.6": "3 survivors after filter and sort. the pipe did in 2 lines what a loop would take 10.",
+  "5.0": "364 days. markets were open for roughly 252 of them — the number that matters.",
+  "5.2": "first change: -$1.50. the series started by going down before it went anywhere.",
+  "5.3": "first return: -0.81%. percentage changes are what you actually trade on.",
+  "5.4": "the rolling mean smooths noise. the cost is lag — it always tells you where prices were.",
+  "5.5": "the first 4 values are NA. you can't have a 5-day average until you have 5 days.",
+  "5.6": "rolling volatility captures regime changes. flat stretches and violent ones look different here.",
+  "5.7": "lag-0 autocorrelation is always 1.0 — a series is perfectly correlated with itself.",
+  "6.0": "8 rows to train, 2 to test. with 10 observations this is all you can afford.",
+  "6.1": "logistic regression draws a line through probability space. not a straight line — an S-curve.",
+  "6.2": "three probabilities, all between 0 and 1. the model has an opinion on each volume level.",
+  "6.3": "a confusion matrix counts what the model got right and wrong. accuracy hides inside it.",
+  "6.4": "ARIMA assumes the recent past predicts the near future. financial returns test that assumption hard.",
+  "6.5": "MAE and RMSE penalise errors differently. RMSE punishes large misses more severely.",
+  "6.6": "the tree made its first split. every quant model is just a sequence of if/then statements.",
+  "6.7": "100 trees voted. the forest is more stable than any individual tree — that's the whole idea.",
+  "7.0": "Sharpe above 1.5 is considered good. above 3 in live trading, check your code first.",
+  "7.1": "that's the worst it got, measured peak to trough. every strategy has one. now you know yours.",
+  "7.2": "5 buys, 2 holds, 3 sells. the hold zone is doing its job — filtering weak signals.",
+  "7.3": "Kelly says 26.7%. half-Kelly says 13.3%. full Kelly will be right on average and ruin you in practice.",
+  "7.4": "7 composite scores, all between 0 and 1. the highest is your strongest signal.",
+  "7.5": "strategy vs buy-and-hold. most strategies lose this comparison. the ones that don't, survive.",
+  "7.6": "walk-forward accuracy is honest — each prediction used only past data. this number is real.",
+  "7.7": "prices to Sharpe to drawdown to backtest in one pipeline. this is the job.",
+};
+
 // ── STATE ──────────────────────────────────────────────────────────────────
 let completed  = new Set(JSON.parse(localStorage.getItem("rlab_done") || "[]"));
 let xp         = parseInt(localStorage.getItem("rlab_xp") || "0");
@@ -1131,6 +1212,7 @@ function loadTrial(idx, animate) {
   failCount = 0;
   hintOpen  = false;
   clearFlash();
+  clearOutput();
   closeHint();
 
   const t = TRIALS[idx];
@@ -1251,26 +1333,70 @@ async function runSim(code) {
   resolve(env, errText, trial);
 }
 
+// ── OUTPUT ─────────────────────────────────────────────────────────────────
+function showOutput(text, isError) {
+  const ol = document.getElementById("output-line");
+  const cl = document.getElementById("commentary-line");
+  ol.textContent = text || "";
+  ol.className = "visible" + (isError ? " is-error" : "");
+  cl.textContent = "";
+  cl.className = "";
+}
+
+function clearOutput() {
+  const ol = document.getElementById("output-line");
+  const cl = document.getElementById("commentary-line");
+  ol.textContent = "";
+  ol.className = "";
+  cl.textContent = "";
+  cl.className = "";
+}
+
+function showCommentary(trialId) {
+  const line = COMMENTARY[trialId];
+  if (!line) return;
+  const cl = document.getElementById("commentary-line");
+  cl.textContent = line;
+  // brief delay so it appears after the pass flash settles
+  setTimeout(() => cl.classList.add("visible"), 100);
+}
+
 // ── RESOLVE ────────────────────────────────────────────────────────────────
 function resolve(envData, errText, trial) {
-  if (errText) { flash("fail"); failCount++; maybeShowHint(); return; }
+  if (errText) {
+    flash("fail");
+    showOutput("error: " + errText.split("\n")[0], true);
+    failCount++;
+    maybeShowHint();
+    return;
+  }
+
   const verdict = trial.validate(envData);
+  const rawOut = (envData.__output || "").trim();
+
   if (verdict.pass) {
     flash("pass");
+    // show raw output briefly, then commentary
+    if (rawOut) showOutput(rawOut, false);
+    showCommentary(trial.id);
     const wasNew = !completed.has(trial.id);
     if (wasNew) { completed.add(trial.id); xp += 10; touchStreak(); save(); }
     transitioning = true;
     setTimeout(() => {
       transitioning = false;
+      clearOutput();
       const nextIdx = current + 1;
       if (nextIdx < TRIALS.length) {
         loadTrial(nextIdx, true);
       } else {
         showDone();
       }
-    }, 700);
+    }, 2200);
   } else {
     flash("fail");
+    // on fail: show what they actually got
+    const failMsg = rawOut || verdict.msg || "";
+    showOutput(failMsg, false);
     failCount++;
     maybeShowHint();
   }
