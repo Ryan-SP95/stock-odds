@@ -1313,6 +1313,7 @@ function loadTrial(idx, animate) {
   clearOutput();
   closeHint();
   document.getElementById('hint-line').classList.remove('visible');
+  if (typeof refreshCheat === 'function') refreshCheat();
 
   const t = TRIALS[idx];
   const pt = document.getElementById("problem-text");
@@ -1544,45 +1545,79 @@ function closeHint() {
 // ── CHEATSHEET ──────────────────────────────────────────────────────────────
 let cheatOpen = false;
 
+// [fn, desc, unlock_at_level]
 const CHEAT_FNS = [
-  ["c(x, y, ...)", "combine into vector"],
-  ["length(x)", "count elements"],
-  ["mean(x)", "arithmetic mean"],
-  ["sum(x)", "total"],
-  ["sd(x)", "standard deviation"],
-  ["var(x)", "variance"],
-  ["min(x) / max(x)", "extremes"],
-  ["which.min(x)", "index of min"],
-  ["which.max(x)", "index of max"],
-  ["diff(x)", "consecutive differences"],
-  ["cumprod(x)", "cumulative product"],
-  ["cummax(x)", "running maximum"],
-  ["cumsum(x)", "running sum"],
-  ["prod(x)", "product of all"],
-  ["abs(x)", "absolute value"],
-  ["round(x, n)", "round to n digits"],
-  ["sqrt(x)", "square root"],
-  ["seq(a, b, by=n)", "sequence"],
-  ["rep(x, n)", "repeat x n times"],
-  ["ifelse(cond, a, b)", "vectorised if"],
-  ["subset(df, cond)", "filter rows"],
-  ["order(x)", "sort indices"],
-  ["nrow(df)", "row count"],
-  ["ncol(df)", "column count"],
-  ["lm(y ~ x, data)", "linear model"],
-  ["predict(model, newdata)", "predictions"],
-  ["glm(..., family=binomial)", "logistic model"],
-  ["table(a, b)", "confusion matrix"],
-  ["cor(x, y)", "correlation"],
+  ["c(x, y, ...)",          "combine into vector",        0],
+  ["length(x)",              "count elements",             0],
+  ["sqrt(x)",                "square root",                0],
+  ["seq(a, b, by=n)",        "generate sequence",          0],
+  ["matrix(x, nrow, ncol)",  "build a matrix",             0],
+  ["ifelse(cond, a, b)",     "vectorised if",              1],
+  ["mean(x)",                "arithmetic mean",            1],
+  ["sum(x)",                 "total",                      1],
+  ["which.min(x)",           "index of minimum",           1],
+  ["which.max(x)",           "index of maximum",           1],
+  ["abs(x)",                 "absolute value",             1],
+  ["rep(x, n)",              "repeat x n times",           1],
+  ["data.frame(...)",        "build a table",              2],
+  ["nrow(df)",               "row count",                  2],
+  ["ncol(df)",               "column count",               2],
+  ["subset(df, cond)",       "filter rows",                2],
+  ["order(x)",               "sort indices",               2],
+  ["sd(x)",                  "standard deviation",         3],
+  ["var(x)",                 "variance",                   3],
+  ["cor(x, y)",              "correlation",                3],
+  ["lm(y ~ x, data)",        "linear model",               3],
+  ["predict(model, newdata)","predictions",                3],
+  ["round(x, n)",            "round to n digits",          3],
+  ["min(x) / max(x)",        "extremes",                   3],
+  ["diff(x)",                "consecutive differences",    5],
+  ["cumprod(x)",             "cumulative product",         5],
+  ["cummax(x)",              "running maximum",            5],
+  ["cumsum(x)",              "running sum",                5],
+  ["prod(x)",                "product of all",             5],
+  ["acf(x)",                 "autocorrelation",            5],
+  ["glm(..., family=binomial)", "logistic model",          6],
+  ["table(a, b)",            "confusion matrix",           6],
+  ["arima(x, order=c(p,d,q))","ARIMA model",              6],
+  ["predict(..., type='response')", "model probabilities", 6],
 ];
 
+function getUnlockedLevel() {
+  let max = 0;
+  completed.forEach(id => {
+    const t = TRIALS.find(t => t.id === id);
+    if (t && t.level > max) max = t.level;
+  });
+  // also count current trial's level if in progress
+  if (TRIALS[current] && TRIALS[current].level > max) max = TRIALS[current].level;
+  return max;
+}
+
 function buildCheat() {
+  refreshCheat();
+}
+
+function refreshCheat() {
   const panel = document.getElementById("cheat-panel");
+  panel.innerHTML = "";
   const label = document.createElement("div");
   label.id = "cheat-label";
   label.textContent = "reference";
   panel.appendChild(label);
-  CHEAT_FNS.forEach(([fn, desc]) => {
+
+  const unlockedLevel = getUnlockedLevel();
+  const visible = CHEAT_FNS.filter(([,, lvl]) => lvl <= unlockedLevel);
+
+  if (visible.length === 0) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "font-size:10px;color:#252538;line-height:1.6;margin-top:4px;";
+    empty.textContent = "complete trials to unlock";
+    panel.appendChild(empty);
+    return;
+  }
+
+  visible.forEach(([fn, desc]) => {
     const btn = document.createElement("button");
     btn.className = "cheat-fn";
     btn.textContent = fn;
