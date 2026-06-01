@@ -326,7 +326,9 @@ html, body {
   align-items: center;
   background: var(--bg);
   z-index: 40;
+  transition: height 0.2s ease;
 }
+#ticker:hover { height: 42px; }
 #ticker-track {
   display: flex;
   white-space: nowrap;
@@ -343,11 +345,12 @@ html, body {
   gap: 9px;
   padding: 0 20px;
   font-size: 10px;
-  color: #1a1a2e;
+  color: #2a2a42;
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.15s;
+  transition: color 0.15s, font-size 0.2s ease;
 }
+#ticker:hover .tick-item { font-size: 13px; }
 .tick-item:hover { color: #e8e8f0; }
 .tick-fn { font-family: var(--mono); }
 .tick-sep { display: inline-block; width: 1px; height: 8px; background: var(--border); vertical-align: middle; }
