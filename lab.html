@@ -72,7 +72,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 24px 40px;
+  padding: 80px 24px 60px;
 }
 
 /* ── PROBLEM ── */
@@ -218,53 +218,140 @@ html, body {
 #commentary-line.visible { opacity: 1; color: #383858; }
 
 
-/* ── HINT ── */
-#hint-trigger {
-  position: fixed;
-  bottom: 24px;
-  right: 28px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1px solid var(--muted);
+/* ── HINT (inline, below output) ── */
+#hint-line {
+  width: 100%;
+  max-width: 600px;
+  margin-top: 10px;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+#hint-line.visible { opacity: 1; pointer-events: auto; }
+#hint-toggle {
   background: none;
-  color: var(--muted);
-  font-family: var(--sans);
-  font-size: 11px;
+  border: none;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: #2a2a3f;
   cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.06em;
+  transition: color 0.15s;
+}
+#hint-toggle:hover { color: var(--muted); }
+#hint-toggle.open { color: #a07b10; }
+#hint-text {
+  font-size: 11px;
+  color: #3a3520;
+  line-height: 1.6;
+  margin-top: 5px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.25s;
+  opacity: 0;
+}
+#hint-text.open { max-height: 100px; opacity: 1; }
+
+/* ── CHEATSHEET ── */
+#cheat-panel {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 160px;
+  background: #0d0d1a;
+  border-left: 1px solid var(--border);
+  padding: 14px;
+  z-index: 50;
+  transition: right 0.25s ease;
+}
+#cheat-panel.hidden { right: -160px; }
+#cheat-label {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #252538;
+  margin-bottom: 10px;
+  font-family: var(--sans);
+}
+.cheat-fn {
+  display: block;
+  font-size: 11px;
+  color: #2a2a3f;
+  padding: 3px 0;
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: var(--mono);
+  text-align: left;
+  width: 100%;
+  transition: color 0.15s;
+  letter-spacing: 0;
+}
+.cheat-fn:hover { color: var(--green); }
+#cheat-tab {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 36px;
+  background: #0d0d1a;
+  border: 1px solid var(--border);
+  border-right: none;
+  border-radius: 4px 0 0 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: opacity 0.4s, border-color 0.15s, color 0.15s;
-  z-index: 100;
+  cursor: pointer;
+  z-index: 51;
+  font-size: 8px;
+  color: #252538;
+  transition: right 0.25s ease, color 0.15s;
+  user-select: none;
 }
-#hint-trigger.visible { opacity: 1; }
-#hint-trigger:hover { border-color: #eab308; color: #eab308; }
+#cheat-tab:hover { color: var(--muted); }
 
-#hint-bubble {
+/* ── TICKER ── */
+#ticker {
   position: fixed;
-  bottom: 54px;
-  right: 28px;
-  max-width: 280px;
-  background: var(--dim);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 14px;
-  font-size: 11.5px;
-  color: var(--muted);
-  line-height: 1.6;
-  opacity: 0;
-  transform: translateY(4px) scale(0.97);
-  transition: opacity 0.2s, transform 0.2s;
-  pointer-events: none;
-  z-index: 100;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  border-top: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  background: var(--bg);
+  z-index: 40;
 }
-#hint-bubble.visible {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
+#ticker-track {
+  display: flex;
+  white-space: nowrap;
+  animation: tickScroll 30s linear infinite;
 }
+#ticker-track:hover { animation-play-state: paused; }
+@keyframes tickScroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.tick-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 20px;
+  font-size: 10px;
+  color: #1a1a2e;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+.tick-item:hover { color: #2e2e4a; }
+.tick-fn { font-family: var(--mono); }
+.tick-sep { display: inline-block; width: 1px; height: 8px; background: var(--border); vertical-align: middle; }
+.tick-desc { font-family: var(--sans); font-weight: 300; }
 
 /* ── COUNTER (hidden, reveals at end) ── */
 #counter {
@@ -336,16 +423,23 @@ html, body {
       <span class="kb">ctrl+enter</span>
     </div>
   </div>
+
+  <div id="output-area">
+    <div id="output-line"></div>
+    <div id="commentary-line"></div>
+  </div>
 </div>
 
-<div id="output-area">
-  <div id="output-line"></div>
-  <div id="commentary-line"></div>
+<div id="hint-line">
+  <button id="hint-toggle" onclick="toggleHint()">hint</button>
+  <div id="hint-text"></div>
 </div>
-
-<button id="hint-trigger" onclick="toggleHint()">?</button>
-<div id="hint-bubble"></div>
 <div id="counter"></div>
+
+<div id="cheat-panel" class="hidden"></div>
+<div id="cheat-tab" onclick="toggleCheat()">‹</div>
+
+<div id="ticker"><div id="ticker-track"></div></div>
 
 <div id="done-screen">
   <h1>Complete</h1>
@@ -1211,9 +1305,11 @@ function loadTrial(idx, animate) {
   current   = idx;
   failCount = 0;
   hintOpen  = false;
+  failCount = 0;
   clearFlash();
   clearOutput();
   closeHint();
+  document.getElementById('hint-line').classList.remove('visible');
 
   const t = TRIALS[idx];
   const pt = document.getElementById("problem-text");
@@ -1417,16 +1513,19 @@ function clearFlash() {
 // ── HINT ───────────────────────────────────────────────────────────────────
 function maybeShowHint() {
   if (failCount >= 3) {
-    document.getElementById("hint-trigger").classList.add("visible");
+    document.getElementById("hint-line").classList.add("visible");
   }
 }
 
 function toggleHint() {
   hintOpen = !hintOpen;
-  const bubble = document.getElementById("hint-bubble");
+  const toggle = document.getElementById("hint-toggle");
+  const text   = document.getElementById("hint-text");
   if (hintOpen) {
-    bubble.textContent = TRIALS[current].hint;
-    bubble.classList.add("visible");
+    text.textContent = TRIALS[current].hint;
+    text.classList.add("open");
+    toggle.classList.add("open");
+    toggle.textContent = "hide hint";
   } else {
     closeHint();
   }
@@ -1434,7 +1533,114 @@ function toggleHint() {
 
 function closeHint() {
   hintOpen = false;
-  document.getElementById("hint-bubble").classList.remove("visible");
+  document.getElementById("hint-text").classList.remove("open");
+  document.getElementById("hint-toggle").classList.remove("open");
+  document.getElementById("hint-toggle").textContent = "hint";
+}
+
+// ── CHEATSHEET ──────────────────────────────────────────────────────────────
+let cheatOpen = false;
+
+const CHEAT_FNS = [
+  ["c(x, y, ...)", "combine into vector"],
+  ["length(x)", "count elements"],
+  ["mean(x)", "arithmetic mean"],
+  ["sum(x)", "total"],
+  ["sd(x)", "standard deviation"],
+  ["var(x)", "variance"],
+  ["min(x) / max(x)", "extremes"],
+  ["which.min(x)", "index of min"],
+  ["which.max(x)", "index of max"],
+  ["diff(x)", "consecutive differences"],
+  ["cumprod(x)", "cumulative product"],
+  ["cummax(x)", "running maximum"],
+  ["cumsum(x)", "running sum"],
+  ["prod(x)", "product of all"],
+  ["abs(x)", "absolute value"],
+  ["round(x, n)", "round to n digits"],
+  ["sqrt(x)", "square root"],
+  ["seq(a, b, by=n)", "sequence"],
+  ["rep(x, n)", "repeat x n times"],
+  ["ifelse(cond, a, b)", "vectorised if"],
+  ["subset(df, cond)", "filter rows"],
+  ["order(x)", "sort indices"],
+  ["nrow(df)", "row count"],
+  ["ncol(df)", "column count"],
+  ["lm(y ~ x, data)", "linear model"],
+  ["predict(model, newdata)", "predictions"],
+  ["glm(..., family=binomial)", "logistic model"],
+  ["table(a, b)", "confusion matrix"],
+  ["cor(x, y)", "correlation"],
+];
+
+function buildCheat() {
+  const panel = document.getElementById("cheat-panel");
+  const label = document.createElement("div");
+  label.id = "cheat-label";
+  label.textContent = "reference";
+  panel.appendChild(label);
+  CHEAT_FNS.forEach(([fn, desc]) => {
+    const btn = document.createElement("button");
+    btn.className = "cheat-fn";
+    btn.textContent = fn;
+    btn.title = desc;
+    btn.onclick = () => insertAtCursor(fn.split("(")[0] + "(");
+    panel.appendChild(btn);
+  });
+}
+
+function toggleCheat() {
+  cheatOpen = !cheatOpen;
+  const panel = document.getElementById("cheat-panel");
+  const tab   = document.getElementById("cheat-tab");
+  panel.classList.toggle("hidden", !cheatOpen);
+  tab.textContent  = cheatOpen ? "›" : "‹";
+  tab.style.right  = cheatOpen ? "160px" : "0";
+  panel.style.right = "0";
+}
+
+function insertAtCursor(text) {
+  const ed = document.getElementById("editor");
+  const s = ed.selectionStart;
+  ed.value = ed.value.slice(0, s) + text + ed.value.slice(s);
+  ed.selectionStart = ed.selectionEnd = s + text.length;
+  ed.focus();
+}
+
+// ── TICKER ──────────────────────────────────────────────────────────────────
+const TICKER_ITEMS = [
+  ["c()", "combine values"],
+  ["mean(x)", "average"],
+  ["sd(x)", "standard deviation"],
+  ["sum(x)", "total"],
+  ["diff(x)", "consecutive differences"],
+  ["cumprod(1 + x)", "cumulative growth"],
+  ["cummax(x)", "running maximum"],
+  ["min(x)", "minimum"],
+  ["max(x)", "maximum"],
+  ["which.min(x)", "index of minimum"],
+  ["which.max(x)", "index of maximum"],
+  ["length(x)", "count elements"],
+  ["seq(a, b, by=n)", "generate sequence"],
+  ["ifelse(cond, a, b)", "vectorised if"],
+  ["lm(y ~ x, data)", "linear model"],
+  ["cor(x, y)", "correlation"],
+  ["subset(df, cond)", "filter rows"],
+  ["order(-x)", "sort descending"],
+  ["round(x, n)", "round digits"],
+  ["prod(x)", "product of all"],
+];
+
+function buildTicker() {
+  const track = document.getElementById("ticker-track");
+  const doubled = [...TICKER_ITEMS, ...TICKER_ITEMS];
+  track.innerHTML = doubled.map(([fn, desc]) =>
+    `<span class="tick-item" onclick="insertAtCursor('${fn.split('(')[0]}(')">` +
+    `<span class="tick-fn">${fn}</span>` +
+    `<span class="tick-sep"></span>` +
+    `<span class="tick-desc">${desc}</span>` +
+    `</span>`
+  ).join("");
 }
 
 // ── DONE ───────────────────────────────────────────────────────────────────
@@ -1606,6 +1812,8 @@ for (let i = 0; i < TRIALS.length; i++) {
   if (i === TRIALS.length - 1) startIdx = TRIALS.length - 1;
 }
 
+buildCheat();
+buildTicker();
 loadTrial(startIdx, false);
 initWebR();
 </script>
