@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>R Lab — TheOddsAlgo</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -422,7 +422,7 @@ html, body {
   <div id="editor-wrap">
     <textarea id="editor" spellcheck="false"></textarea>
     <div class="editor-footer">
-      <button id="runBtn" disabled>run</button>
+      <button id="runBtn" disabled onclick="runCode()" ontouchstart="runCode()">run</button>
       <span class="kb">ctrl+enter</span>
     </div>
   </div>
@@ -440,7 +440,7 @@ html, body {
 <div id="counter"></div>
 
 <div id="cheat-panel" class="hidden"></div>
-<div id="cheat-tab" onclick="toggleCheat()">‹</div>
+<div id="cheat-tab" onclick="toggleCheat()" ontouchend="event.preventDefault();toggleCheat()">‹</div>
 
 <div id="ticker"><div id="ticker-track"></div></div>
 
@@ -1632,10 +1632,17 @@ function toggleCheat() {
   cheatOpen = !cheatOpen;
   const panel = document.getElementById("cheat-panel");
   const tab   = document.getElementById("cheat-tab");
-  panel.classList.toggle("hidden", !cheatOpen);
-  tab.textContent  = cheatOpen ? "›" : "‹";
-  tab.style.right  = cheatOpen ? "160px" : "0";
-  panel.style.right = "0";
+  if (cheatOpen) {
+    panel.classList.remove("hidden");
+    panel.style.right = "0";
+    tab.style.right   = "160px";
+    tab.textContent   = "›";
+  } else {
+    panel.classList.add("hidden");
+    panel.style.right = "-160px";
+    tab.style.right   = "0";
+    tab.textContent   = "‹";
+  }
 }
 
 function insertAtCursor(text) {
@@ -1854,6 +1861,8 @@ function formatVal(val) {
 
 // ── WEBR ───────────────────────────────────────────────────────────────────
 async function initWebR() {
+  // always enable run button after a timeout regardless of webR outcome
+  setTimeout(() => { document.getElementById("runBtn").disabled = false; }, 3000);
   try {
     const { WebR } = await import("https://webr.r-wasm.org/latest/webr.mjs");
     webr = new WebR();
