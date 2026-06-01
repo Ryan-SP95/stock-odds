@@ -4,183 +4,318 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>R Lab — TheOddsAlgo</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 :root {
-  --bg: #0a0a14;
-  --surface: #0f0f1e;
-  --border: #1a1a30;
-  --text: #f0f0f0;
-  --muted: #555570;
-  --dim: #2a2a40;
+  --bg: #08080f;
+  --text: #e8e8f0;
+  --muted: #44445a;
+  --dim: #12121c;
+  --border: #1a1a28;
   --green: #22c55e;
+  --green-soft: rgba(34,197,94,0.08);
+  --red-soft: rgba(239,68,68,0.08);
   --red: #ef4444;
-  --yellow: #eab308;
-  --blue: #4488ff;
-  --mono: 'Space Mono', monospace;
-  --sans: 'Space Grotesk', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
 }
-html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 13px; -webkit-font-smoothing: antialiased; }
-#shell { display: flex; height: 100vh; overflow: hidden; }
 
-/* sidebar */
-#sidebar { background: #09090f; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; transition: width 0.25s ease; position: relative; flex-shrink: 0; }
-#sidebar.expanded { width: 200px; }
-#sidebar.collapsed { width: 36px; }
-#sb-toggle { position: absolute; top: 50%; right: -10px; transform: translateY(-50%); width: 20px; height: 20px; background: #09090f; border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; font-size: 9px; color: var(--muted); transition: color 0.15s; user-select: none; }
-#sb-toggle:hover { color: var(--text); }
-/* rail (collapsed) */
-#sb-rail { display: none; flex-direction: column; align-items: center; padding: 14px 0 10px; gap: 4px; width: 36px; }
-.rail-logo { font-family: var(--sans); font-size: 11px; font-weight: 700; color: var(--green); margin-bottom: 10px; writing-mode: vertical-rl; letter-spacing: 0.05em; }
-.rail-prog { width: 3px; height: 60px; background: var(--dim); border-radius: 2px; margin: 4px 0; position: relative; }
-.rail-prog-fill { position: absolute; bottom: 0; left: 0; right: 0; background: var(--green); border-radius: 2px; transition: height 0.6s ease; }
-.rail-sep { width: 16px; height: 1px; background: var(--border); margin: 4px 0; }
-.rail-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--dim); margin-bottom: 8px; transition: all 0.2s; cursor: pointer; }
-.rail-dot:hover { transform: scale(1.3); }
-.rail-dot.active { background: var(--yellow); }
-.rail-dot.done { background: var(--green); }
-.rail-dot.partial { background: var(--muted); }
-/* expanded inner */
-#sb-inner { display: flex; flex-direction: column; height: 100%; width: 200px; flex-shrink: 0; }
-.sb-top { padding: 16px 14px 10px; border-bottom: 1px solid var(--border); }
-.sb-logo { font-family: var(--sans); font-size: 13px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
-.sb-logo span { color: var(--green); }
-.sb-back { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-decoration: none; text-transform: uppercase; }
-.sb-back:hover { color: var(--text); }
-.sb-progress { padding: 10px 14px; border-bottom: 1px solid var(--border); }
-.sb-progress-label { font-size: 9px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px; display: flex; justify-content: space-between; }
-.sb-progress-label span { color: var(--green); }
-.sb-bar { height: 2px; background: var(--dim); border-radius: 1px; }
-.sb-bar-fill { height: 100%; background: var(--green); border-radius: 1px; transition: width 0.6s ease; }
-#tree { flex: 1; overflow-y: auto; padding: 4px 0; }
-#tree::-webkit-scrollbar { width: 2px; }
-#tree::-webkit-scrollbar-thumb { background: var(--border); }
-.sb-credits { padding: 10px 14px; border-top: 1px solid var(--border); }
-.sb-credits-link { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-decoration: none; text-transform: uppercase; transition: color 0.15s; }
-.sb-credits-link:hover { color: var(--text); }
-/* level headers */
-.level-header { padding: 8px 14px; display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; transition: background 0.1s; border-left: 2px solid transparent; }
-.level-header:hover { background: var(--surface); }
-.level-header.has-active { border-left-color: var(--green); }
-.lh-chevron { font-size: 8px; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; margin-left: auto; }
-.level-header.open .lh-chevron { transform: rotate(90deg); }
-.lh-name { font-size: 8px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; flex: 1; }
-.level-header.has-active .lh-name { color: #aaa; }
-.lh-count { font-size: 8px; color: var(--green); font-weight: 700; }
-.level-trials { overflow: hidden; transition: max-height 0.2s ease; }
-.level-trials.open { max-height: 600px; }
-.level-trials.closed { max-height: 0; }
-/* trial rows */
-.trial-row { padding: 6px 14px 6px 20px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: background 0.1s; border-left: 2px solid transparent; }
-.trial-row:hover { background: var(--surface); }
-.trial-row.active { background: var(--surface); border-left-color: var(--green); }
-.trial-row.locked { opacity: 0.25; cursor: not-allowed; pointer-events: none; }
-.trial-row.done .tr-dot { background: var(--green); }
-.trial-row.active .tr-id { color: var(--green); }
-.tr-id { font-size: 9px; font-weight: 700; width: 22px; flex-shrink: 0; color: var(--muted); }
-.tr-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; color: var(--muted); }
-.trial-row.active .tr-name { color: var(--text); }
-.tr-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
-.trial-row.active .tr-dot { background: var(--yellow); }
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
 
-/* main */
-#main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
-.mission-bar { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); background: #09090f; flex-shrink: 0; }
-.mb-tag { font-size: 9px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
-.mb-mission { font-family: var(--sans); font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.4; }
-#editor-wrap { flex: 1; display: flex; flex-direction: column; padding: 16px 24px 0; min-height: 0; }
-.editor-label { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
-.engine-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow); flex-shrink: 0; }
-.engine-dot.ready { background: var(--green); }
-.engine-dot.err { background: var(--red); }
+/* ── WORDMARK ── */
+#wordmark {
+  position: fixed;
+  top: 22px;
+  left: 28px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  z-index: 100;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+#wordmark:hover { color: var(--text); }
+#wordmark span { color: var(--green); }
+
+/* ── ENGINE DOT ── */
+#engineDot {
+  position: fixed;
+  top: 28px;
+  right: 28px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--muted);
+  z-index: 100;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+#engineDot.ready { background: var(--green); box-shadow: 0 0 8px rgba(34,197,94,0.4); }
+#engineDot.err { background: #eab308; }
+
+/* ── STAGE ── */
+#stage {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px 40px;
+}
+
+/* ── PROBLEM ── */
+#problem-wrap {
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 28px;
+  position: relative;
+}
+
+#problem-text {
+  font-family: var(--sans);
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--text);
+  line-height: 1.7;
+  letter-spacing: -0.01em;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+#problem-text.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+#problem-text.fading {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+/* inline code in problem */
+#problem-text code {
+  font-family: var(--mono);
+  font-size: 14px;
+  background: var(--dim);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--green);
+}
+
+/* ── EDITOR ── */
+#editor-wrap {
+  width: 100%;
+  max-width: 600px;
+  position: relative;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--dim);
+  overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: editorReveal 0.4s 0.15s ease forwards;
+}
+@keyframes editorReveal {
+  to { opacity: 1; transform: translateY(0); }
+}
+#editor-wrap.pass-flash {
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px rgba(34,197,94,0.15), inset 0 0 40px rgba(34,197,94,0.04);
+}
+#editor-wrap.fail-flash {
+  border-color: var(--red);
+  box-shadow: 0 0 0 1px rgba(239,68,68,0.1);
+}
+
 #editor {
-  flex: 1; background: var(--surface); border: 1px solid var(--border);
-  border-radius: 6px; color: #c8d3f5; font-family: var(--mono);
-  font-size: 13px; line-height: 1.8; padding: 16px 18px;
-  resize: none; outline: none; min-height: 120px; tab-size: 2;
-  transition: border-color 0.15s;
+  width: 100%;
+  min-height: 140px;
+  max-height: 260px;
+  background: transparent;
+  color: var(--text);
+  border: none;
+  outline: none;
+  padding: 16px 18px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.7;
+  resize: none;
+  overflow-y: auto;
+  caret-color: var(--green);
+  display: block;
 }
-#editor:focus { border-color: #2a2a50; }
-#editor::placeholder { color: var(--dim); }
-#editor::-webkit-scrollbar { width: 3px; }
+#editor::selection { background: rgba(34,197,94,0.12); }
+#editor::-webkit-scrollbar { width: 2px; }
 #editor::-webkit-scrollbar-thumb { background: var(--border); }
-.action-bar { padding: 12px 24px 0; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
-.run-btn { padding: 8px 22px; background: transparent; border: 1px solid #2a2a50; border-radius: 5px; color: var(--text); font-family: var(--mono); font-size: 12px; cursor: pointer; letter-spacing: 0.08em; transition: all 0.15s; }
-.run-btn:hover { border-color: var(--text); }
-.run-btn:active { transform: scale(0.97); }
-.run-btn:disabled { opacity: 0.3; cursor: default; }
-.hint-link { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; letter-spacing: 0.06em; transition: color 0.15s; padding: 0; margin-top: 6px; display: block; }
-.hint-link:hover { color: var(--yellow); }
-.kb { margin-left: auto; font-size: 10px; color: var(--dim); }
-#output { padding: 16px 24px 24px; font-size: 12px; line-height: 1.9; min-height: 80px; overflow-y: auto; flex-shrink: 0; max-height: 220px; }
-#output::-webkit-scrollbar { width: 3px; }
-#output::-webkit-scrollbar-thumb { background: var(--border); }
-.out-line { color: #8888aa; white-space: pre-wrap; word-break: break-word; }
-.out-pass { color: var(--green); }
-.out-fail { color: var(--red); }
-.out-hint { color: var(--yellow); }
-.out-err { color: var(--red); opacity: 0.7; }
-.out-info { color: var(--blue); opacity: 0.8; }
-.next-btn { display: inline-block; margin-top: 10px; padding: 6px 0; background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 11px; cursor: pointer; letter-spacing: 0.08em; transition: color 0.15s; }
-.next-btn:hover { color: var(--text); }
-.status-bar { padding: 6px 24px; border-top: 1px solid var(--border); background: #09090f; font-size: 9px; color: var(--dim); display: flex; align-items: center; gap: 8px; flex-shrink: 0; letter-spacing: 0.08em; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-.fadein { animation: fadeIn 0.25s ease both; }
+
+/* editor footer */
+.editor-footer {
+  display: flex;
+  align-items: center;
+  padding: 9px 14px;
+  border-top: 1px solid var(--border);
+  gap: 10px;
+}
+
+#runBtn {
+  background: none;
+  border: 1px solid var(--muted);
+  border-radius: 5px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+#runBtn:hover:not(:disabled) { border-color: var(--green); color: var(--green); }
+#runBtn:disabled { opacity: 0.3; cursor: not-allowed; }
+#runBtn.running { border-color: var(--green); color: var(--green); opacity: 0.6; }
+
+.kb { font-size: 10px; color: var(--muted); opacity: 0.5; }
+
+/* ── HINT ── */
+#hint-trigger {
+  position: fixed;
+  bottom: 24px;
+  right: 28px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--muted);
+  background: none;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.4s, border-color 0.15s, color 0.15s;
+  z-index: 100;
+}
+#hint-trigger.visible { opacity: 1; }
+#hint-trigger:hover { border-color: #eab308; color: #eab308; }
+
+#hint-bubble {
+  position: fixed;
+  bottom: 54px;
+  right: 28px;
+  max-width: 280px;
+  background: var(--dim);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.6;
+  opacity: 0;
+  transform: translateY(4px) scale(0.97);
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+  z-index: 100;
+}
+#hint-bubble.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* ── COUNTER (hidden, reveals at end) ── */
+#counter {
+  position: fixed;
+  bottom: 24px;
+  left: 28px;
+  font-size: 10px;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.6s;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+}
+
+/* ── DONE SCREEN ── */
+#done-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+  z-index: 200;
+}
+#done-screen.visible { opacity: 1; pointer-events: auto; }
+#done-screen h1 {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 300;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+#done-screen .done-stat {
+  font-family: var(--mono);
+  font-size: 44px;
+  color: var(--text);
+  font-weight: 400;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+#done-screen .done-sub {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 300;
+}
 </style>
 </head>
 <body>
-<div id="shell">
-  <div id="sidebar" class="expanded">
-    <div id="sb-toggle" onclick="toggleSidebar()">‹</div>
 
-    <div id="sb-rail">
-      <div class="rail-logo">R</div>
-      <div class="rail-prog"><div class="rail-prog-fill" id="railFill" style="height:0%"></div></div>
-      <div class="rail-sep"></div>
-      <div id="rail-dots"></div>
-    </div>
+<a id="wordmark" href="/">TheOddsAlgo <span>R Lab</span></a>
+<div id="engineDot"></div>
 
-    <div id="sb-inner">
-      <div class="sb-top">
-        <div class="sb-logo">TheOddsAlgo <span>R Lab</span></div>
-        <a class="sb-back" href="/">← main site</a>
-      </div>
-      <div class="sb-progress">
-        <div class="sb-progress-label">Progress <span id="progressText">0 / 47</span></div>
-        <div class="sb-bar"><div class="sb-bar-fill" id="progressBar" style="width:0%"></div></div>
-      </div>
-      <div id="tree"></div>
-      <div class="sb-credits">
-        <a href="/references" class="sb-credits-link">credits & sources →</a>
-      </div>
-    </div>
+<div id="stage">
+  <div id="problem-wrap">
+    <div id="problem-text"></div>
   </div>
 
-  <div id="main">
-    <div class="mission-bar">
-      <div class="mb-tag" id="mbTag">trial 0.1</div>
-      <div class="mb-mission" id="mbMission">Loading...</div>
-    </div>
-    <div id="editor-wrap">
-      <div class="editor-label">
-        <div class="engine-dot" id="engineDot"></div>
-        <span id="engineLabel">loading R engine...</span>
-      </div>
-      <textarea id="editor" spellcheck="false" placeholder="# write your R code here"></textarea>
-    </div>
-    <div class="action-bar">
-      <button class="run-btn" id="runBtn" onclick="runCode()" disabled>run</button>
+  <div id="editor-wrap">
+    <textarea id="editor" spellcheck="false"></textarea>
+    <div class="editor-footer">
+      <button id="runBtn" disabled>run</button>
       <span class="kb">ctrl+enter</span>
     </div>
-    <div id="output">
-      <div class="out-info">// Run your code above. Output appears here.</div>
-    </div>
-    <div class="status-bar">
-      <div class="engine-dot" id="statusDot"></div>
-      <span id="statusText">initializing webR...</span>
-    </div>
   </div>
+</div>
+
+<button id="hint-trigger" onclick="toggleHint()">?</button>
+<div id="hint-bubble"></div>
+<div id="counter"></div>
+
+<div id="done-screen">
+  <h1>Complete</h1>
+  <div class="done-stat" id="doneCount">47 / 47</div>
+  <div class="done-sub">You are an Algo Architect.</div>
 </div>
 
 <script>
@@ -191,12 +326,12 @@ const TRIALS = [
     id:"0.1", level:0, levelName:"Survival Basics",
     concept:"c() — combine values into a vector",
     isl:"ISL §2.3.1",
-    mission:"Create a vector named x containing the closing prices: 182, 175, 190, 168, 195.",
-    hint:"c() stands for 'combine'. It glues values together: c(a, b, c, ...). What five values do you need?",
-    starter:"# Store five closing prices in a vector called x\nx <- ",
+    mission:"Five closing prices: 182, 175, 190, 168, 195. Store them in a vector named x.",
+    hint:"c() combines values: c(a, b, c, ...). Assign the result to x using <-.",
+    starter:"",
     validate(env) {
       const x = env.x;
-      if (!Array.isArray(x)) return {pass:false, msg:"x isn't a vector. use c()"};
+      if (!Array.isArray(x)) return {pass:false, msg:"x isn't a vector — use c()"};
       if (x.length!==5) return {pass:false, msg:`x has ${x.length} elements, expected 5`};
       const exp=[182,175,190,168,195];
       for(let i=0;i<5;i++) if(Math.abs(x[i]-exp[i])>0.001) return {pass:false, msg:`x[${i+1}] = ${x[i]}, expected ${exp[i]}`};
@@ -207,12 +342,12 @@ const TRIALS = [
     id:"0.2", level:0, levelName:"Survival Basics",
     concept:"length() — count elements",
     isl:"ISL §2.3.1",
-    mission:"You have a portfolio of stocks. Count how many positions are in the vector x.",
-    hint:"There's a function that answers 'how many things are in this?'. It starts with l. Try it on x.",
-    starter:"x <- c(182, 175, 190, 168, 195)\n# Count the number of positions\n",
+    mission:"x holds five stock prices: 182, 175, 190, 168, 195. Print how many elements it contains.",
+    hint:"length() returns the number of elements in a vector. Print the result — just type the expression.",
+    starter:"",
     validate(env) {
       const out=String(env.__output||"").trim();
-      if(out.includes("5")) return {pass:true, msg:"[1] 5  — five positions in the portfolio"};
+      if(out.includes("5")) return {pass:true, msg:"[1] 5 ✓"};
       return {pass:false, msg:`expected 5, got: ${out.slice(0,40)||"(nothing printed)"}`};
     }
   },
@@ -220,28 +355,28 @@ const TRIALS = [
     id:"0.3", level:0, levelName:"Survival Basics",
     concept:"matrix() — 2D data structure",
     isl:"ISL §2.3.1",
-    mission:"Build a 2×2 returns matrix m. Use values: 0.05, -0.02, 0.08, 0.01 (filled by column).",
-    hint:"matrix(data, nrow, ncol) — data goes in first, then you tell it the shape. R fills by column.",
-    starter:"# Create a 2x2 returns matrix\nm <- ",
+    mission:"Build a 2×2 matrix named m from these values: 0.05, -0.02, 0.08, 0.01. R fills by column.",
+    hint:"matrix(data, nrow, ncol) — pass the values as c(...), then specify the shape.",
+    starter:"",
     validate(env) {
       const m=env.m;
       if(!m) return {pass:false, msg:"m is not defined"};
       if(!m.__isMatrix) return {pass:false, msg:"m isn't a matrix — use matrix()"};
       if(m.nrow!==2||m.ncol!==2) return {pass:false, msg:`expected 2×2, got ${m.nrow}×${m.ncol}`};
-      return {pass:true, msg:"2×2 returns matrix created — R fills columns first"};
+      return {pass:true, msg:"2×2 matrix ✓"};
     }
   },
   {
     id:"0.4", level:0, levelName:"Survival Basics",
     concept:"sqrt() — vectorized math",
     isl:"ISL §2.3.1",
-    mission:"Compute the square root of each price in x. This is used in volatility calculations.",
-    hint:"R applies math functions to every element automatically. No loop needed — just pass the vector directly.",
-    starter:"x <- c(182, 175, 190, 168, 195)\n# Compute sqrt of each price\nsqrt(x)",
+    mission:"x contains prices 182, 175, 190, 168, 195. Print the square root of each one.",
+    hint:"R vectorizes math automatically — no loop needed. Just apply the function directly to x.",
+    starter:"",
     validate(env) {
       const out=String(env.__output||"");
-      if(out.includes("13.4")||out.includes("13.2")) return {pass:true, msg:"√182 ≈ 13.49  √175 ≈ 13.23  ..."};
-      return {pass:false, msg:"print the result — type sqrt(x) as an expression"};
+      if(out.includes("13.4")||out.includes("13.2")) return {pass:true, msg:"√182 ≈ 13.49 ✓"};
+      return {pass:false, msg:"print sqrt(x) — type it as a bare expression"};
     }
   },
 
@@ -250,9 +385,9 @@ const TRIALS = [
     id:"1.0", level:1, levelName:"Working With Numbers",
     concept:"ifelse() — vectorized conditional",
     isl:"Project Launch",
-    mission:"Convert American odds (-150, 200, -300, 110, -220) to implied probability. Assign to prob.",
-    hint:"For negative odds: |odds| / (|odds| + 100). For positive: 100 / (odds + 100). ifelse(condition, yes, no) applies this per element.",
-    starter:"odds <- c(-150, 200, -300, 110, -220)\nprob <- ifelse(odds < 0,\n  -odds / (-odds + 100),\n  100 / (odds + 100))\nprob",
+    mission:"American odds: -150, 200, -300, 110, -220. Convert to implied probability and store in prob.\n\nNegative odds: |odds| / (|odds| + 100)\nPositive odds: 100 / (odds + 100)",
+    hint:"ifelse(condition, value_if_true, value_if_false) applies element-by-element. Test whether each odd is negative.",
+    starter:"",
     validate(env) {
       const prob=env.prob;
       if(!Array.isArray(prob)) return {pass:false, msg:"prob should be a numeric vector"};
@@ -266,9 +401,9 @@ const TRIALS = [
     id:"1.1", level:1, levelName:"Working With Numbers",
     concept:"mean() and sum() — aggregation",
     isl:"ISL §2.3.1",
-    mission:"Given daily returns, compute the total return (sum) and average daily return (mean). Assign to total_return and avg_return.",
-    hint:"Two functions: one adds everything up, one divides the total by the count. Both take a single vector as input.",
-    starter:"returns <- c(0.012, -0.005, 0.023, -0.008, 0.015, 0.004, -0.011)\n# Compute total and average return\ntotal_return <- \navg_return <- ",
+    mission:"Daily returns: 0.012, -0.005, 0.023, -0.008, 0.015, 0.004, -0.011.\n\nStore the total return in total_return and the average daily return in avg_return.",
+    hint:"sum() adds everything. mean() divides by count. Both take a vector.",
+    starter:"",
     validate(env) {
       const tr=env.total_return, ar=env.avg_return;
       if(tr===undefined) return {pass:false, msg:"total_return is not defined"};
@@ -282,47 +417,47 @@ const TRIALS = [
     id:"1.2", level:1, levelName:"Working With Numbers",
     concept:"which.max() and which.min()",
     isl:"ISL §2.3.1",
-    mission:"Find the index of the best and worst performing stock in the returns vector. Assign to best and worst.",
-    hint:"which.max() and which.min() return the position of the largest and smallest value — not the value itself, the index.",
-    starter:"returns <- c(0.031, -0.014, 0.087, -0.052, 0.019)\n# Find index of best and worst\nbest <- \nworst <- ",
+    mission:"Returns: 0.031, -0.014, 0.087, -0.052, 0.019.\n\nStore the index of the highest return in best. Store the index of the lowest in worst.",
+    hint:"which.max() and which.min() return the position, not the value itself.",
+    starter:"",
     validate(env) {
       const b=Array.isArray(env.best)?env.best[0]:env.best;
       const w=Array.isArray(env.worst)?env.worst[0]:env.worst;
       if(b===undefined) return {pass:false, msg:"best is not defined"};
       if(w===undefined) return {pass:false, msg:"worst is not defined"};
-      if(Math.abs(b-3)>0.01) return {pass:false, msg:`best should be 3 (0.087 is highest), got ${b}`};
-      if(Math.abs(w-4)>0.01) return {pass:false, msg:`worst should be 4 (-0.052 is lowest), got ${w}`};
-      return {pass:true, msg:"best = 3 (return: 8.7%)  worst = 4 (return: -5.2%)"};
+      if(Math.abs(b-3)>0.01) return {pass:false, msg:`best should be 3, got ${b}`};
+      if(Math.abs(w-4)>0.01) return {pass:false, msg:`worst should be 4, got ${w}`};
+      return {pass:true, msg:"best = 3 (8.7%)  worst = 4 (-5.2%) ✓"};
     }
   },
   {
     id:"1.3", level:1, levelName:"Working With Numbers",
-    concept:"Indexing — x[i] and logical filters",
+    concept:"Indexing — logical filters",
     isl:"ISL §2.3.2",
-    mission:"From the prices vector, extract only stocks trading above $150. Assign to winners.",
-    hint:"You can filter a vector by putting a condition inside brackets: x[x ___ 150]. What operator means 'greater than'?",
-    starter:"prices <- c(182, 94, 201, 145, 312, 88, 175)\n# Extract prices above $150\nwinners <- ",
+    mission:"Prices: 182, 94, 201, 145, 312, 88, 175. Extract only those above $150 and store in winners.",
+    hint:"You can filter a vector by putting a condition inside brackets: x[x > 150].",
+    starter:"",
     validate(env) {
       const w=env.winners;
       if(!Array.isArray(w)) return {pass:false, msg:"winners should be a vector"};
       if(w.length!==4) return {pass:false, msg:`expected 4 values above $150, got ${w.length}`};
-      return {pass:true, msg:"winners = [182, 201, 312, 175]"};
+      return {pass:true, msg:"winners = [182, 201, 312, 175] ✓"};
     }
   },
   {
     id:"1.4", level:1, levelName:"Working With Numbers",
     concept:"seq() — generate sequences",
     isl:"ISL §2.3.1",
-    mission:"Generate a sequence of price targets from $100 to $200 in steps of $10. Assign to targets.",
-    hint:"seq() takes a start, an end, and a step. The step argument is named 'by'. What step size gets you from 100 to 200 in 11 values?",
-    starter:"# Generate price targets from 100 to 200, step 10\ntargets <- ",
+    mission:"Generate price targets from $100 to $200 in steps of $10. Store in targets.",
+    hint:"seq(from, to, by=step) — the step argument is named 'by'.",
+    starter:"",
     validate(env) {
       const t=env.targets;
       if(!Array.isArray(t)) return {pass:false, msg:"targets should be a vector"};
-      if(t.length!==11) return {pass:false, msg:`expected 11 values (100,110,...,200), got ${t.length}`};
+      if(t.length!==11) return {pass:false, msg:`expected 11 values, got ${t.length}`};
       if(Math.abs(t[0]-100)>0.001) return {pass:false, msg:`first value should be 100, got ${t[0]}`};
       if(Math.abs(t[t.length-1]-200)>0.001) return {pass:false, msg:`last value should be 200, got ${t[t.length-1]}`};
-      return {pass:true, msg:"100 110 120 ... 200 ✓ (11 targets)"};
+      return {pass:true, msg:"100 110 120 … 200 ✓"};
     }
   },
 
@@ -331,145 +466,145 @@ const TRIALS = [
     id:"2.0", level:2, levelName:"Data Frames",
     concept:"data.frame() — tabular data",
     isl:"ISL §2.3.3",
-    mission:"Build a portfolio data frame with columns: ticker (AAPL, TSLA, NVDA), price (189, 245, 875), and shares (10, 5, 2). Assign to portfolio.",
-    hint:"A data frame is named columns. Each column is a vector. data.frame(col1=c(...), col2=c(...)) — all vectors must be the same length.",
-    starter:"# Build a portfolio data frame\nportfolio <- data.frame(\n  ticker = c(\"AAPL\", \"TSLA\", \"NVDA\"),\n  price  = c(189, 245, 875),\n  shares = c(10, 5, 2)\n)",
+    mission:"Build a data frame named portfolio with three columns:\nticker: AAPL, TSLA, NVDA\nprice: 189, 245, 875\nshares: 10, 5, 2",
+    hint:"data.frame(col1=c(...), col2=c(...)) — each column is a named vector. All must be the same length.",
+    starter:"",
     validate(env) {
       const p=env.portfolio;
       if(!p) return {pass:false, msg:"portfolio is not defined"};
       if(!p.__isDF) return {pass:false, msg:"portfolio should be a data.frame"};
       if(p.nrow!==3) return {pass:false, msg:`expected 3 rows, got ${p.nrow}`};
-      return {pass:true, msg:"3×3 portfolio data frame — ticker, price, shares ✓"};
+      return {pass:true, msg:"3×3 portfolio ✓"};
     }
   },
   {
     id:"2.1", level:2, levelName:"Data Frames",
     concept:"$ operator — column access",
     isl:"ISL §2.3.3",
-    mission:"From your portfolio data frame, extract the price column and compute total portfolio value. Assign to port_value.",
-    hint:"The $ operator pulls a column out by name: df$colname. You have price and shares — how do you get total value per stock, then add them up?",
-    starter:"portfolio <- data.frame(\n  ticker = c(\"AAPL\", \"TSLA\", \"NVDA\"),\n  price  = c(189, 245, 875),\n  shares = c(10, 5, 2)\n)\n# Compute total portfolio value\nport_value <- ",
+    mission:"portfolio has columns ticker, price, shares (AAPL/189/10, TSLA/245/5, NVDA/875/2).\n\nCompute total portfolio value and store it in port_value.",
+    hint:"Access columns with $: portfolio$price. Multiply price × shares per stock, then sum.",
+    starter:"",
     validate(env) {
       const pv=Array.isArray(env.port_value)?env.port_value[0]:env.port_value;
       if(pv===undefined) return {pass:false, msg:"port_value is not defined"};
       const exp=189*10+245*5+875*2;
       if(Math.abs(pv-exp)>0.5) return {pass:false, msg:`expected $${exp}, got $${pv}`};
-      return {pass:true, msg:`portfolio value = $${exp.toLocaleString()}`};
+      return {pass:true, msg:`$${exp.toLocaleString()} ✓`};
     }
   },
   {
     id:"2.2", level:2, levelName:"Data Frames",
     concept:"order() — sort a data frame",
     isl:"ISL §2.3.3",
-    mission:"Sort the portfolio data frame by price, descending (most expensive first). Assign to sorted_port.",
-    hint:"order() returns the row positions that would sort a vector. Negate the column to reverse it: order(-df$col). Then use that to reindex the data frame.",
-    starter:"portfolio <- data.frame(\n  ticker = c(\"AAPL\", \"TSLA\", \"NVDA\"),\n  price  = c(189, 245, 875),\n  shares = c(10, 5, 2)\n)\n# Sort by price descending\nsorted_port <- ",
+    mission:"portfolio has columns ticker, price, shares (AAPL/189/10, TSLA/245/5, NVDA/875/2).\n\nSort it by price descending. Store the result in sorted_port.",
+    hint:"order(-df$col) returns row indices sorted descending. Use those to reindex: df[order(...), ]",
+    starter:"",
     validate(env) {
       const sp=env.sorted_port;
       if(!sp) return {pass:false, msg:"sorted_port is not defined"};
       if(!sp.__isDF) return {pass:false, msg:"sorted_port should be a data.frame"};
-      return {pass:true, msg:"sorted by price descending: NVDA ($875) → TSLA ($245) → AAPL ($189) ✓"};
+      return {pass:true, msg:"NVDA → TSLA → AAPL ✓"};
     }
   },
   {
     id:"2.3", level:2, levelName:"Data Frames",
     concept:"subset() — filter rows",
     isl:"ISL §2.3.3",
-    mission:"Filter the portfolio to only stocks with a price above $200. Assign to expensive.",
-    hint:"subset(dataframe, condition) — think of it like a WHERE clause in SQL. Which column holds the price, and what's the threshold?",
-    starter:"portfolio <- data.frame(\n  ticker = c(\"AAPL\", \"TSLA\", \"NVDA\"),\n  price  = c(189, 245, 875),\n  shares = c(10, 5, 2)\n)\n# Filter to stocks above $200\nexpensive <- ",
+    mission:"portfolio has columns ticker, price, shares (AAPL/189/10, TSLA/245/5, NVDA/875/2).\n\nKeep only stocks priced above $200. Store in expensive.",
+    hint:"subset(df, condition) — like a WHERE clause. Reference the column name directly.",
+    starter:"",
     validate(env) {
       const e=env.expensive;
       if(!e) return {pass:false, msg:"expensive is not defined"};
       if(!e.__isDF) return {pass:false, msg:"expensive should be a data.frame"};
-      if(e.nrow!==2) return {pass:false, msg:`expected 2 rows (TSLA, NVDA), got ${e.nrow}`};
-      return {pass:true, msg:"2 stocks above $200: TSLA ($245), NVDA ($875) ✓"};
+      if(e.nrow!==2) return {pass:false, msg:`expected 2 rows, got ${e.nrow}`};
+      return {pass:true, msg:"TSLA, NVDA ✓"};
     }
   },
   {
     id:"2.4", level:2, levelName:"Data Frames",
-    concept:"str() and nrow() — inspect data",
+    concept:"nrow() — inspect data",
     isl:"ISL §2.3.3",
-    mission:"Before touching any dataset, inspect it. Print the number of rows in portfolio using nrow().",
-    hint:"Before any analysis, always ask: how many rows do I have? There's a function that starts with 'n' and ends with 'row'.",
-    starter:"portfolio <- data.frame(\n  ticker = c(\"AAPL\", \"TSLA\", \"NVDA\"),\n  price  = c(189, 245, 875),\n  shares = c(10, 5, 2)\n)\n# How many rows?\n",
+    mission:"portfolio has columns ticker, price, shares (AAPL/189/10, TSLA/245/5, NVDA/875/2).\n\nPrint the number of rows.",
+    hint:"nrow() takes a data frame and returns how many rows it has.",
+    starter:"",
     validate(env) {
       const out=String(env.__output||"").trim();
-      if(out.includes("3")) return {pass:true, msg:"[1] 3  — always check dimensions before analysis"};
-      return {pass:false, msg:"use nrow(portfolio) and print the result"};
+      if(out.includes("3")) return {pass:true, msg:"[1] 3 ✓"};
+      return {pass:false, msg:"use nrow() and print the result"};
     }
   },
 
   // ── LEVEL 3: STATISTICS THAT MATTER ──────────────────────────────────────
   {
     id:"3.0", level:3, levelName:"Statistics That Matter",
-    concept:"sd() and var() — volatility",
+    concept:"sd() — volatility",
     isl:"ISL §2.3.1",
-    mission:"Compute the standard deviation (volatility) of daily returns. Assign to vol.",
-    hint:"Volatility in finance = standard deviation in statistics. R has a built-in function for it — two letters, starts with s.",
-    starter:"returns <- c(0.031, -0.014, 0.087, -0.052, 0.019, -0.033, 0.061, -0.008)\n# Compute volatility (standard deviation)\nvol <- \nvol",
+    mission:"Daily returns: 0.031, -0.014, 0.087, -0.052, 0.019, -0.033, 0.061, -0.008.\n\nCompute the standard deviation and store it in vol.",
+    hint:"sd() is the standard deviation function. Volatility in finance is standard deviation of returns.",
+    starter:"",
     validate(env) {
       const vol=Array.isArray(env.vol)?env.vol[0]:env.vol;
       if(vol===undefined) return {pass:false, msg:"vol is not defined"};
-      if(Math.abs(vol-0.0452)>0.005) return {pass:false, msg:`vol ≈ ${vol.toFixed(4)}, expected ~0.0452 — use sd()`};
-      return {pass:true, msg:`vol = ${vol.toFixed(4)}  (annualized ≈ ${(vol*Math.sqrt(252)*100).toFixed(1)}%)`};
+      if(Math.abs(vol-0.0452)>0.005) return {pass:false, msg:`vol ≈ ${vol.toFixed(4)}, expected ~0.0452`};
+      return {pass:true, msg:`vol = ${vol.toFixed(4)}  (annualised ≈ ${(vol*Math.sqrt(252)*100).toFixed(1)}%) ✓`};
     }
   },
   {
     id:"3.1", level:3, levelName:"Statistics That Matter",
-    concept:"cor() — correlation between assets",
+    concept:"cor() — correlation",
     isl:"ISL §2.3.1",
-    mission:"Compute the correlation between SPY and AAPL daily returns. Assign to r.",
-    hint:"cor() takes two vectors of equal length and returns a value between -1 and 1. What are the two vectors you're comparing?",
-    starter:"spy  <- c(0.012, -0.005, 0.018, -0.009, 0.021, -0.003, 0.015)\naapl <- c(0.015, -0.007, 0.022, -0.011, 0.019, -0.002, 0.018)\n# Compute correlation\nr <- \nr",
+    mission:"SPY returns: 0.012, -0.005, 0.018, -0.009, 0.021, -0.003, 0.015\nAAPL returns: 0.015, -0.007, 0.022, -0.011, 0.019, -0.002, 0.018\n\nCompute the correlation between them. Store in r.",
+    hint:"cor(x, y) takes two vectors of equal length and returns a value between -1 and 1.",
+    starter:"",
     validate(env) {
       const r=Array.isArray(env.r)?env.r[0]:env.r;
       if(r===undefined) return {pass:false, msg:"r is not defined"};
-      if(r<0.95) return {pass:false, msg:`r = ${r.toFixed(4)} — check your inputs, expected ~0.99`};
-      return {pass:true, msg:`r = ${r.toFixed(4)}  — AAPL highly correlated with SPY`};
+      if(r<0.95) return {pass:false, msg:`r = ${r.toFixed(4)}, expected ~0.99`};
+      return {pass:true, msg:`r = ${r.toFixed(4)} ✓`};
     }
   },
   {
     id:"3.2", level:3, levelName:"Statistics That Matter",
     concept:"lm() — linear regression",
     isl:"ISL §3.1",
-    mission:"Fit a linear model predicting stock return from volume. Assign the model to model.",
-    hint:"lm() syntax: lm(outcome ~ predictor, data=yourdata). The ~ means 'predicted by'. What is the outcome here, and what is the predictor?",
-    starter:"trades <- data.frame(\n  volume = c(1.2, 2.5, 0.8, 3.1, 1.8, 2.2, 0.5),\n  return = c(0.012, 0.031, -0.005, 0.044, 0.018, 0.027, -0.008)\n)\n# Fit linear model: return ~ volume\nmodel <- \nsummary(model)",
+    mission:"You have a data frame called trades with columns volume and return (7 rows of trading data).\n\nFit a linear model predicting return from volume. Store it in model.\n\ntrades <- data.frame(\n  volume = c(1.2, 2.5, 0.8, 3.1, 1.8, 2.2, 0.5),\n  return = c(0.012, 0.031, -0.005, 0.044, 0.018, 0.027, -0.008)\n)",
+    hint:"lm(outcome ~ predictor, data=df) — the ~ means 'predicted by'.",
+    starter:"",
     validate(env) {
       const m=env.model;
       if(!m) return {pass:false, msg:"model is not defined"};
       if(!m.__isLM) return {pass:false, msg:"model should be a linear model — use lm()"};
-      return {pass:true, msg:"linear model fitted: return ~ volume\ncheck summary() for coefficients and R²"};
+      return {pass:true, msg:"model fitted ✓"};
     }
   },
   {
     id:"3.3", level:3, levelName:"Statistics That Matter",
     concept:"predict() — applying a model",
     isl:"ISL §3.1",
-    mission:"Use your linear model to predict the return when volume = 2.0. Assign to predicted.",
-    hint:"predict() needs two things: the model, and a newdata argument — a data frame with the same column name as your predictor. What was your predictor column called?",
-    starter:"trades <- data.frame(\n  volume = c(1.2, 2.5, 0.8, 3.1, 1.8, 2.2, 0.5),\n  return = c(0.012, 0.031, -0.005, 0.044, 0.018, 0.027, -0.008)\n)\nmodel <- lm(return ~ volume, data=trades)\n# Predict return at volume = 2.0\npredicted <- predict(model, newdata=data.frame(volume=2.0))\npredicted",
+    mission:"Using the trades data and a linear model of return ~ volume, predict the return when volume = 2.0. Store in predicted.\n\ntrades <- data.frame(\n  volume = c(1.2, 2.5, 0.8, 3.1, 1.8, 2.2, 0.5),\n  return = c(0.012, 0.031, -0.005, 0.044, 0.018, 0.027, -0.008)\n)",
+    hint:"predict(model, newdata=data.frame(volume=2.0)) — newdata must use the same column name as the predictor.",
+    starter:"",
     validate(env) {
       const p=env.predicted;
       const val=Array.isArray(p)?p[0]:p;
       if(val===undefined) return {pass:false, msg:"predicted is not defined"};
-      if(val<0.005||val>0.04) return {pass:false, msg:`predicted = ${val?.toFixed(4)} — out of expected range for this model`};
-      return {pass:true, msg:`predicted return at volume=2.0: ${(val*100).toFixed(2)}%\nThis is supervised learning — you just made a prediction.`};
+      if(val<0.005||val>0.04) return {pass:false, msg:`predicted = ${val?.toFixed(4)} — out of expected range`};
+      return {pass:true, msg:`predicted return at volume=2.0: ${(val*100).toFixed(2)}% ✓`};
     }
   },
   {
     id:"3.4", level:3, levelName:"Statistics That Matter",
-    concept:"R² and residuals — model quality",
+    concept:"R² — model quality",
     isl:"ISL §3.1–3.2",
-    mission:"Extract R-squared from your model summary. Assign to r_squared.",
-    hint:"summary(model) returns an object, not just text. You can pull pieces out of it with $. R-squared measures the fit — what would you call that piece?",
-    starter:"trades <- data.frame(\n  volume = c(1.2, 2.5, 0.8, 3.1, 1.8, 2.2, 0.5),\n  return = c(0.012, 0.031, -0.005, 0.044, 0.018, 0.027, -0.008)\n)\nmodel <- lm(return ~ volume, data=trades)\n# Extract R-squared\nr_squared <- summary(model)$r.squared\nr_squared",
+    mission:"Using the trades data and a linear model of return ~ volume, extract R-squared and store in r_squared.\n\ntrades <- data.frame(\n  volume = c(1.2, 2.5, 0.8, 3.1, 1.8, 2.2, 0.5),\n  return = c(0.012, 0.031, -0.005, 0.044, 0.018, 0.027, -0.008)\n)",
+    hint:"summary(model) returns an object. Pull pieces from it with $. What would R-squared be called?",
+    starter:"",
     validate(env) {
       const r2=Array.isArray(env.r_squared)?env.r_squared[0]:env.r_squared;
       if(r2===undefined) return {pass:false, msg:"r_squared is not defined"};
-      if(r2<0.9) return {pass:false, msg:`R² = ${r2?.toFixed(4)} — check summary(model)$r.squared`};
-      return {pass:true, msg:`R² = ${r2.toFixed(4)}\n${(r2*100).toFixed(1)}% of return variance explained by volume.\nLevel 3 complete — you've done regression.`};
+      if(r2<0.9) return {pass:false, msg:`R² = ${r2?.toFixed(4)}, expected >0.9`};
+      return {pass:true, msg:`R² = ${r2.toFixed(4)} ✓`};
     }
   },
 
@@ -478,117 +613,117 @@ const TRIALS = [
     id:"4.0", level:4, levelName:"The Tidyverse",
     concept:"library() — loading packages",
     isl:"R4DS §1",
-    mission:"The tidyverse is a collection of R packages for modern data work. Load it with library(). Then confirm it loaded by running tidyverse_logo().",
-    hint:"Packages extend R's capabilities. library(packagename) makes them available. You only need one line here.",
-    starter:"# Load the tidyverse\nlibrary(tidyverse)\n\n# Confirm it loaded\ntidyverse_logo()",
+    mission:"Load the tidyverse. Confirm it loaded by running tidyverse_logo().",
+    hint:"library(packagename) makes a package available. One line to load, one to confirm.",
+    starter:"",
     validate(env) {
       const out=String(env.__output||"");
-      if(out.includes("tidyverse")||out.includes("Attaching")||env.__tidyverse) return {pass:true, msg:"tidyverse loaded ✓\ndplyr, ggplot2, tidyr, readr and more are now available."};
-      return {pass:true, msg:"tidyverse loaded ✓\nIn simulation mode — in real R this attaches 8 core packages."};
+      if(out.includes("tidyverse")||out.includes("Attaching")||env.__tidyverse) return {pass:true, msg:"tidyverse loaded ✓"};
+      return {pass:true, msg:"tidyverse loaded ✓"};
     }
   },
   {
     id:"4.1", level:4, levelName:"The Tidyverse",
-    concept:"filter() — select rows by condition",
+    concept:"filter() — select rows",
     isl:"R4DS §3.2",
-    mission:"Use dplyr's filter() to keep only stocks where return > 0 (positive days). Assign to positive_days.",
-    hint:"filter(dataframe, condition) — like subset() but from dplyr. The condition uses the column name directly, no quotes.",
-    starter:"library(dplyr)\n\nstocks <- data.frame(\n  ticker = c(\"AAPL\",\"AAPL\",\"AAPL\",\"TSLA\",\"TSLA\",\"TSLA\"),\n  return = c(0.012, -0.005, 0.023, -0.014, 0.031, -0.008)\n)\n\n# Keep only positive return days\npositive_days <- filter(stocks, return > 0)\nnrow(positive_days)",
+    mission:"stocks has columns ticker and return (AAPL/TSLA, 6 rows). Keep only rows where return > 0. Store in positive_days.\n\nstocks <- data.frame(\n  ticker = c(\"AAPL\",\"AAPL\",\"AAPL\",\"TSLA\",\"TSLA\",\"TSLA\"),\n  return = c(0.012, -0.005, 0.023, -0.014, 0.031, -0.008)\n)",
+    hint:"library(dplyr) then filter(df, condition) — reference the column name directly, no quotes.",
+    starter:"",
     validate(env) {
       const pd=env.positive_days;
       const out=String(env.__output||"");
-      if(pd&&pd.__isDF&&pd.nrow===3) return {pass:true, msg:"3 positive days found ✓\nfilter() is cleaner than subset() for chained operations."};
-      if(out.includes("3")) return {pass:true, msg:"3 positive days found ✓\nfilter() is cleaner than subset() for chained operations."};
-      return {pass:false, msg:"positive_days should have 3 rows — days where return > 0"};
+      if(pd&&pd.__isDF&&pd.nrow===3) return {pass:true, msg:"3 positive days ✓"};
+      if(out.includes("3")) return {pass:true, msg:"3 positive days ✓"};
+      return {pass:false, msg:"positive_days should have 3 rows"};
     }
   },
   {
     id:"4.2", level:4, levelName:"The Tidyverse",
     concept:"select() — choose columns",
     isl:"R4DS §3.3",
-    mission:"From a stock dataset with many columns, select() only ticker and return. Assign to trimmed.",
-    hint:"select(dataframe, col1, col2) keeps only the columns you name. No quotes needed around column names.",
-    starter:"library(dplyr)\n\nstocks <- data.frame(\n  ticker = c(\"AAPL\",\"TSLA\",\"NVDA\"),\n  price  = c(189, 245, 875),\n  volume = c(55.2, 31.4, 42.1),\n  return = c(0.012, -0.005, 0.031),\n  mktcap = c(2900, 780, 2100)\n)\n\n# Keep only ticker and return\ntrimmed <- select(stocks, ticker, return)\nncol(trimmed)",
+    mission:"stocks has 5 columns: ticker, price, volume, return, mktcap. Keep only ticker and return. Store in trimmed.\n\nstocks <- data.frame(\n  ticker = c(\"AAPL\",\"TSLA\",\"NVDA\"),\n  price  = c(189, 245, 875),\n  volume = c(55.2, 31.4, 42.1),\n  return = c(0.012, -0.005, 0.031),\n  mktcap = c(2900, 780, 2100)\n)",
+    hint:"select(df, col1, col2) keeps only the named columns.",
+    starter:"",
     validate(env) {
       const t=env.trimmed;
       const out=String(env.__output||"");
-      if(t&&t.__isDF&&t.ncol===2) return {pass:true, msg:"2 columns kept: ticker and return ✓\nselect() reduces noise — only work with what you need."};
-      if(out.includes("2")) return {pass:true, msg:"2 columns kept: ticker and return ✓\nselect() reduces noise — only work with what you need."};
-      return {pass:false, msg:"trimmed should have 2 columns — ticker and return only"};
+      if(t&&t.__isDF&&t.ncol===2) return {pass:true, msg:"2 columns ✓"};
+      if(out.includes("2")) return {pass:true, msg:"2 columns ✓"};
+      return {pass:false, msg:"trimmed should have 2 columns"};
     }
   },
   {
     id:"4.3", level:4, levelName:"The Tidyverse",
-    concept:"mutate() — add calculated columns",
+    concept:"mutate() — add columns",
     isl:"R4DS §3.4",
-    mission:"Add a new column called daily_pnl that computes price × return (dollar gain/loss per share). Use mutate().",
-    hint:"mutate(dataframe, new_col = expression) adds a column. You can reference existing columns by name in the expression.",
-    starter:"library(dplyr)\n\nstocks <- data.frame(\n  ticker = c(\"AAPL\",\"TSLA\",\"NVDA\"),\n  price  = c(189, 245, 875),\n  return = c(0.012, -0.005, 0.031)\n)\n\n# Add daily_pnl column = price * return\nstocks <- mutate(stocks, daily_pnl = price * return)\nstocks$daily_pnl",
+    mission:"stocks has columns ticker, price, return. Add a column daily_pnl = price × return. Modify stocks in place.\n\nstocks <- data.frame(\n  ticker = c(\"AAPL\",\"TSLA\",\"NVDA\"),\n  price  = c(189, 245, 875),\n  return = c(0.012, -0.005, 0.031)\n)",
+    hint:"mutate(df, new_col = expression) adds a column. Reference existing columns by name.",
+    starter:"",
     validate(env) {
       const out=String(env.__output||"");
       const s=env.stocks;
-      if(s&&s.__isDF&&s.ncol===4) return {pass:true, msg:"daily_pnl added ✓\nAAPL: $2.27  TSLA: -$1.23  NVDA: $27.13"};
-      if(out.includes("2.2")||out.includes("-1.2")||out.includes("27.1")) return {pass:true, msg:"daily_pnl added ✓\nAAPL: $2.27  TSLA: -$1.23  NVDA: $27.13"};
-      return {pass:false, msg:"stocks should now have a daily_pnl column — use mutate()"};
+      if(s&&s.__isDF&&s.ncol===4) return {pass:true, msg:"daily_pnl added ✓"};
+      if(out.includes("2.2")||out.includes("-1.2")||out.includes("27.1")) return {pass:true, msg:"daily_pnl added ✓"};
+      return {pass:false, msg:"stocks should now have a daily_pnl column"};
     }
   },
   {
     id:"4.4", level:4, levelName:"The Tidyverse",
     concept:"arrange() — sort rows",
     isl:"R4DS §3.3",
-    mission:"Sort the stocks data frame by return, descending (best performers first). Use arrange(). Assign to ranked.",
-    hint:"arrange(dataframe, column) sorts ascending. Wrap the column in desc() to flip it: arrange(df, desc(col)).",
-    starter:"library(dplyr)\n\nstocks <- data.frame(\n  ticker = c(\"AAPL\",\"TSLA\",\"NVDA\",\"AMZN\",\"GOOG\"),\n  return = c(0.012, -0.005, 0.031, -0.018, 0.024)\n)\n\n# Sort by return descending\nranked <- arrange(stocks, desc(return))\nranked$ticker",
+    mission:"stocks has columns ticker and return. Sort by return descending. Store in ranked.\n\nstocks <- data.frame(\n  ticker = c(\"AAPL\",\"TSLA\",\"NVDA\",\"AMZN\",\"GOOG\"),\n  return = c(0.012, -0.005, 0.031, -0.018, 0.024)\n)",
+    hint:"arrange(df, desc(col)) sorts descending.",
+    starter:"",
     validate(env) {
       const out=String(env.__output||"");
       const r=env.ranked;
-      if(out.includes("NVDA")||r&&r.__isDF) return {pass:true, msg:"ranked: NVDA (3.1%) → GOOG (2.4%) → AAPL (1.2%) → TSLA (-0.5%) → AMZN (-1.8%) ✓"};
-      return {pass:false, msg:"ranked should be sorted with best performers first — use arrange(desc(return))"};
+      if(out.includes("NVDA")||r&&r.__isDF) return {pass:true, msg:"NVDA → GOOG → AAPL → TSLA → AMZN ✓"};
+      return {pass:false, msg:"ranked should be sorted best first"};
     }
   },
   {
     id:"4.5", level:4, levelName:"The Tidyverse",
-    concept:"group_by() and summarise()",
+    concept:"group_by() + summarise()",
     isl:"R4DS §3.5",
-    mission:"Compute the average return per ticker across multiple days. Use group_by(ticker) then summarise().",
-    hint:"group_by(df, col) splits the data mentally by group. summarise() then computes one value per group. Chain them together.",
-    starter:"library(dplyr)\n\nstocks <- data.frame(\n  ticker = c(\"AAPL\",\"AAPL\",\"AAPL\",\"TSLA\",\"TSLA\",\"TSLA\"),\n  return = c(0.012, -0.005, 0.023, -0.014, 0.031, 0.008)\n)\n\n# Average return per ticker\navg_by_ticker <- stocks |> group_by(ticker) |> summarise(avg_return = mean(return))\navg_by_ticker",
+    mission:"stocks has columns ticker and return (3 days each for AAPL and TSLA). Compute average return per ticker. Store in avg_by_ticker.\n\nstocks <- data.frame(\n  ticker = c(\"AAPL\",\"AAPL\",\"AAPL\",\"TSLA\",\"TSLA\",\"TSLA\"),\n  return = c(0.012, -0.005, 0.023, -0.014, 0.031, 0.008)\n)",
+    hint:"group_by(df, col) |> summarise(new_col = mean(col))",
+    starter:"",
     validate(env) {
       const out=String(env.__output||"");
       const a=env.avg_by_ticker;
-      if(a&&a.__isDF) return {pass:true, msg:"AAPL avg: 1.00%  TSLA avg: 0.83% ✓\ngroup_by + summarise is the workhorse of data aggregation."};
-      if(out.includes("AAPL")||out.includes("0.01")) return {pass:true, msg:"AAPL avg: 1.00%  TSLA avg: 0.83% ✓\ngroup_by + summarise is the workhorse of data aggregation."};
-      return {pass:false, msg:"avg_by_ticker should show one row per ticker with their average return"};
+      if(a&&a.__isDF) return {pass:true, msg:"AAPL: 1.00%  TSLA: 0.83% ✓"};
+      if(out.includes("AAPL")||out.includes("0.01")) return {pass:true, msg:"AAPL: 1.00%  TSLA: 0.83% ✓"};
+      return {pass:false, msg:"avg_by_ticker should show one row per ticker"};
     }
   },
   {
     id:"4.6", level:4, levelName:"The Tidyverse",
-    concept:"|> pipe operator — chain operations",
+    concept:"|> pipe — chain operations",
     isl:"R4DS §4.3",
-    mission:"Rewrite this analysis as a single pipe chain: filter to positive returns, then arrange by return descending.",
-    hint:"The |> pipe passes the left side as the first argument to the right side. Read it as 'then'. df |> filter(...) |> arrange(...)",
-    starter:"library(dplyr)\n\nstocks <- data.frame(\n  ticker = c(\"AAPL\",\"TSLA\",\"NVDA\",\"AMZN\",\"GOOG\"),\n  return = c(0.012, -0.005, 0.031, -0.018, 0.024)\n)\n\n# Chain: filter positive returns, then sort best first\nresult <- stocks |>\n  filter(return > 0) |>\n  arrange(desc(return))\n\nresult$ticker",
+    mission:"stocks has columns ticker and return. In a single pipe chain: filter to positive returns, then sort best first. Store in result.\n\nstocks <- data.frame(\n  ticker = c(\"AAPL\",\"TSLA\",\"NVDA\",\"AMZN\",\"GOOG\"),\n  return = c(0.012, -0.005, 0.031, -0.018, 0.024)\n)",
+    hint:"df |> filter(...) |> arrange(...) — the pipe passes the left side as the first argument to the right.",
+    starter:"",
     validate(env) {
       const out=String(env.__output||"");
       const r=env.result;
-      if(r&&r.__isDF) return {pass:true, msg:"NVDA → GOOG → AAPL ✓\nThe pipe makes multi-step analysis readable left to right."};
-      if(out.includes("NVDA")||out.includes("GOOG")) return {pass:true, msg:"NVDA → GOOG → AAPL ✓\nThe pipe makes multi-step analysis readable left to right."};
-      return {pass:false, msg:"result should show the 3 positive-return tickers, sorted best first"};
+      if(r&&r.__isDF) return {pass:true, msg:"NVDA → GOOG → AAPL ✓"};
+      if(out.includes("NVDA")||out.includes("GOOG")) return {pass:true, msg:"NVDA → GOOG → AAPL ✓"};
+      return {pass:false, msg:"result should show 3 positive-return tickers, sorted"};
     }
   },
   {
     id:"4.7", level:4, levelName:"The Tidyverse",
     concept:"left_join() — merge datasets",
     isl:"R4DS §19",
-    mission:"Join a prices table with a fundamentals table on ticker. Use left_join(). Assign to full_data.",
-    hint:"left_join(table_a, table_b, by='shared_column') keeps all rows from table_a and matches from table_b. What column exists in both tables?",
-    starter:"library(dplyr)\n\nprices <- data.frame(\n  ticker = c(\"AAPL\",\"TSLA\",\"NVDA\"),\n  price  = c(189, 245, 875)\n)\n\nfundamentals <- data.frame(\n  ticker = c(\"AAPL\",\"TSLA\",\"NVDA\"),\n  pe_ratio = c(28.4, 65.2, 42.1)\n)\n\n# Join on ticker\nfull_data <- left_join(prices, fundamentals, by=\"ticker\")\nncol(full_data)",
+    mission:"Join prices and fundamentals on ticker. Store in full_data.\n\nprices <- data.frame(\n  ticker = c(\"AAPL\",\"TSLA\",\"NVDA\"),\n  price  = c(189, 245, 875)\n)\nfundamentals <- data.frame(\n  ticker   = c(\"AAPL\",\"TSLA\",\"NVDA\"),\n  pe_ratio = c(28.4, 65.2, 42.1)\n)",
+    hint:"left_join(table_a, table_b, by=\"shared_column\") — what column exists in both?",
+    starter:"",
     validate(env) {
       const out=String(env.__output||"");
       const f=env.full_data;
-      if(f&&f.__isDF&&f.ncol===3) return {pass:true, msg:"3 columns: ticker, price, pe_ratio ✓\nJoining datasets is fundamental to real-world analysis.\nLevel 4 complete — you know the tidyverse."};
-      if(out.includes("3")) return {pass:true, msg:"3 columns: ticker, price, pe_ratio ✓\nJoining datasets is fundamental to real-world analysis.\nLevel 4 complete — you know the tidyverse."};
-      return {pass:false, msg:"full_data should have 3 columns — ticker, price, and pe_ratio merged together"};
+      if(f&&f.__isDF&&f.ncol===3) return {pass:true, msg:"3 columns: ticker, price, pe_ratio ✓"};
+      if(out.includes("3")) return {pass:true, msg:"3 columns ✓"};
+      return {pass:false, msg:"full_data should have 3 columns"};
     }
   },
 
@@ -597,120 +732,118 @@ const TRIALS = [
     id:"5.0", level:5, levelName:"Time Series",
     concept:"as.Date() — working with dates",
     isl:"FPP3 §2",
-    mission:"Parse two date strings into R Date objects and compute the number of days between them. Assign to gap.",
-    hint:"as.Date('YYYY-MM-DD') converts a string to a date. Subtract two dates to get the difference — the result is in days.",
-    starter:"start <- as.Date(\"2024-01-02\")\nend   <- as.Date(\"2024-12-31\")\n\n# How many days between start and end?\ngap <- as.numeric(end - start)\ngap",
+    mission:"How many days between 2024-01-02 and 2024-12-31? Store the result in gap.",
+    hint:"as.Date('YYYY-MM-DD') parses a string into a date. Subtract two dates to get the difference in days. Wrap in as.numeric().",
+    starter:"",
     validate(env) {
-      const gap = Array.isArray(env.gap)?env.gap[0]:env.gap;
+      const gap=Array.isArray(env.gap)?env.gap[0]:env.gap;
       if(gap===undefined) return {pass:false, msg:"gap is not defined"};
       if(Math.abs(gap-364)>1) return {pass:false, msg:`expected ~364 days, got ${gap}`};
-      return {pass:true, msg:`gap = ${gap} days\n2024 had 366 days (leap year) — 364 trading-day gaps matter for backtesting.`};
+      return {pass:true, msg:`gap = ${gap} days ✓`};
     }
   },
   {
     id:"5.1", level:5, levelName:"Time Series",
-    concept:"Date-indexed data frames — price series",
+    concept:"Date-indexed data frames",
     isl:"FPP3 §2",
-    mission:"Build a data frame with a date column and a price column. Dates should run Mon–Fri for one week. Assign to prices.",
-    hint:"Create a date vector with c(as.Date(...), as.Date(...), ...) or seq(as.Date(...), by='day', length.out=5). Pair it with a prices vector in data.frame().",
-    starter:"# Build a 5-row price series for one trading week\ndates  <- seq(as.Date(\"2024-01-08\"), by=\"day\", length.out=5)\nprices_vec <- c(185.2, 183.7, 186.4, 188.1, 187.5)\n\nprices <- data.frame(date=dates, close=prices_vec)\nnrow(prices)",
+    mission:"Build a data frame named prices with two columns: date (Mon–Fri, week of 2024-01-08) and close (185.2, 183.7, 186.4, 188.1, 187.5). Print the number of rows.",
+    hint:"seq(as.Date(...), by='day', length.out=5) generates a date sequence. Pair it with the prices in data.frame().",
+    starter:"",
     validate(env) {
       const out=String(env.__output||"");
       const p=env.prices;
-      if(p&&p.__isDF&&p.nrow===5) return {pass:true, msg:"5-row date-indexed price series ✓\nThis is the foundation of every time series analysis."};
-      if(out.includes("5")) return {pass:true, msg:"5-row date-indexed price series ✓\nThis is the foundation of every time series analysis."};
-      return {pass:false, msg:"prices should have 5 rows — one per trading day"};
+      if(p&&p.__isDF&&p.nrow===5) return {pass:true, msg:"5-row date-indexed series ✓"};
+      if(out.includes("5")) return {pass:true, msg:"5-row date-indexed series ✓"};
+      return {pass:false, msg:"prices should have 5 rows"};
     }
   },
   {
     id:"5.2", level:5, levelName:"Time Series",
-    concept:"diff() — compute returns from prices",
+    concept:"diff() — price changes",
     isl:"FPP3 §2",
-    mission:"Given a vector of closing prices, compute the daily dollar change using diff(). Assign to changes.",
-    hint:"diff(x) subtracts each element from the next: x[2]-x[1], x[3]-x[2], ... The result has one fewer element than the input.",
-    starter:"close <- c(185.2, 183.7, 186.4, 188.1, 187.5, 190.2, 192.8)\n\n# Compute daily price changes\nchanges <- diff(close)\nchanges",
+    mission:"Closing prices: 185.2, 183.7, 186.4, 188.1, 187.5, 190.2, 192.8.\n\nCompute the daily dollar change. Store in changes.",
+    hint:"diff(x) subtracts each element from the next. The result has one fewer element than the input.",
+    starter:"",
     validate(env) {
       const ch=env.changes;
-      if(!Array.isArray(ch)) return {pass:false, msg:"changes should be a vector — use diff(close)"};
-      if(ch.length!==6) return {pass:false, msg:`expected 6 values (one less than input), got ${ch.length}`};
+      if(!Array.isArray(ch)) return {pass:false, msg:"changes should be a vector"};
+      if(ch.length!==6) return {pass:false, msg:`expected 6 values, got ${ch.length}`};
       if(Math.abs(ch[0]-(-1.5))>0.01) return {pass:false, msg:`changes[1] should be -1.5, got ${ch[0].toFixed(2)}`};
-      return {pass:true, msg:`changes = [${ch.map(v=>v.toFixed(1)).join(", ")}]\ndiff() is how raw prices become returns.`};
+      return {pass:true, msg:`[${ch.map(v=>v.toFixed(1)).join(", ")}] ✓`};
     }
   },
   {
     id:"5.3", level:5, levelName:"Time Series",
-    concept:"lag() — compare to previous value",
+    concept:"Percentage returns",
     isl:"FPP3 §2",
-    mission:"Compute percentage daily returns: (today - yesterday) / yesterday. Use diff() and the original price vector. Assign to pct_returns.",
-    hint:"Percentage return = diff(prices) / prices[-length(prices)]. The denominator removes the last element so lengths match.",
-    starter:"close <- c(185.2, 183.7, 186.4, 188.1, 187.5, 190.2, 192.8)\n\n# Compute percentage daily returns\npct_returns <- diff(close) / close[-length(close)]\nround(pct_returns * 100, 3)",
+    mission:"Closing prices: 185.2, 183.7, 186.4, 188.1, 187.5, 190.2, 192.8.\n\nCompute daily percentage returns. Store in pct_returns.",
+    hint:"Percentage return = diff(prices) / prices[-length(prices)] — the denominator removes the last element so lengths match.",
+    starter:"",
     validate(env) {
       const pr=env.pct_returns;
-      if(!Array.isArray(pr)) return {pass:false, msg:"pct_returns should be a numeric vector"};
+      if(!Array.isArray(pr)) return {pass:false, msg:"pct_returns should be a vector"};
       if(pr.length!==6) return {pass:false, msg:`expected 6 returns, got ${pr.length}`};
       if(Math.abs(pr[0]-(-0.0081))>0.001) return {pass:false, msg:`first return should be ~-0.81%, got ${(pr[0]*100).toFixed(2)}%`};
-      return {pass:true, msg:`daily returns: ${pr.map(v=>(v*100).toFixed(2)+"%").join("  ")}\nThis is the standard way to convert prices to returns.`};
+      return {pass:true, msg:pr.map(v=>(v*100).toFixed(2)+"%").join("  ")+" ✓"};
     }
   },
   {
     id:"5.4", level:5, levelName:"Time Series",
-    concept:"Rolling mean — moving average by hand",
+    concept:"Rolling mean by hand",
     isl:"FPP3 §3",
-    mission:"Compute a 3-day rolling mean of closing prices using a for loop. Assign the result to ma3. It should have length = length(close) - 2.",
-    hint:"Loop from i=3 to length(close). At each step, take mean(close[(i-2):i]). Build up a vector of results.",
-    starter:"close <- c(185.2, 183.7, 186.4, 188.1, 187.5, 190.2, 192.8)\n\n# 3-day rolling mean\nma3 <- c()\nfor(i in 3:length(close)) {\n  ma3 <- c(ma3, mean(close[(i-2):i]))\n}\nround(ma3, 2)",
+    mission:"Closing prices: 185.2, 183.7, 186.4, 188.1, 187.5, 190.2, 192.8.\n\nCompute a 3-day rolling mean using a for loop. Store in ma3.",
+    hint:"Loop from i=3 to length(close). At each step: mean(close[(i-2):i]). Build up the vector with c().",
+    starter:"",
     validate(env) {
       const ma=env.ma3;
-      if(!Array.isArray(ma)) return {pass:false, msg:"ma3 should be a numeric vector"};
+      if(!Array.isArray(ma)) return {pass:false, msg:"ma3 should be a vector"};
       if(ma.length!==5) return {pass:false, msg:`expected 5 values, got ${ma.length}`};
       if(Math.abs(ma[0]-185.1)>0.1) return {pass:false, msg:`ma3[1] should be ~185.1, got ${ma[0].toFixed(2)}`};
-      return {pass:true, msg:`ma3 = [${ma.map(v=>v.toFixed(2)).join(", ")}]\nBuilding it manually first means you understand what rollmean() does.`};
+      return {pass:true, msg:`[${ma.map(v=>v.toFixed(2)).join(", ")}] ✓`};
     }
   },
   {
     id:"5.5", level:5, levelName:"Time Series",
-    concept:"rollmean() — the professional way",
+    concept:"rollmean() — moving average",
     isl:"FPP3 §3",
-    mission:"Now use rollmean() from the zoo package to compute a 5-day moving average. Assign to ma5. Use align='right' and fill=NA.",
-    hint:"zoo is the professional time series package. rollmean(x, k, fill=NA, align='right') — k is the window size. The result is the same length as the input.",
-    starter:"library(zoo)\n\nclose <- c(185.2, 183.7, 186.4, 188.1, 187.5, 190.2, 192.8, 191.4, 193.6, 195.1)\n\n# 5-day moving average\nma5 <- rollmean(close, k=5, fill=NA, align=\"right\")\nround(ma5, 2)",
+    mission:"10 closing prices: 185.2, 183.7, 186.4, 188.1, 187.5, 190.2, 192.8, 191.4, 193.6, 195.1.\n\nCompute a 5-day moving average using rollmean(). Use align='right' and fill=NA. Store in ma5.",
+    hint:"library(zoo) — rollmean(x, k, fill=NA, align='right'). k is the window size.",
+    starter:"",
     validate(env) {
       const ma=env.ma5;
-      if(!Array.isArray(ma)) return {pass:false, msg:"ma5 should be a vector — did you assign the rollmean result?"};
-      if(ma.length!==10) return {pass:false, msg:`expected 10 values (same length as input), got ${ma.length}`};
+      if(!Array.isArray(ma)) return {pass:false, msg:"ma5 should be a vector"};
+      if(ma.length!==10) return {pass:false, msg:`expected 10 values, got ${ma.length}`};
       const defined=ma.filter(v=>v!==null&&!isNaN(v));
-      if(defined.length!==6) return {pass:false, msg:`expected 6 non-NA values (first 4 should be NA with align='right')`};
-      return {pass:true, msg:`ma5 computed ✓\nFirst 4 values are NA — not enough history yet.\nThis is a 5-day moving average, the most common trend indicator.`};
+      if(defined.length!==6) return {pass:false, msg:"expected 6 non-NA values"};
+      return {pass:true, msg:"5-day MA computed ✓  (first 4 are NA)"};
     }
   },
   {
     id:"5.6", level:5, levelName:"Time Series",
-    concept:"Rolling volatility — risk changes over time",
+    concept:"Rolling volatility",
     isl:"FPP3 §3",
-    mission:"Compute 5-day rolling standard deviation of daily returns. Assign to roll_vol. This is rolling volatility — a key risk measure.",
-    hint:"rollapply(x, width, FUN, fill=NA, align='right') applies any function over a rolling window. Use sd as FUN.",
-    starter:"library(zoo)\n\nreturns <- c(-0.008, 0.015, 0.009, -0.005, 0.021, -0.012, 0.018, 0.003, -0.007, 0.024)\n\n# 5-day rolling volatility\nroll_vol <- rollapply(returns, width=5, FUN=sd, fill=NA, align=\"right\")\nround(roll_vol, 4)",
+    mission:"Daily returns: -0.008, 0.015, 0.009, -0.005, 0.021, -0.012, 0.018, 0.003, -0.007, 0.024.\n\nCompute 5-day rolling standard deviation. Store in roll_vol.",
+    hint:"library(zoo) — rollapply(x, width, FUN, fill=NA, align='right'). Use sd as FUN.",
+    starter:"",
     validate(env) {
       const rv=env.roll_vol;
-      if(!Array.isArray(rv)) return {pass:false, msg:"roll_vol should be a vector — use rollapply()"};
+      if(!Array.isArray(rv)) return {pass:false, msg:"roll_vol should be a vector"};
       if(rv.length!==10) return {pass:false, msg:`expected 10 values, got ${rv.length}`};
       const defined=rv.filter(v=>v!==null&&!isNaN(v)&&v>0);
-      if(defined.length<5) return {pass:false, msg:"not enough non-NA values — check width=5 and align='right'"};
-      return {pass:true, msg:`rolling vol computed ✓\nNotice it changes day to day — volatility is not constant.\nThis is why static risk models fail.`};
+      if(defined.length<5) return {pass:false, msg:"not enough non-NA values"};
+      return {pass:true, msg:"rolling volatility ✓"};
     }
   },
   {
     id:"5.7", level:5, levelName:"Time Series",
     concept:"acf() — autocorrelation",
     isl:"FPP3 §2.8",
-    mission:"Compute the autocorrelation function of daily returns using acf(). Set lag.max=5 and plot=FALSE. Assign to ac. Does this stock have momentum?",
-    hint:"acf(x, lag.max=n, plot=FALSE) returns an object. The autocorrelation values are in ac$acf. Values near 0 = no pattern. Values away from 0 = momentum or mean reversion.",
-    starter:"returns <- c(-0.008, 0.015, 0.009, -0.005, 0.021, -0.012, 0.018,\n             0.003, -0.007, 0.024, 0.011, -0.003, 0.019, -0.008, 0.016)\n\n# Compute autocorrelation\nac <- acf(returns, lag.max=5, plot=FALSE)\nround(ac$acf, 3)",
+    mission:"Returns: -0.008, 0.015, 0.009, -0.005, 0.021, -0.012, 0.018, 0.003, -0.007, 0.024, 0.011, -0.003, 0.019, -0.008, 0.016.\n\nCompute the autocorrelation function with lag.max=5 and plot=FALSE. Store in ac.",
+    hint:"acf(x, lag.max=5, plot=FALSE) — the autocorrelation values live in ac$acf.",
+    starter:"",
     validate(env) {
-      const ac=env.ac||env.ac_vals;
       const out=String(env.__output||"");
-      if(out.includes("1.000")||out.includes("1")) return {pass:true, msg:"acf computed ✓\nLag 0 is always 1.0 (a series is perfectly correlated with itself).\nLags 1–5 near 0 = weak momentum. This is typical for stocks."};
-      if(ac&&ac.__isACF) return {pass:true, msg:"acf computed ✓\nLag 0 is always 1.0. Lags 1–5 near 0 = weak momentum."};
+      if(out.includes("1.000")||out.includes("1")) return {pass:true, msg:"acf computed ✓  (lag 0 is always 1.0)"};
       return {pass:false, msg:"assign acf(..., plot=FALSE) to ac, then print ac$acf"};
     }
   },
@@ -718,912 +851,635 @@ const TRIALS = [
   // ── LEVEL 6: MACHINE LEARNING ─────────────────────────────────────────────
   {
     id:"6.0", level:6, levelName:"Machine Learning",
-    concept:"Train/test split — the golden rule",
+    concept:"Train/test split",
     isl:"ISL §2.2",
-    mission:"Split a dataset into 80% training and 20% test sets. Use sample() to create a random index. Assign to train and test.",
-    hint:"sample(nrow(df), size=0.8*nrow(df)) gives random row indices. Use those to index the data frame: df[idx,] and df[-idx,].",
-    starter:"set.seed(42)\nstocks <- data.frame(\n  vol    = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4),\n  return = c(0.012,0.031,-0.005,0.044,0.018,0.027,-0.008,0.039,0.014,0.051)\n)\n\n# 80/20 split\nidx   <- sample(nrow(stocks), size=0.8*nrow(stocks))\ntrain <- stocks[idx, ]\ntest  <- stocks[-idx, ]\nnrow(train)",
+    mission:"Split stocks 80/20 into train and test sets using a random index.\n\nset.seed(42)\nstocks <- data.frame(\n  vol    = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4),\n  return = c(0.012,0.031,-0.005,0.044,0.018,0.027,-0.008,0.039,0.014,0.051)\n)",
+    hint:"sample(nrow(df), size=0.8*nrow(df)) gives random row indices. Use them: df[idx,] and df[-idx,].",
+    starter:"",
     validate(env) {
       const out=String(env.__output||"");
       const tr=env.train, te=env.test;
-      if(tr&&tr.__isDF&&tr.nrow===8&&te&&te.__isDF&&te.nrow===2) return {pass:true, msg:"train: 8 rows  test: 2 rows ✓\nNever train and evaluate on the same data — that's overfitting."};
-      if(out.includes("8")) return {pass:true, msg:"train: 8 rows  test: 2 rows ✓\nNever train and evaluate on the same data — that's overfitting."};
-      return {pass:false, msg:"train should have 8 rows, test should have 2 rows"};
+      if(tr&&tr.__isDF&&tr.nrow===8) return {pass:true, msg:"train: 8 rows  test: 2 rows ✓"};
+      if(out.includes("8")) return {pass:true, msg:"train: 8 rows  test: 2 rows ✓"};
+      return {pass:false, msg:"train should have 8 rows, test should have 2"};
     }
   },
   {
     id:"6.1", level:6, levelName:"Machine Learning",
     concept:"glm() — logistic regression",
     isl:"ISL §4.3",
-    mission:"Fit a logistic regression predicting whether a stock goes up (1) or down (0) based on volume. Use glm() with family=binomial. Assign to log_model.",
-    hint:"glm(outcome ~ predictor, data=df, family=binomial) — the same formula syntax as lm() but with a family argument. Outcome must be 0/1.",
-    starter:"trades <- data.frame(\n  volume    = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4,2.1,0.9),\n  up        = c(1,1,0,1,1,1,0,1,1,1,0,0)\n)\n\n# Logistic regression: up ~ volume\nlog_model <- glm(up ~ volume, data=trades, family=binomial)\ncoef(log_model)",
+    mission:"Fit a logistic regression predicting up from volume. Store in log_model.\n\ntrades <- data.frame(\n  volume = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4,2.1,0.9),\n  up     = c(1,1,0,1,1,1,0,1,1,1,0,0)\n)",
+    hint:"glm(outcome ~ predictor, data=df, family=binomial) — same syntax as lm() but with a family argument.",
+    starter:"",
     validate(env) {
       const m=env.log_model;
       const out=String(env.__output||"");
-      if(m&&m.__isLM) return {pass:true, msg:"logistic model fitted ✓\nCoefficients are log-odds. Positive volume coef = more volume → more likely up day."};
-      if(out.includes("volume")||out.includes("Intercept")) return {pass:true, msg:"logistic model fitted ✓\nCoefficients are log-odds. Positive volume coef = more volume → more likely up day."};
+      if(m&&m.__isLM) return {pass:true, msg:"logistic model fitted ✓"};
+      if(out.includes("volume")||out.includes("Intercept")) return {pass:true, msg:"logistic model fitted ✓"};
       return {pass:false, msg:"log_model should be a glm object — check family=binomial"};
     }
   },
   {
     id:"6.2", level:6, levelName:"Machine Learning",
-    concept:"predict() with type='response' — probabilities",
+    concept:"predict() — probabilities",
     isl:"ISL §4.3",
-    mission:"Use your logistic model to predict probabilities on new data. Use type='response' to get probabilities (not log-odds). Assign to probs.",
-    hint:"predict(model, newdata=df, type='response') returns values between 0 and 1. Without type='response' you get log-odds, which are harder to interpret.",
-    starter:"trades <- data.frame(\n  volume = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4,2.1,0.9),\n  up     = c(1,1,0,1,1,1,0,1,1,1,0,0)\n)\nlog_model <- glm(up ~ volume, data=trades, family=binomial)\n\nnew_data <- data.frame(volume=c(1.0, 2.0, 3.0))\nprobs <- predict(log_model, newdata=new_data, type=\"response\")\nround(probs, 3)",
+    mission:"Using a logistic model of up ~ volume, predict the probability of an up day at volumes 1.0, 2.0, 3.0. Store in probs.\n\ntrades <- data.frame(\n  volume = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4,2.1,0.9),\n  up     = c(1,1,0,1,1,1,0,1,1,1,0,0)\n)",
+    hint:"predict(model, newdata=df, type='response') — without type='response' you get log-odds, not probabilities.",
+    starter:"",
     validate(env) {
       const p=env.probs;
       const out=String(env.__output||"");
-      if(Array.isArray(p)&&p.length===3&&p.every(v=>v>0&&v<1)) return {pass:true, msg:`probs = [${p.map(v=>v.toFixed(3)).join(", ")}]\nAll between 0 and 1 ✓ — these are probabilities of an up day.`};
-      if(out.match(/0\.\d+/)) return {pass:true, msg:"probabilities computed ✓\nHigher volume → higher probability of up day, per the model."};
-      return {pass:false, msg:"probs should be 3 values between 0 and 1 — add type='response'"};
+      if(Array.isArray(p)&&p.length===3&&p.every(v=>v>0&&v<1)) return {pass:true, msg:`[${p.map(v=>v.toFixed(3)).join(", ")}] ✓`};
+      if(out.match(/0\.\d+/)) return {pass:true, msg:"probabilities ✓"};
+      return {pass:false, msg:"probs should be 3 values between 0 and 1"};
     }
   },
   {
     id:"6.3", level:6, levelName:"Machine Learning",
-    concept:"Confusion matrix — measuring accuracy",
+    concept:"Confusion matrix",
     isl:"ISL §4.4",
-    mission:"Convert probabilities to binary predictions (threshold 0.5), then build a confusion matrix with table(). Compare predicted vs actual.",
-    hint:"predicted <- ifelse(probs > 0.5, 1, 0) converts probabilities to 0/1. Then table(predicted, actual) shows correct vs incorrect predictions.",
-    starter:"actual    <- c(1, 1, 0, 1, 0, 1, 0, 1)\nprobs_vec <- c(0.82, 0.71, 0.34, 0.88, 0.41, 0.79, 0.29, 0.93)\n\n# Convert to binary and build confusion matrix\npredicted <- ifelse(probs_vec > 0.5, 1, 0)\nconf_mat  <- table(predicted, actual)\nconf_mat",
+    mission:"actual:    1, 1, 0, 1, 0, 1, 0, 1\nprobs_vec: 0.82, 0.71, 0.34, 0.88, 0.41, 0.79, 0.29, 0.93\n\nConvert probabilities to predictions at threshold 0.5. Build a confusion matrix. Store in conf_mat.",
+    hint:"predicted <- ifelse(probs_vec > 0.5, 1, 0) — then table(predicted, actual).",
+    starter:"",
     validate(env) {
       const out=String(env.__output||"");
       const cm=env.conf_mat;
-      if(out.includes("actual")||out.includes("predicted")||(cm&&cm.__isTable)) return {pass:true, msg:"confusion matrix built ✓\nTrue positives (top-left): correct up predictions.\nFalse positives (top-right): predicted up, was actually down.\nAccuracy = correct / total."};
+      if(out.includes("actual")||out.includes("predicted")||(cm&&cm.__isTable)) return {pass:true, msg:"confusion matrix ✓"};
       return {pass:false, msg:"conf_mat should be a table — use table(predicted, actual)"};
     }
   },
   {
     id:"6.4", level:6, levelName:"Machine Learning",
-    concept:"arima() — time series forecasting",
+    concept:"arima() — forecasting",
     isl:"FPP3 §9",
-    mission:"Fit an ARIMA(1,0,0) model to a return series. Assign to arima_model. Then forecast 3 steps ahead using forecast(). Assign to fc.",
-    hint:"arima(x, order=c(p,d,q)) — p=autoregressive terms, d=differencing, q=moving average. For ARIMA(1,0,0): order=c(1,0,0). Then forecast(model, h=3).",
-    starter:"library(forecast)\n\nreturns <- c(-0.008,0.015,0.009,-0.005,0.021,-0.012,0.018,\n             0.003,-0.007,0.024,0.011,-0.003,0.019,-0.008,0.016)\n\n# Fit ARIMA(1,0,0)\narima_model <- arima(returns, order=c(1,0,0))\n\n# Forecast 3 steps ahead\nfc <- forecast(arima_model, h=3)\nfc$mean",
+    mission:"Returns: -0.008, 0.015, 0.009, -0.005, 0.021, -0.012, 0.018, 0.003, -0.007, 0.024, 0.011, -0.003, 0.019, -0.008, 0.016.\n\nFit ARIMA(1,0,0). Store in arima_model. Forecast 3 steps ahead. Store in fc.",
+    hint:"library(forecast) — arima(x, order=c(1,0,0)) then forecast(model, h=3).",
+    starter:"",
     validate(env) {
-      const fc=env.fc||env.arima_model;
       const out=String(env.__output||"");
-      if(env.arima_model&&env.arima_model.__isArima) return {pass:true, msg:"ARIMA(1,0,0) fitted and forecast computed ✓\nThe forecast will be near the mean — ARIMA on its own is a humble model.\nForecast error matters more than the point estimate."};
-      if(out.match(/-?0\.0\d+/)) return {pass:true, msg:"ARIMA forecast computed ✓\nValues near zero are expected — stock returns are hard to predict."};
-      return {pass:false, msg:"fit arima(returns, order=c(1,0,0)) and forecast(arima_model, h=3)"};
+      if(env.arima_model&&env.arima_model.__isArima) return {pass:true, msg:"ARIMA forecast ✓"};
+      if(out.match(/-?0\.0\d+/)) return {pass:true, msg:"ARIMA forecast ✓"};
+      return {pass:false, msg:"fit arima(..., order=c(1,0,0)) then forecast(..., h=3)"};
     }
   },
   {
     id:"6.5", level:6, levelName:"Machine Learning",
-    concept:"MAE and RMSE — forecast evaluation",
+    concept:"MAE and RMSE",
     isl:"FPP3 §5.8",
-    mission:"Given actual and predicted values, compute MAE (mean absolute error) and RMSE (root mean squared error). Assign to mae and rmse.",
-    hint:"MAE = mean(abs(actual - predicted)). RMSE = sqrt(mean((actual - predicted)^2)). Both measure how wrong your model is — smaller is better.",
-    starter:"actual    <- c(0.012, -0.005, 0.018, -0.003, 0.021)\npredicted <- c(0.008, -0.002, 0.015, -0.007, 0.019)\n\n# Compute error metrics\nmae  <- mean(abs(actual - predicted))\nrmse <- sqrt(mean((actual - predicted)^2))\n\ncat(\"MAE: \", round(mae,5), \"\\n\")\ncat(\"RMSE:\", round(rmse,5), \"\\n\")",
+    mission:"actual:    0.012, -0.005, 0.018, -0.003, 0.021\npredicted: 0.008, -0.002, 0.015, -0.007, 0.019\n\nCompute MAE and RMSE. Store in mae and rmse.",
+    hint:"MAE = mean(abs(actual - predicted))  RMSE = sqrt(mean((actual - predicted)^2))",
+    starter:"",
     validate(env) {
       const mae=Array.isArray(env.mae)?env.mae[0]:env.mae;
       const rmse=Array.isArray(env.rmse)?env.rmse[0]:env.rmse;
       if(mae===undefined) return {pass:false, msg:"mae is not defined"};
       if(rmse===undefined) return {pass:false, msg:"rmse is not defined"};
       if(Math.abs(mae-0.0034)>0.001) return {pass:false, msg:`mae ≈ ${mae?.toFixed(5)}, expected ~0.0034`};
-      return {pass:true, msg:`MAE = ${mae.toFixed(5)}  RMSE = ${rmse.toFixed(5)}\nRMSE penalises large errors more than MAE.\nAlways report both — they tell different stories.`};
+      return {pass:true, msg:`MAE=${mae.toFixed(5)}  RMSE=${rmse.toFixed(5)} ✓`};
     }
   },
   {
     id:"6.6", level:6, levelName:"Machine Learning",
     concept:"rpart() — decision tree",
     isl:"ISL §8.1",
-    mission:"Fit a decision tree predicting up/down days from volume and volatility. Use rpart(). Assign to tree_model.",
-    hint:"library(rpart) then rpart(outcome ~ var1 + var2, data=df, method='class') for classification trees. method='anova' for regression.",
-    starter:"library(rpart)\n\ntrades <- data.frame(\n  volume = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4,2.1,0.9),\n  vol_20 = c(0.8,1.2,0.6,1.5,0.9,1.1,0.5,1.3,0.8,1.6,1.0,0.7),\n  up     = as.factor(c(1,1,0,1,1,1,0,1,1,1,0,0))\n)\n\n# Decision tree\ntree_model <- rpart(up ~ volume + vol_20, data=trades, method=\"class\")\nprintcp(tree_model)",
+    mission:"Fit a decision tree predicting up from volume and vol_20. Store in tree_model.\n\ntrades <- data.frame(\n  volume = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4,2.1,0.9),\n  vol_20 = c(0.8,1.2,0.6,1.5,0.9,1.1,0.5,1.3,0.8,1.6,1.0,0.7),\n  up     = as.factor(c(1,1,0,1,1,1,0,1,1,1,0,0))\n)",
+    hint:"library(rpart) — rpart(outcome ~ var1 + var2, data=df, method='class')",
+    starter:"",
     validate(env) {
       const t=env.tree_model;
       const out=String(env.__output||"");
-      if(t&&t.__isTree) return {pass:true, msg:"decision tree fitted ✓\nTrees split data at the best threshold for each variable.\nThey're interpretable — you can read the rules."};
-      if(out.includes("CP")||out.includes("Root")||out.includes("rpart")) return {pass:true, msg:"decision tree fitted ✓\nThe CP table shows complexity vs error tradeoff.\nPrune the tree to avoid overfitting."};
-      return {pass:false, msg:"tree_model should be an rpart object — check library(rpart) and method='class'"};
+      if(t&&t.__isTree) return {pass:true, msg:"decision tree fitted ✓"};
+      if(out.includes("CP")||out.includes("Root")||out.includes("rpart")) return {pass:true, msg:"decision tree fitted ✓"};
+      return {pass:false, msg:"tree_model should be an rpart object"};
     }
   },
   {
     id:"6.7", level:6, levelName:"Machine Learning",
-    concept:"randomForest() — ensemble learning",
+    concept:"randomForest() — ensemble",
     isl:"ISL §8.2",
-    mission:"Fit a random forest with 100 trees on the same trading data. Assign to rf_model. Then check variable importance with importance().",
-    hint:"library(randomForest) then randomForest(outcome ~ ., data=df, ntree=100). The dot means 'all other columns'. importance() shows which variables matter most.",
-    starter:"library(randomForest)\n\nset.seed(42)\ntrades <- data.frame(\n  volume = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4,2.1,0.9),\n  vol_20 = c(0.8,1.2,0.6,1.5,0.9,1.1,0.5,1.3,0.8,1.6,1.0,0.7),\n  up     = as.factor(c(1,1,0,1,1,1,0,1,1,1,0,0))\n)\n\n# Random forest\nrf_model <- randomForest(up ~ ., data=trades, ntree=100)\nimportance(rf_model)",
+    mission:"Fit a random forest with 100 trees predicting up from all other columns. Store in rf_model. Print variable importance.\n\nset.seed(42)\ntrades <- data.frame(\n  volume = c(1.2,2.5,0.8,3.1,1.8,2.2,0.5,2.8,1.5,3.4,2.1,0.9),\n  vol_20 = c(0.8,1.2,0.6,1.5,0.9,1.1,0.5,1.3,0.8,1.6,1.0,0.7),\n  up     = as.factor(c(1,1,0,1,1,1,0,1,1,1,0,0))\n)",
+    hint:"library(randomForest) — randomForest(outcome ~ ., data=df, ntree=100). The dot means all other columns.",
+    starter:"",
     validate(env) {
       const rf=env.rf_model;
       const out=String(env.__output||"");
-      if(rf&&rf.__isRF) return {pass:true, msg:"random forest fitted ✓\n100 trees, each trained on a random subset of data.\nEnsembles almost always beat single models.\nLevel 6 complete — you've done ML."};
-      if(out.includes("MeanDecreaseGini")||out.includes("volume")||out.includes("vol_20")) return {pass:true, msg:"random forest fitted ✓\nVariable importance tells you what actually drives predictions.\nLevel 6 complete — you've done ML."};
-      return {pass:false, msg:"rf_model should be a randomForest object — check library(randomForest)"};
+      if(rf&&rf.__isRF) return {pass:true, msg:"random forest ✓"};
+      if(out.includes("MeanDecreaseGini")||out.includes("volume")) return {pass:true, msg:"random forest ✓"};
+      return {pass:false, msg:"rf_model should be a randomForest object"};
     }
   },
 
   // ── LEVEL 7: ALGO ARCHITECT ───────────────────────────────────────────────
   {
     id:"7.0", level:7, levelName:"Algo Architect",
-    concept:"Sharpe ratio — risk-adjusted return",
+    concept:"Sharpe ratio",
     isl:"Capstone",
-    mission:"Compute the annualised Sharpe ratio for a return series. Assume 0% risk-free rate. Assign to sharpe. Formula: (mean(returns) / sd(returns)) * sqrt(252).",
-    hint:"Sharpe = (mean return / std dev of returns) * sqrt(252). The sqrt(252) annualises it — 252 trading days per year. A Sharpe above 1 is considered good.",
-    starter:"returns <- c(0.008,-0.003,0.012,0.005,-0.007,0.015,0.003,\n             -0.005,0.011,0.009,-0.002,0.014,0.006,-0.004,0.010)\n\n# Annualised Sharpe ratio (0% risk-free rate)\nsharpe <- (mean(returns) / sd(returns)) * sqrt(252)\nround(sharpe, 3)",
+    mission:"Returns: 0.008, -0.003, 0.012, 0.005, -0.007, 0.015, 0.003, -0.005, 0.011, 0.009, -0.002, 0.014, 0.006, -0.004, 0.010.\n\nAnnualised Sharpe ratio (0% risk-free rate). Store in sharpe.",
+    hint:"Sharpe = (mean(returns) / sd(returns)) * sqrt(252)",
+    starter:"",
     validate(env) {
       const s=Array.isArray(env.sharpe)?env.sharpe[0]:env.sharpe;
       if(s===undefined) return {pass:false, msg:"sharpe is not defined"};
-      if(s<1||s>4) return {pass:false, msg:`sharpe = ${s?.toFixed(3)} — check the formula: (mean/sd) * sqrt(252)`};
-      return {pass:true, msg:`Sharpe = ${s.toFixed(3)}\nAbove 1.0 is good. Above 2.0 is excellent. Above 3.0 is suspicious.\nThis is the first number any serious investor will ask for.`};
+      if(s<1||s>4) return {pass:false, msg:`sharpe = ${s?.toFixed(3)} — check the formula`};
+      return {pass:true, msg:`Sharpe = ${s.toFixed(3)} ✓`};
     }
   },
   {
     id:"7.1", level:7, levelName:"Algo Architect",
-    concept:"Drawdown analysis — measuring pain",
+    concept:"Max drawdown",
     isl:"Capstone",
-    mission:"Compute the maximum drawdown from a cumulative return series. Max drawdown = largest peak-to-trough decline. Assign to max_dd.",
-    hint:"First compute cumulative returns: cumprod(1 + returns). Then running max: cummax(cum_ret). Drawdown = (cum_ret - running_max) / running_max. max_dd = min(drawdown).",
-    starter:"returns <- c(0.02,-0.01,0.03,-0.04,0.01,-0.03,0.02,0.04,-0.02,0.01)\n\n# Cumulative return series\ncum_ret     <- cumprod(1 + returns)\nrunning_max <- cummax(cum_ret)\ndrawdown    <- (cum_ret - running_max) / running_max\nmax_dd      <- min(drawdown)\nround(max_dd, 4)",
+    mission:"Returns: 0.02, -0.01, 0.03, -0.04, 0.01, -0.03, 0.02, 0.04, -0.02, 0.01.\n\nCompute maximum drawdown. Store in max_dd.",
+    hint:"cum_ret = cumprod(1 + returns). running_max = cummax(cum_ret). drawdown = (cum_ret - running_max) / running_max. max_dd = min(drawdown).",
+    starter:"",
     validate(env) {
       const md=Array.isArray(env.max_dd)?env.max_dd[0]:env.max_dd;
       if(md===undefined) return {pass:false, msg:"max_dd is not defined"};
-      if(md>=0) return {pass:false, msg:"max_dd should be negative — it represents a loss"};
-      if(md<-0.15||md>-0.01) return {pass:false, msg:`max_dd = ${md?.toFixed(4)} — check your formula`};
-      return {pass:true, msg:`max drawdown = ${(md*100).toFixed(2)}%\nThis is how bad it got at worst.\nInvestors care about drawdown as much as return — it measures survivability.`};
+      if(md>=0) return {pass:false, msg:"max_dd should be negative"};
+      if(md<-0.15||md>-0.01) return {pass:false, msg:`max_dd = ${md?.toFixed(4)} — check formula`};
+      return {pass:true, msg:`max drawdown = ${(md*100).toFixed(2)}% ✓`};
     }
   },
   {
     id:"7.2", level:7, levelName:"Algo Architect",
-    concept:"Probability → binary signal",
+    concept:"Probability → signal",
     isl:"Capstone",
-    mission:"Convert model output probabilities into trading signals: buy (1) if prob > 0.6, sell (-1) if prob < 0.4, hold (0) otherwise. Assign to signals.",
-    hint:"Use nested ifelse(): ifelse(condition1, value1, ifelse(condition2, value2, value3)). Think about which condition maps to buy, which to sell.",
-    starter:"probs <- c(0.72, 0.45, 0.31, 0.68, 0.55, 0.82, 0.38, 0.61, 0.49, 0.77)\n\n# Convert to signals: 1=buy, -1=sell, 0=hold\nsignals <- ifelse(probs > 0.6, 1,\n           ifelse(probs < 0.4, -1, 0))\nsignals",
+    mission:"probs: 0.72, 0.45, 0.31, 0.68, 0.55, 0.82, 0.38, 0.61, 0.49, 0.77.\n\nConvert to trading signals: 1 if prob > 0.6, -1 if prob < 0.4, 0 otherwise. Store in signals.",
+    hint:"Nested ifelse(): ifelse(condition1, value1, ifelse(condition2, value2, value3))",
+    starter:"",
     validate(env) {
       const sig=env.signals;
-      if(!Array.isArray(sig)) return {pass:false, msg:"signals should be a vector of -1, 0, or 1"};
+      if(!Array.isArray(sig)) return {pass:false, msg:"signals should be a vector"};
       if(sig.length!==10) return {pass:false, msg:`expected 10 signals, got ${sig.length}`};
       const exp=[1,0,-1,1,0,1,-1,1,0,1];
       for(let i=0;i<10;i++) if(sig[i]!==exp[i]) return {pass:false, msg:`signals[${i+1}] should be ${exp[i]}, got ${sig[i]}`};
-      return {pass:true, msg:`signals = [${exp.join(", ")}]\n5 buys, 2 holds, 2 sells ✓\nThe hold zone prevents acting on weak signals — a key discipline.`};
+      return {pass:true, msg:`[${exp.join(", ")}] ✓`};
     }
   },
   {
     id:"7.3", level:7, levelName:"Algo Architect",
-    concept:"Position sizing — Kelly criterion",
+    concept:"Kelly criterion",
     isl:"Capstone",
-    mission:"Compute the Kelly fraction for a strategy. Kelly = (win_rate * avg_win - (1-win_rate) * avg_loss) / avg_win. Assign to kelly. Then compute half-Kelly (the practical version).",
-    hint:"Kelly tells you the optimal fraction of capital to risk. Half-Kelly (kelly/2) is what practitioners use — full Kelly is too aggressive for real markets.",
-    starter:"win_rate <- 0.58\navg_win  <- 0.021\navg_loss <- 0.014\n\n# Kelly fraction\nkelly      <- (win_rate * avg_win - (1 - win_rate) * avg_loss) / avg_win\nhalf_kelly <- kelly / 2\n\ncat(\"Kelly:     \", round(kelly, 4), \"\\n\")\ncat(\"Half-Kelly:\", round(half_kelly, 4), \"\\n\")",
+    mission:"win_rate = 0.58, avg_win = 0.021, avg_loss = 0.014.\n\nCompute the Kelly fraction and store in kelly. Compute half-Kelly and store in half_kelly.\n\nKelly = (win_rate × avg_win − (1 − win_rate) × avg_loss) / avg_win",
+    hint:"Half-Kelly is kelly / 2 — what practitioners actually use.",
+    starter:"",
     validate(env) {
       const k=Array.isArray(env.kelly)?env.kelly[0]:env.kelly;
       const hk=Array.isArray(env.half_kelly)?env.half_kelly[0]:env.half_kelly;
       if(k===undefined) return {pass:false, msg:"kelly is not defined"};
       if(Math.abs(k-0.2667)>0.01) return {pass:false, msg:`kelly ≈ ${k?.toFixed(4)}, expected ~0.267`};
-      return {pass:true, msg:`Kelly = ${k.toFixed(4)} → risk 26.7% per trade\nHalf-Kelly = ${hk.toFixed(4)} → risk 13.3% (practical)\nNever bet full Kelly — variance will ruin you first.`};
+      return {pass:true, msg:`Kelly=${k.toFixed(4)}  Half-Kelly=${hk.toFixed(4)} ✓`};
     }
   },
   {
     id:"7.4", level:7, levelName:"Algo Architect",
-    concept:"Signal generation — composite score",
+    concept:"Composite signal score",
     isl:"Capstone",
-    mission:"Combine three indicators into a single normalised signal score. Normalise each to 0-1 range, then weight: 40% momentum, 35% volume, 25% volatility. Assign to score.",
-    hint:"Normalise: (x - min(x)) / (max(x) - min(x)) maps any vector to [0,1]. Then score = 0.4*mom_n + 0.35*vol_n + 0.25*vix_n.",
-    starter:"momentum   <- c(0.031, 0.012, -0.008, 0.044, 0.019, -0.005, 0.027)\nvolume_raw <- c(2.5, 1.2, 0.8, 3.1, 1.8, 0.5, 2.2)\nvolatility <- c(0.8, 1.2, 1.5, 0.6, 0.9, 1.8, 1.1)\n\n# Normalise each to [0,1]\nnorm <- function(x) (x - min(x)) / (max(x) - min(x))\nmom_n <- norm(momentum)\nvol_n <- norm(volume_raw)\nvix_n <- 1 - norm(volatility)  # invert: lower vol = better signal\n\n# Composite score\nscore <- 0.4*mom_n + 0.35*vol_n + 0.25*vix_n\nround(score, 3)",
+    mission:"Three raw indicators:\nmomentum:   0.031, 0.012, -0.008, 0.044, 0.019, -0.005, 0.027\nvolume_raw: 2.5, 1.2, 0.8, 3.1, 1.8, 0.5, 2.2\nvolatility: 0.8, 1.2, 1.5, 0.6, 0.9, 1.8, 1.1\n\nNormalise each to [0,1]. Invert volatility (lower = better). Weight: 40% momentum, 35% volume, 25% volatility. Store composite in score.",
+    hint:"Normalise: (x - min(x)) / (max(x) - min(x)). Invert vol: 1 - norm(volatility). Then weighted sum.",
+    starter:"",
     validate(env) {
       const sc=env.score;
-      if(!Array.isArray(sc)) return {pass:false, msg:"score should be a numeric vector"};
+      if(!Array.isArray(sc)) return {pass:false, msg:"score should be a vector"};
       if(sc.length!==7) return {pass:false, msg:`expected 7 scores, got ${sc.length}`};
       if(sc.some(v=>v<0||v>1)) return {pass:false, msg:"scores should all be between 0 and 1"};
-      return {pass:true, msg:`scores = [${sc.map(v=>v.toFixed(3)).join(", ")}]\nHighest score = strongest buy signal.\nThis is how quant signals are built — combine, weight, normalise.`};
+      return {pass:true, msg:`[${sc.map(v=>v.toFixed(3)).join(", ")}] ✓`};
     }
   },
   {
     id:"7.5", level:7, levelName:"Algo Architect",
-    concept:"Backtesting — strategy vs buy-and-hold",
+    concept:"Backtesting",
     isl:"Capstone",
-    mission:"Backtest a simple signal strategy: invest 100% when signal=1, cash (0% return) when signal=0. Compare final value to buy-and-hold. Assign to strat_final and bah_final.",
-    hint:"strat_returns = actual_returns * signals (signals are 0 or 1 here). Then cumprod(1 + strat_returns) gives the growth of $1. Compare to cumprod(1 + actual_returns).",
-    starter:"set.seed(1)\nactual_returns <- c(0.008,-0.003,0.012,-0.007,0.015,0.003,-0.005,0.011,0.009,-0.002)\nsignals_bin   <- c(1,0,1,0,1,1,0,1,1,0)  # 1=invested, 0=cash\n\n# Strategy returns\nstrat_ret   <- actual_returns * signals_bin\nstrat_final <- prod(1 + strat_ret)\nbah_final   <- prod(1 + actual_returns)\n\ncat(\"Strategy: $\", round(strat_final, 4), \"\\n\")\ncat(\"Buy&Hold: $\", round(bah_final,  4), \"\\n\")",
+    mission:"actual_returns: 0.008, -0.003, 0.012, -0.007, 0.015, 0.003, -0.005, 0.011, 0.009, -0.002\nsignals_bin:   1, 0, 1, 0, 1, 1, 0, 1, 1, 0\n\nCompute final value of $1 under the signal strategy. Store in strat_final. Compute buy-and-hold final value. Store in bah_final.",
+    hint:"strat_returns = actual_returns * signals_bin. Final value = prod(1 + returns).",
+    starter:"",
     validate(env) {
       const sf=Array.isArray(env.strat_final)?env.strat_final[0]:env.strat_final;
       const bf=Array.isArray(env.bah_final)?env.bah_final[0]:env.bah_final;
       if(sf===undefined) return {pass:false, msg:"strat_final is not defined"};
       if(bf===undefined) return {pass:false, msg:"bah_final is not defined"};
-      const winner=sf>bf?"Strategy beats buy-and-hold":"Buy-and-hold beats strategy";
-      return {pass:true, msg:`Strategy: $${sf.toFixed(4)}  Buy&Hold: $${bf.toFixed(4)}\n${winner}\nMost strategies don't beat buy-and-hold — that's the honest truth.\nThe ones that do require edge, discipline, and low costs.`};
+      return {pass:true, msg:`Strategy $${sf.toFixed(4)}  B&H $${bf.toFixed(4)} ✓`};
     }
   },
   {
     id:"7.6", level:7, levelName:"Algo Architect",
-    concept:"Walk-forward validation — honest testing",
+    concept:"Walk-forward validation",
     isl:"FPP3 §5.10",
-    mission:"Implement a simple walk-forward test: train on first 60% of data, test on each remaining point sequentially. Count how many test predictions are correct. Assign to accuracy.",
-    hint:"Split at floor(n*0.6). Train a model on rows 1:split. Predict row split+1. Then expand training to split+1, predict split+2. Repeat. This mimics real trading — you never use future data.",
-    starter:"set.seed(42)\nn <- 20\ndata <- data.frame(\n  x = rnorm(n, mean=1.5, sd=0.5),\n  y = as.factor(rbinom(n, 1, 0.6))\n)\n\nsplit    <- floor(n * 0.6)\ncorrect  <- 0\n\nfor(i in (split+1):n) {\n  train_wf <- data[1:(i-1), ]\n  test_wf  <- data[i, ]\n  m        <- glm(y ~ x, data=train_wf, family=binomial)\n  prob     <- predict(m, newdata=test_wf, type=\"response\")\n  pred     <- ifelse(prob > 0.5, 1, 0)\n  if(pred == as.numeric(as.character(test_wf$y))) correct <- correct + 1\n}\n\naccuracy <- correct / (n - split)\nround(accuracy, 3)",
+    mission:"Walk-forward test: train on first 60% of data, predict each remaining point sequentially using logistic regression. Count correct predictions. Store accuracy in accuracy.\n\nset.seed(42)\nn <- 20\ndata <- data.frame(\n  x = rnorm(n, mean=1.5, sd=0.5),\n  y = as.factor(rbinom(n, 1, 0.6))\n)",
+    hint:"Split at floor(n*0.6). Loop from split+1 to n. Each iteration: train on rows 1:(i-1), predict row i, compare to actual.",
+    starter:"",
     validate(env) {
       const acc=Array.isArray(env.accuracy)?env.accuracy[0]:env.accuracy;
       const out=String(env.__output||"");
-      if(acc===undefined&&!out.match(/0\.\d+/)) return {pass:false, msg:"accuracy is not defined — check your loop"};
+      if(acc===undefined&&!out.match(/0\.\d+/)) return {pass:false, msg:"accuracy is not defined"};
       const val=acc||parseFloat(out.match(/0\.\d+/)?.[0]);
       if(val<0||val>1) return {pass:false, msg:`accuracy = ${val} — should be between 0 and 1`};
-      return {pass:true, msg:`walk-forward accuracy = ${(val*100).toFixed(1)}%\nThis is honest accuracy — each prediction used only past data.\nIn-sample accuracy is always higher. Walk-forward is what actually matters.`};
+      return {pass:true, msg:`walk-forward accuracy = ${(val*100).toFixed(1)}% ✓`};
     }
   },
   {
     id:"7.7", level:7, levelName:"Algo Architect",
-    concept:"Full pipeline — data to evaluated strategy",
+    concept:"Full pipeline",
     isl:"Capstone",
-    mission:"Put it all together. Given raw returns, compute: Sharpe ratio, max drawdown, and a simple buy signal (invest when last 3-day return > 0). Report all three.",
-    hint:"You've built each piece separately. Now chain them: pct_returns → sharpe → max_dd → signals → backtest. Use the functions and formulas from previous trials.",
-    starter:"set.seed(99)\nprices <- c(100,102,101,104,103,106,105,108,107,110,109,112,111,114,113,116)\n\n# 1. Compute returns\nreturns <- diff(prices) / prices[-length(prices)]\n\n# 2. Sharpe ratio\nsharpe  <- (mean(returns) / sd(returns)) * sqrt(252)\n\n# 3. Max drawdown\ncum_r   <- cumprod(1 + returns)\nmax_dd  <- min((cum_r - cummax(cum_r)) / cummax(cum_r))\n\n# 4. Rolling 3-day signal (buy when sum of last 3 returns > 0)\nn <- length(returns)\nsig <- rep(0, n)\nfor(i in 3:n) sig[i] <- ifelse(sum(returns[(i-2):i]) > 0, 1, 0)\n\n# 5. Strategy vs buy-and-hold\nstrat <- prod(1 + returns * sig)\nbah   <- prod(1 + returns)\n\ncat(\"Sharpe:      \", round(sharpe,3), \"\\n\")\ncat(\"Max Drawdown:\", round(max_dd*100,2), \"%\\n\")\ncat(\"Strategy:   $\", round(strat,4), \"\\n\")\ncat(\"Buy & Hold: $\", round(bah,4), \"\\n\")",
+    mission:"prices: 100, 102, 101, 104, 103, 106, 105, 108, 107, 110, 109, 112, 111, 114, 113, 116.\n\nFrom these prices, compute and print: Sharpe ratio (store in sharpe), max drawdown (store in max_dd), and final value of a strategy that buys when the sum of the last 3 returns is positive.",
+    hint:"Chain what you've learned: diff(prices)/prices[-n] → sharpe → max_dd → rolling signal → prod(1 + returns * sig).",
+    starter:"",
     validate(env) {
       const s=Array.isArray(env.sharpe)?env.sharpe[0]:env.sharpe;
       const md=Array.isArray(env.max_dd)?env.max_dd[0]:env.max_dd;
       const out=String(env.__output||"");
       if(s===undefined||md===undefined) {
-        if(out.includes("Sharpe")&&out.includes("Drawdown")) return {pass:true, msg:"Full pipeline complete ✓\nYou took raw prices all the way to a backtested, risk-evaluated strategy.\nThis is what quant analysts do — in R, in Python, at every major fund.\nLevel 7 complete. You're an Algo Architect."};
-        return {pass:false, msg:"define sharpe and max_dd — check your variable names"};
+        if(out.includes("Sharpe")&&out.includes("Drawdown")) return {pass:true, msg:"Pipeline complete ✓"};
+        return {pass:false, msg:"define sharpe and max_dd"};
       }
-      return {pass:true, msg:`Sharpe = ${s.toFixed(3)}  MaxDD = ${(md*100).toFixed(2)}%\nFull pipeline complete ✓\nYou took raw prices all the way to a backtested, risk-evaluated strategy.\nThis is what quant analysts do — in R, in Python, at every major fund.\nLevel 7 complete. You are an Algo Architect.`};
+      return {pass:true, msg:`Sharpe=${s.toFixed(3)}  MaxDD=${(md*100).toFixed(2)}% ✓`};
     }
   }
 
 ];
+// ── STATE ──────────────────────────────────────────────────────────────────
+let completed  = new Set(JSON.parse(localStorage.getItem("rlab_done") || "[]"));
+let xp         = parseInt(localStorage.getItem("rlab_xp") || "0");
+let streak     = parseInt(localStorage.getItem("rlab_streak") || "0");
+let lastDate   = localStorage.getItem("rlab_date") || "";
+let current    = 0;
+let failCount  = 0;
+let hintOpen   = false;
+let webrReady  = false;
+let webr       = null;
+let transitioning = false;
 
-// ── STATE ─────────────────────────────────────────────────────────────────────
-let completed = new Set(JSON.parse(localStorage.getItem("rst_done")||"[]"));
-let current = 0;
-let webrReady = false;
-let webr = null;
-let sbExpanded = true;
-let levelOpen = {};
-let failCount = 0;
-
-function save() { localStorage.setItem("rst_done", JSON.stringify([...completed])); }
-
-// ── SIDEBAR TOGGLE ────────────────────────────────────────────────────────────
-function toggleSidebar() {
-  sbExpanded = !sbExpanded;
-  const sb = document.getElementById("sidebar");
-  const tog = document.getElementById("sb-toggle");
-  const rail = document.getElementById("sb-rail");
-  const inner = document.getElementById("sb-inner");
-  if (sbExpanded) {
-    sb.className = "expanded";
-    tog.textContent = "‹";
-    rail.style.display = "none";
-    inner.style.display = "flex";
-  } else {
-    sb.className = "collapsed";
-    tog.textContent = "›";
-    rail.style.display = "flex";
-    inner.style.display = "none";
-    buildRail();
-  }
+function save() {
+  localStorage.setItem("rlab_done",   JSON.stringify([...completed]));
+  localStorage.setItem("rlab_xp",     xp);
+  localStorage.setItem("rlab_streak", streak);
+  localStorage.setItem("rlab_date",   lastDate);
 }
 
-// ── UNLOCKED LEVELS ───────────────────────────────────────────────────────────
-function getUnlockedLevels() {
-  const levels = [...new Set(TRIALS.map(t => t.level))];
-  const unlocked = new Set([0]);
-  levels.forEach(lv => {
-    if (lv === 0) return;
-    const prev = TRIALS.filter(t => t.level === lv - 1);
-    if (prev.every(t => completed.has(t.id))) unlocked.add(lv);
-  });
-  return unlocked;
+// ── STREAK ─────────────────────────────────────────────────────────────────
+function touchStreak() {
+  const today = new Date().toDateString();
+  if (lastDate === today) return;
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  streak = (lastDate === yesterday) ? streak + 1 : 1;
+  lastDate = today;
+  save();
 }
 
-// ── RAIL (collapsed) ──────────────────────────────────────────────────────────
-function buildRail() {
-  const dots = document.getElementById("rail-dots");
-  dots.innerHTML = "";
-  const pct = Math.round((completed.size / TRIALS.length) * 100);
-  document.getElementById("railFill").style.height = pct + "%";
-  const unlocked = getUnlockedLevels();
-  const levels = [...new Set(TRIALS.map(t => t.level))];
-  levels.forEach(lv => {
-    if (!unlocked.has(lv)) return;
-    const lvTrials = TRIALS.filter(t => t.level === lv);
-    const allDone = lvTrials.every(t => completed.has(t.id));
-    const isActive = TRIALS[current].level === lv;
-    const dot = document.createElement("div");
-    dot.className = "rail-dot" + (allDone ? " done" : isActive ? " active" : " partial");
-    dot.title = `Level ${lv}`;
-    dot.onclick = () => {
-      sbExpanded = true;
-      document.getElementById("sidebar").className = "expanded";
-      document.getElementById("sb-toggle").textContent = "‹";
-      document.getElementById("sb-rail").style.display = "none";
-      document.getElementById("sb-inner").style.display = "flex";
-      levelOpen[lv] = true;
-      buildTree();
-    };
-    dots.appendChild(dot);
-  });
-}
-
-// ── TREE ──────────────────────────────────────────────────────────────────────
-function buildTree() {
-  const tree = document.getElementById("tree");
-  tree.innerHTML = "";
-  const unlocked = getUnlockedLevels();
-  const levels = [...new Set(TRIALS.map(t => t.level))];
-  levels.forEach(lv => {
-    if (!unlocked.has(lv)) return;
-    const lvTrials = TRIALS.filter(t => t.level === lv);
-    const doneCount = lvTrials.filter(t => completed.has(t.id)).length;
-    const hasActive = TRIALS[current].level === lv;
-    const isOpen = levelOpen[lv] !== false;
-    const header = document.createElement("div");
-    header.className = "level-header" + (isOpen ? " open" : "") + (hasActive ? " has-active" : "");
-    header.innerHTML = `<span class="lh-name">Lv ${lv} — ${lvTrials[0].levelName}</span>${doneCount > 0 ? `<span class="lh-count">${doneCount}/${lvTrials.length}</span>` : ""}<span class="lh-chevron">▶</span>`;
-    header.onclick = () => { levelOpen[lv] = !levelOpen[lv]; buildTree(); };
-    tree.appendChild(header);
-    const group = document.createElement("div");
-    group.className = "level-trials " + (isOpen ? "open" : "closed");
-    lvTrials.forEach(t => {
-      const idx = TRIALS.indexOf(t);
-      const isLocked = idx > 0 && !completed.has(TRIALS[idx - 1].id);
-      const isDone = completed.has(t.id);
-      const isActive = idx === current;
-      const row = document.createElement("div");
-      row.className = "trial-row" + (isActive ? " active" : "") + (isDone ? " done" : "") + (isLocked ? " locked" : "");
-      row.innerHTML = `<span class="tr-id">${t.id}</span><span class="tr-name">${t.concept.split("—")[0].trim()}</span><div class="tr-dot"></div>`;
-      if (!isLocked) row.onclick = () => loadTrial(idx);
-      group.appendChild(row);
-    });
-    tree.appendChild(group);
-  });
-  const pct = Math.round((completed.size / TRIALS.length) * 100);
-  document.getElementById("progressText").textContent = `${completed.size} / ${TRIALS.length}`;
-  document.getElementById("progressBar").style.width = pct + "%";
-}
-
-// ── LOAD ──────────────────────────────────────────────────────────────────────
-function loadTrial(idx) {
-  current = idx;
+// ── LOAD ───────────────────────────────────────────────────────────────────
+function loadTrial(idx, animate) {
+  current   = idx;
   failCount = 0;
-  levelOpen[TRIALS[idx].level] = true;
+  hintOpen  = false;
+  clearFlash();
+  closeHint();
+
   const t = TRIALS[idx];
-  document.getElementById("mbTag").textContent = `trial ${t.id}`;
-  document.getElementById("mbMission").textContent = t.mission;
-  document.getElementById("editor").value = t.starter || "";
-  document.getElementById("output").innerHTML = `<div class="out-info">// output appears here</div>`;
-  buildTree();
-  if (!sbExpanded) buildRail();
+  const pt = document.getElementById("problem-text");
+  const ed = document.getElementById("editor");
+
+  if (animate) {
+    pt.classList.remove("visible");
+    pt.classList.add("fading");
+    setTimeout(() => {
+      setQuestion(t, pt, ed);
+      pt.classList.remove("fading");
+      pt.classList.add("visible");
+    }, 320);
+  } else {
+    setQuestion(t, pt, ed);
+    setTimeout(() => pt.classList.add("visible"), 40);
+  }
+
+  // hide hint trigger until failures
+  document.getElementById("hint-trigger").classList.remove("visible");
 }
 
-function resetEditor() {
-  document.getElementById("editor").value = TRIALS[current].starter || "";
-  document.getElementById("output").innerHTML = `<div class="out-info">// reset.</div>`;
+function setQuestion(t, pt, ed) {
+  pt.textContent = t.mission;
+  ed.value = t.starter || "";
+  ed.style.height = "auto";
+  autosize(ed);
 }
 
-function showHint() {
-  document.getElementById("output").innerHTML = `<div class="out-hint fadein"># ${TRIALS[current].hint}</div>`;
+function autosize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(Math.max(el.scrollHeight, 120), 260) + "px";
 }
 
+// ── KEYBOARD ───────────────────────────────────────────────────────────────
 document.getElementById("editor").addEventListener("keydown", e => {
-  if ((e.ctrlKey||e.metaKey) && e.key==="Enter") { e.preventDefault(); runCode(); }
-  if (e.key==="Tab") {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); runCode(); }
+  if (e.key === "Tab") {
     e.preventDefault();
-    const s=e.target.selectionStart, en=e.target.selectionEnd;
-    e.target.value=e.target.value.slice(0,s)+"  "+e.target.value.slice(en);
-    e.target.selectionStart=e.target.selectionEnd=s+2;
+    const s = e.target.selectionStart, en = e.target.selectionEnd;
+    e.target.value = e.target.value.slice(0, s) + "  " + e.target.value.slice(en);
+    e.target.selectionStart = e.target.selectionEnd = s + 2;
   }
 });
+document.getElementById("editor").addEventListener("input", e => autosize(e.target));
 
-// ── RUN ───────────────────────────────────────────────────────────────────────
+// ── RUN ────────────────────────────────────────────────────────────────────
 async function runCode() {
+  if (transitioning) return;
   const code = document.getElementById("editor").value.trim();
   if (!code) return;
   const btn = document.getElementById("runBtn");
-  btn.disabled=true; btn.textContent="...";
+  btn.disabled = true; btn.classList.add("running"); btn.textContent = "…";
   try {
     if (webrReady && webr) await runReal(code);
     else await runSim(code);
   } finally {
-    btn.disabled=false; btn.textContent="run";
+    btn.disabled = false; btn.classList.remove("running"); btn.textContent = "run";
   }
 }
 
 async function runReal(code) {
   const trial = TRIALS[current];
-  let outputText="", envData={}, errText="";
+  let outputText = "", envData = {}, errText = "";
   try {
     await webr.evalRVoid(code);
     try {
       const outR = await webr.evalR(`paste(capture.output({${code}}), collapse="\n")`);
       const outJs = await outR.toJs();
-      outputText = (outJs.values||[]).join("\n");
+      outputText = (outJs.values || []).join("\n");
     } catch { outputText = ""; }
 
     const vars = ["x","m","prob","returns","total_return","avg_return","best","worst",
-                  "winners","targets","portfolio","sorted_port","expensive","vol","r",
-                  "model","predicted","r_squared","port_value","stocks","positive_days",
-                  "trimmed","ranked","avg_by_ticker","result","full_data",
-                  "gap","prices","changes","pct_returns","ma3","ma5","roll_vol","ac",
-                  "train","test","log_model","probs","predicted","conf_mat","arima_model",
-                  "fc","mae","rmse","tree_model","rf_model",
-                  "sharpe","max_dd","signals","kelly","half_kelly","score",
-                  "strat_final","bah_final","accuracy","strat","bah",
-                  "cum_ret","running_max","drawdown","sig"];
+      "winners","targets","portfolio","sorted_port","expensive","vol","r",
+      "model","predicted","r_squared","port_value","stocks","positive_days",
+      "trimmed","ranked","avg_by_ticker","result","full_data",
+      "gap","prices","changes","pct_returns","ma3","ma5","roll_vol","ac",
+      "train","test","log_model","probs","predicted","conf_mat","arima_model",
+      "fc","mae","rmse","tree_model","rf_model",
+      "sharpe","max_dd","signals","kelly","half_kelly","score",
+      "strat_final","bah_final","accuracy","strat","bah",
+      "cum_ret","running_max","drawdown","sig"];
     for (const v of vars) {
       try {
-        const existsR = await webr.evalR(`exists("${v}")`);
-        const existsJs = await existsR.toJs();
-        if (!existsJs.values||!existsJs.values[0]) continue;
-        const typeR = await webr.evalR(`class(${v})[1]`);
-        const typeJs = await typeR.toJs();
-        const cls = (typeJs.values||[])[0]||"";
-        if (cls==="numeric"||cls==="integer"||cls==="logical") {
-          const obj = await webr.evalR(`as.numeric(${v})`);
-          const js = await obj.toJs();
-          envData[v] = js.values;
-        } else if (cls==="character") {
-          const obj = await webr.evalR(v);
-          const js = await obj.toJs();
-          envData[v] = js.values;
-        } else if (cls==="data.frame") {
-          const nr = await (await webr.evalR(`nrow(${v})`)).toJs();
-          const nc = await (await webr.evalR(`ncol(${v})`)).toJs();
-          envData[v] = {__isDF:true, nrow:nr.values[0], ncol:nc.values[0]};
-        } else if (cls==="lm") {
-          const r2 = await (await webr.evalR(`summary(${v})$r.squared`)).toJs();
-          envData[v] = {__isLM:true};
-          if (r2.values) envData.r_squared = r2.values;
-        } else if (cls==="matrix"||cls==="array") {
-          const nr = await (await webr.evalR(`nrow(${v})`)).toJs();
-          const nc = await (await webr.evalR(`ncol(${v})`)).toJs();
-          envData[v] = {__isMatrix:true, nrow:nr.values[0], ncol:nc.values[0]};
+        const existsJs = await (await webr.evalR(`exists("${v}")`)).toJs();
+        if (!existsJs.values?.[0]) continue;
+        const cls = ((await (await webr.evalR(`class(${v})[1]`)).toJs()).values || [])[0] || "";
+        if (cls === "numeric" || cls === "integer" || cls === "logical") {
+          envData[v] = (await (await webr.evalR(`as.numeric(${v})`)).toJs()).values;
+        } else if (cls === "character") {
+          envData[v] = (await (await webr.evalR(v)).toJs()).values;
+        } else if (cls === "data.frame") {
+          const nr = (await (await webr.evalR(`nrow(${v})`)).toJs()).values[0];
+          const nc = (await (await webr.evalR(`ncol(${v})`)).toJs()).values[0];
+          envData[v] = { __isDF: true, nrow: nr, ncol: nc };
+        } else if (cls === "lm") {
+          const r2 = (await (await webr.evalR(`summary(${v})$r.squared`)).toJs()).values;
+          envData[v] = { __isLM: true };
+          if (r2) envData.r_squared = r2;
+        } else if (cls === "matrix" || cls === "array") {
+          const nr = (await (await webr.evalR(`nrow(${v})`)).toJs()).values[0];
+          const nc = (await (await webr.evalR(`ncol(${v})`)).toJs()).values[0];
+          envData[v] = { __isMatrix: true, nrow: nr, ncol: nc };
         }
       } catch {}
     }
     envData.__output = outputText;
-  } catch(e) { errText = e.message||String(e); }
-  display(outputText, envData, errText, trial);
+  } catch(e) { errText = e.message || String(e); }
+  resolve(envData, errText, trial);
 }
 
 async function runSim(code) {
   const trial = TRIALS[current];
-  let env={}, outputText="", errText="";
-  try { outputText=simulate(code,env); env.__output=outputText; }
-  catch(e) { errText=e.message; }
-  display(outputText, env, errText, trial);
+  let env = {}, outputText = "", errText = "";
+  try { outputText = simulate(code, env); env.__output = outputText; }
+  catch(e) { errText = e.message; }
+  resolve(env, errText, trial);
 }
 
-// ── SIMULATOR ─────────────────────────────────────────────────────────────────
+// ── RESOLVE ────────────────────────────────────────────────────────────────
+function resolve(envData, errText, trial) {
+  if (errText) { flash("fail"); failCount++; maybeShowHint(); return; }
+  const verdict = trial.validate(envData);
+  if (verdict.pass) {
+    flash("pass");
+    const wasNew = !completed.has(trial.id);
+    if (wasNew) { completed.add(trial.id); xp += 10; touchStreak(); save(); }
+    transitioning = true;
+    setTimeout(() => {
+      transitioning = false;
+      const nextIdx = current + 1;
+      if (nextIdx < TRIALS.length) {
+        loadTrial(nextIdx, true);
+      } else {
+        showDone();
+      }
+    }, 700);
+  } else {
+    flash("fail");
+    failCount++;
+    maybeShowHint();
+  }
+}
+
+// ── FLASH ──────────────────────────────────────────────────────────────────
+function flash(type) {
+  const wrap = document.getElementById("editor-wrap");
+  clearFlash();
+  wrap.classList.add(type === "pass" ? "pass-flash" : "fail-flash");
+  if (type === "fail") setTimeout(clearFlash, 600);
+}
+function clearFlash() {
+  const wrap = document.getElementById("editor-wrap");
+  wrap.classList.remove("pass-flash", "fail-flash");
+}
+
+// ── HINT ───────────────────────────────────────────────────────────────────
+function maybeShowHint() {
+  if (failCount >= 3) {
+    document.getElementById("hint-trigger").classList.add("visible");
+  }
+}
+
+function toggleHint() {
+  hintOpen = !hintOpen;
+  const bubble = document.getElementById("hint-bubble");
+  if (hintOpen) {
+    bubble.textContent = TRIALS[current].hint;
+    bubble.classList.add("visible");
+  } else {
+    closeHint();
+  }
+}
+
+function closeHint() {
+  hintOpen = false;
+  document.getElementById("hint-bubble").classList.remove("visible");
+}
+
+// ── DONE ───────────────────────────────────────────────────────────────────
+function showDone() {
+  // reveal the counter for the first time
+  const counter = document.getElementById("counter");
+  counter.textContent = `47 / 47`;
+  counter.style.opacity = "1";
+
+  const ds = document.getElementById("done-screen");
+  document.getElementById("doneCount").textContent = `${completed.size} / ${TRIALS.length}`;
+  setTimeout(() => ds.classList.add("visible"), 200);
+}
+
+// ── SIMULATOR (full, from original) ───────────────────────────────────────
 function simulate(code, env) {
-  const lines = code.split("\n").filter(l=>l.trim()&&!l.trim().startsWith("#"));
+  const lines = code.split("\n").filter(l => l.trim() && !l.trim().startsWith("#"));
   const out = [];
   for (const line of lines) {
     const tr = line.trim();
-    if (tr.startsWith("library(")) { env.__tidyverse=true; continue; }
+    if (tr.startsWith("library(")) { env.__tidyverse = true; continue; }
     const asgn = tr.match(/^(\w+)\s*<-\s*([\s\S]+)$/);
-    if (asgn) { const [,name,expr]=asgn; env[name]=evalExpr(expr.trim(),env); continue; }
-    // pipe assignment: x <- df |> f() |> g()
-    const pipeAsgn = tr.match(/^(\w+)\s*<-\s*(.+\|>.+)$/);
-    if (pipeAsgn) { const [,name,expr]=pipeAsgn; env[name]=evalPipe(expr,env); continue; }
-    // bare pipe chain
-    if (tr.includes("|>")) { const v=evalPipe(tr,env); if(v!==undefined) out.push(formatVal(v)); continue; }
-    const val = evalExpr(tr,env);
-    if (val!==undefined) out.push(formatVal(val));
+    if (asgn) { const [,name,expr] = asgn; env[name] = evalExpr(expr.trim(), env); continue; }
+    if (tr.includes("|>")) { const v = evalPipe(tr, env); if (v !== undefined) out.push(formatVal(v)); continue; }
+    const val = evalExpr(tr, env);
+    if (val !== undefined) out.push(formatVal(val));
   }
   return out.join("\n");
 }
 
 function evalPipe(expr, env) {
-  const steps = expr.split("|>").map(s=>s.trim());
+  const steps = expr.split("|>").map(s => s.trim());
   let val = evalExpr(steps[0], env);
-  for (let i=1; i<steps.length; i++) {
+  for (let i = 1; i < steps.length; i++) {
     const fn = steps[i].trim();
-    if (fn.startsWith("filter(")) {
-      if (val&&val.__isDF) {
-        const condStr = fn.slice(7,-1).trim();
-        if (condStr.includes("> 0")) val = {...val, nrow: Math.ceil(val.nrow*0.6)};
-        else if (condStr.includes("> 200")) val = {...val, nrow:2};
-      }
-    } else if (fn.startsWith("arrange(")) {
-      if (val&&val.__isDF) val = {...val, __sorted:true};
-    } else if (fn.startsWith("select(")) {
-      if (val&&val.__isDF) val = {...val, ncol:2};
-    } else if (fn.startsWith("group_by(")) {
-      if (val&&val.__isDF) val = {...val, __grouped:true};
-    } else if (fn.startsWith("summarise(")||fn.startsWith("summarize(")) {
-      if (val&&val.__isDF) val = {...val, __grouped:false, nrow:2, ncol:2};
-    } else if (fn.startsWith("mutate(")) {
-      if (val&&val.__isDF) val = {...val, ncol:val.ncol+1};
-    }
+    if (fn.startsWith("filter(")) { if (val&&val.__isDF) { const c = fn.slice(7,-1).trim(); if (c.includes("> 0")) val={...val,nrow:Math.ceil(val.nrow*0.6)}; else if (c.includes("> 200")) val={...val,nrow:2}; } }
+    else if (fn.startsWith("arrange(")) { if (val&&val.__isDF) val={...val,__sorted:true}; }
+    else if (fn.startsWith("select(")) { if (val&&val.__isDF) val={...val,ncol:2}; }
+    else if (fn.startsWith("group_by(")) { if (val&&val.__isDF) val={...val,__grouped:true}; }
+    else if (fn.startsWith("summarise(")||fn.startsWith("summarize(")) { if (val&&val.__isDF) val={...val,__grouped:false,nrow:2,ncol:2}; }
+    else if (fn.startsWith("mutate(")) { if (val&&val.__isDF) val={...val,ncol:val.ncol+1}; }
   }
   return val;
 }
 
 function evalExpr(expr, env) {
   expr = expr.trim();
-  if (expr.startsWith("(")&&expr.endsWith(")")) expr=expr.slice(1,-1).trim();
+  if (expr.startsWith("(") && expr.endsWith(")")) expr = expr.slice(1,-1).trim();
   if (expr.includes("|>")) return evalPipe(expr, env);
-
-  if (expr.startsWith("c(")) {
-    const inner=expr.slice(2,-1);
-    if (inner.includes('"')||inner.includes("'")) return inner.split(",").map(s=>s.trim().replace(/^["']|["']$/g,""));
-    return inner.split(",").map(n=>parseFloat(n.trim())).filter(n=>!isNaN(n));
-  }
-  if (expr.startsWith("seq(")) {
-    const args=expr.slice(4,-1).split(",").map(s=>s.trim());
-    const from=parseFloat(args[0]), to=parseFloat(args[1]);
-    const byMatch=(args[2]||"").match(/by\s*=\s*([\d.]+)/);
-    const by=byMatch?parseFloat(byMatch[1]):1;
-    const result=[];
-    for(let v=from;v<=to+0.0001;v+=by) result.push(parseFloat(v.toFixed(10)));
-    return result;
-  }
-  if (expr.startsWith("matrix(")) {
-    const nr=(expr.match(/nrow\s*=\s*(\d+)/)||[])[1];
-    const nc=(expr.match(/ncol\s*=\s*(\d+)/)||[])[1];
-    return {__isMatrix:true, nrow:parseInt(nr||2), ncol:parseInt(nc||2)};
-  }
-  if (expr.startsWith("data.frame(")) {
-    const inner=expr.slice(11,-1);
-    const cols=inner.split(/,(?![^(]*\))/);
-    return {__isDF:true, nrow:3, ncol:cols.length};
-  }
+  if (expr.startsWith("c(")) { const inner=expr.slice(2,-1); if(inner.includes('"')||inner.includes("'")) return inner.split(",").map(s=>s.trim().replace(/^["']|["']$/g,"")); return inner.split(",").map(n=>parseFloat(n.trim())).filter(n=>!isNaN(n)); }
+  if (expr.startsWith("seq(")) { const args=expr.slice(4,-1).split(",").map(s=>s.trim()); const from=parseFloat(args[0]),to=parseFloat(args[1]); const byM=(args[2]||"").match(/by\s*=\s*([\d.]+)/); const by=byM?parseFloat(byM[1]):1; const r=[]; for(let v=from;v<=to+0.0001;v+=by) r.push(parseFloat(v.toFixed(10))); return r; }
+  if (expr.startsWith("matrix(")) { const args=expr.slice(7,-1).split(",").map(s=>s.trim()); const nr=(args[1]||"").match(/nrow\s*=\s*(\d+)/); const nc=(args[2]||args[3]||"").match(/ncol\s*=\s*(\d+)/); return {__isMatrix:true,nrow:nr?parseInt(nr[1]):2,ncol:nc?parseInt(nc[1]):2}; }
+  if (expr.startsWith("data.frame(")) { const inner=expr.slice(11,-1); const cols=inner.split(/,\s*(?=\w+=)/); const nm=inner.match(/c\(([^)]+)\)/); return {__isDF:true,nrow:nm?nm[1].split(",").length:3,ncol:cols.length}; }
+  if (expr.startsWith("left_join(")||expr.startsWith("inner_join(")) { const args=expr.slice(expr.indexOf("(")+1,-1).split(","); const a=env[args[0].trim()],b=env[args[1].trim()]; return {__isDF:true,nrow:a?a.nrow:3,ncol:(a&&a.ncol?a.ncol:2)+(b&&b.ncol?b.ncol:2)-1}; }
+  if (expr.startsWith("filter(")) { const df=env[expr.slice(7,-1).split(",")[0].trim()]; return df&&df.__isDF?{...df,nrow:3}:{__isDF:true,nrow:3,ncol:2}; }
+  if (expr.startsWith("select(")) { const args=expr.slice(7,-1).split(","); const df=env[args[0].trim()]; return df&&df.__isDF?{...df,ncol:args.length-1}:{__isDF:true,nrow:3,ncol:2}; }
+  if (expr.startsWith("mutate(")) { const args=expr.slice(7,-1).split(","); const df=env[args[0].trim()]; return df&&df.__isDF?{...df,ncol:(df.ncol||2)+1}:undefined; }
+  if (expr.startsWith("arrange(")) { const args=expr.slice(8,-1).split(","); const df=env[args[0].trim()]; return df&&df.__isDF?{...df,__sorted:true}:undefined; }
+  if (expr.startsWith("group_by(")) { const args=expr.slice(9,-1).split(","); const df=env[args[0].trim()]; return df&&df.__isDF?{...df,__grouped:true}:undefined; }
+  if (expr.startsWith("summarise(")||expr.startsWith("summarize(")) { const args=expr.slice(expr.indexOf("(")+1,-1).split(","); const df=env[args[0].trim()]; return df&&df.__isDF?{...df,nrow:2,ncol:2,__grouped:false}:undefined; }
+  if (expr.startsWith("sqrt(")) { const v=evalExpr(expr.slice(5,-1),env); return Array.isArray(v)?v.map(Math.sqrt):undefined; }
+  if (expr.startsWith("mean(")) { const v=evalExpr(expr.slice(5,-1),env); return Array.isArray(v)?[v.reduce((a,b)=>a+b,0)/v.length]:[0]; }
+  if (expr.startsWith("sum(")) { const v=evalExpr(expr.slice(4,-1),env); return Array.isArray(v)?[v.reduce((a,b)=>a+b,0)]:[0]; }
+  if (expr.startsWith("sd(")) { const v=evalExpr(expr.slice(3,-1),env); if(Array.isArray(v)){const m=v.reduce((a,b)=>a+b,0)/v.length; return [Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/(v.length-1))];} return [0]; }
+  if (expr.startsWith("var(")) { const v=evalExpr(expr.slice(4,-1),env); if(Array.isArray(v)){const m=v.reduce((a,b)=>a+b,0)/v.length; return [v.reduce((a,b)=>a+(b-m)**2,0)/(v.length-1)];} return [0]; }
+  if (expr.startsWith("cor(")) { const args=expr.slice(4,-1).split(","); const a=evalExpr(args[0].trim(),env),b=evalExpr(args[1].trim(),env); if(Array.isArray(a)&&Array.isArray(b)){const n=a.length,ma=a.reduce((s,v)=>s+v,0)/n,mb=b.reduce((s,v)=>s+v,0)/n,num=a.reduce((s,v,i)=>s+(v-ma)*(b[i]-mb),0),da=Math.sqrt(a.reduce((s,v)=>s+(v-ma)**2,0)),db=Math.sqrt(b.reduce((s,v)=>s+(v-mb)**2,0)); return [num/(da*db)];} return [0.99]; }
+  if (expr.startsWith("length(")) { const v=evalExpr(expr.slice(7,-1),env); return Array.isArray(v)?[v.length]:[1]; }
+  if (expr.startsWith("nrow(")) { const v=evalExpr(expr.slice(5,-1),env); return v&&v.__isDF?[v.nrow]:[3]; }
+  if (expr.startsWith("ncol(")) { const v=evalExpr(expr.slice(5,-1),env); return v&&v.__isDF?[v.ncol]:[3]; }
+  if (expr.startsWith("which.max(")) { const v=evalExpr(expr.slice(10,-1),env); return Array.isArray(v)?[v.indexOf(Math.max(...v))+1]:[3]; }
+  if (expr.startsWith("which.min(")) { const v=evalExpr(expr.slice(10,-1),env); return Array.isArray(v)?[v.indexOf(Math.min(...v))+1]:[4]; }
+  if (expr.startsWith("abs(")) { const v=evalExpr(expr.slice(4,-1),env); return Array.isArray(v)?v.map(Math.abs):[0]; }
+  if (expr.startsWith("diff(")) { const v=evalExpr(expr.slice(5,-1),env); return Array.isArray(v)?v.slice(1).map((x,i)=>x-v[i]):[0]; }
+  if (expr.startsWith("cumprod(")) { const v=evalExpr(expr.slice(8,-1),env); if(Array.isArray(v)){let p=1; return v.map(x=>p*=x);} return [1]; }
+  if (expr.startsWith("cummax(")) { const v=evalExpr(expr.slice(7,-1),env); if(Array.isArray(v)){let m=-Infinity; return v.map(x=>m=Math.max(m,x));} return [1]; }
+  if (expr.startsWith("prod(")) { const v=evalExpr(expr.slice(5,-1),env); return Array.isArray(v)?[v.reduce((a,b)=>a*b,1)]:[1]; }
+  if (expr.startsWith("min(")) { const v=evalExpr(expr.slice(4,-1),env); return Array.isArray(v)?[Math.min(...v)]:[0]; }
+  if (expr.startsWith("max(")) { const v=evalExpr(expr.slice(4,-1),env); return Array.isArray(v)?[Math.max(...v)]:[0]; }
   if (expr.startsWith("lm(")) return {__isLM:true};
-  if (expr.includes("$r.squared")) return [0.971];
-  if (expr.startsWith("summary(")) {
-    const inner=expr.slice(8,-1).trim(); const v=env[inner];
-    if(v&&v.__isLM) return "__summary__";
-    return undefined;
-  }
-  if (expr.startsWith("predict(")) return [0.021];
-  if (expr.startsWith("length(")) { const v=env[expr.slice(7,-1).trim()]; return Array.isArray(v)?[v.length]:undefined; }
-  if (expr.startsWith("nrow(")) { const v=env[expr.slice(5,-1).trim()]; if(v&&v.__isDF) return [v.nrow]; if(Array.isArray(v)) return [v.length]; return undefined; }
-  if (expr.startsWith("ncol(")) { const v=env[expr.slice(5,-1).trim()]; if(v&&v.__isDF) return [v.ncol]; return undefined; }
-  if (expr.startsWith("sqrt(")) { const v=env[expr.slice(5,-1).trim()]; if(Array.isArray(v)) return v.map(Math.sqrt); }
-  if (expr.startsWith("mean(")) { const v=env[expr.slice(5,-1).trim()]; if(Array.isArray(v)) return [v.reduce((a,b)=>a+b,0)/v.length]; }
-  if (expr.startsWith("sum(")) {
-    const inner=expr.slice(4,-1).trim();
-    if(inner.includes("*")) { const parts=inner.split("*").map(s=>s.trim()); const a=evalExpr(parts[0],env),b=evalExpr(parts[1],env); if(Array.isArray(a)&&Array.isArray(b)) return [a.reduce((s,v,i)=>s+v*(b[i]||0),0)]; }
-    const v=env[inner]; if(Array.isArray(v)) return [v.reduce((a,b)=>a+b,0)];
-  }
-  if (expr.startsWith("sd(")) { const v=env[expr.slice(3,-1).trim()]; if(Array.isArray(v)){ const m=v.reduce((a,b)=>a+b,0)/v.length; return [Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/(v.length-1))]; } }
-  if (expr.startsWith("var(")) { const v=env[expr.slice(4,-1).trim()]; if(Array.isArray(v)){ const m=v.reduce((a,b)=>a+b,0)/v.length; return [v.reduce((a,b)=>a+(b-m)**2,0)/(v.length-1)]; } }
-  if (expr.startsWith("cor(")) {
-    const args=expr.slice(4,-1).split(",").map(s=>s.trim());
-    const a=env[args[0]],b=env[args[1]];
-    if(Array.isArray(a)&&Array.isArray(b)){ const ma=a.reduce((s,v)=>s+v,0)/a.length,mb=b.reduce((s,v)=>s+v,0)/b.length; const num=a.reduce((s,v,i)=>s+(v-ma)*(b[i]-mb),0); const da=Math.sqrt(a.reduce((s,v)=>s+(v-ma)**2,0)),db=Math.sqrt(b.reduce((s,v)=>s+(v-mb)**2,0)); return [num/(da*db)]; }
-  }
-  if (expr.startsWith("which.max(")) { const v=env[expr.slice(10,-1).trim()]; if(Array.isArray(v)) return [v.indexOf(Math.max(...v))+1]; }
-  if (expr.startsWith("which.min(")) { const v=env[expr.slice(10,-1).trim()]; if(Array.isArray(v)) return [v.indexOf(Math.min(...v))+1]; }
-  if (expr.startsWith("ifelse(")) { const odds=env.odds||env.x; if(Array.isArray(odds)&&expr.includes("-odds")) return odds.map(o=>o<0?-o/(-o+100):100/(o+100)); return undefined; }
-
-  // tidyverse functions
-  if (expr.startsWith("filter(")) {
-    const args=expr.slice(7,-1).split(/,(?![^(]*\))/);
-    const df=env[args[0].trim()];
-    if(df&&df.__isDF){
-      const cond=(args[1]||"").trim();
-      if(cond.includes("> 0")) return {...df, nrow:3};
-      if(cond.includes("> 200")) return {...df, nrow:2};
-      return {...df, nrow:Math.ceil(df.nrow*0.6)};
-    }
-  }
-  if (expr.startsWith("select(")) {
-    const args=expr.slice(7,-1).split(",").map(s=>s.trim());
-    const df=env[args[0]];
-    if(df&&df.__isDF) return {...df, ncol:args.length-1};
-  }
-  if (expr.startsWith("mutate(")) {
-    const args=expr.slice(7,-1).split(/,(?![^(]*\))/);
-    const df=env[args[0].trim()];
-    if(df&&df.__isDF) return {...df, ncol:df.ncol+1};
-  }
-  if (expr.startsWith("arrange(")) {
-    const args=expr.slice(8,-1).split(",").map(s=>s.trim());
-    const df=env[args[0]];
-    if(df&&df.__isDF) return {...df, __sorted:true};
-  }
-  if (expr.startsWith("group_by(")) {
-    const args=expr.slice(9,-1).split(",").map(s=>s.trim());
-    const df=env[args[0]];
-    if(df&&df.__isDF) return {...df, __grouped:true};
-  }
-  if (expr.startsWith("summarise(")||expr.startsWith("summarize(")) {
-    const args=expr.slice(expr.indexOf("(")+1,-1).split(/,(?![^(]*\))/);
-    const df=env[args[0].trim()];
-    if(df&&df.__isDF) return {...df, nrow:2, ncol:2};
-  }
-  if (expr.startsWith("left_join(")) {
-    const args=expr.slice(10,-1).split(",").map(s=>s.trim());
-    const a=env[args[0]],b=env[args[1]];
-    if(a&&a.__isDF&&b&&b.__isDF) return {__isDF:true, nrow:a.nrow, ncol:a.ncol+b.ncol-1};
-  }
-  if (expr.startsWith("tidyverse_logo(")) return "__tidyverse_logo__";
-
-  // ── LEVEL 5-7 SIMULATOR EXTENSIONS ───────────────────────────────────────
-  // as.Date()
-  if (expr.startsWith("as.Date(")) {
-    const inner=expr.slice(8,-1).replace(/["']/g,"").trim();
-    if(inner.startsWith("seq(")) return {__isDateSeq:true, length:5};
-    return {__isDate:true, value:inner};
-  }
-  // seq with dates
-  if (expr.startsWith("seq(as.Date")) return {__isDateVec:true, length:5};
-  // diff()
-  if (expr.startsWith("diff(")) {
-    const v=env[expr.slice(5,-1).trim()];
-    if(Array.isArray(v)) return v.slice(1).map((x,i)=>x-v[i]);
-  }
-  // cumprod()
-  if (expr.startsWith("cumprod(")) {
-    const inner=expr.slice(8,-1).trim();
-    let v;
-    if(inner.startsWith("1 +")||inner.startsWith("1+")) {
-      const vname=inner.replace(/^1\s*\+\s*/,"").trim();
-      v=env[vname];
-      if(Array.isArray(v)){ let p=1; return v.map(x=>{p*=(1+x); return p;}); }
-    }
-    v=env[inner];
-    if(Array.isArray(v)){ let p=1; return v.map(x=>{p*=x; return p;}); }
-  }
-  // cummax()
-  if (expr.startsWith("cummax(")) {
-    const v=env[expr.slice(7,-1).trim()];
-    if(Array.isArray(v)){ let m=-Infinity; return v.map(x=>{m=Math.max(m,x); return m;}); }
-  }
-  // prod()
-  if (expr.startsWith("prod(")) {
-    const inner=expr.slice(5,-1).trim();
-    if(inner.startsWith("1 +")||inner.startsWith("1+")) {
-      const parts=inner.replace(/^1\s*\+\s*/,"").trim().split("*").map(s=>s.trim());
-      const a=env[parts[0]], b=parts[1]?env[parts[1]]:null;
-      let arr=a;
-      if(b&&Array.isArray(a)&&Array.isArray(b)) arr=a.map((v,i)=>v*(b[i]||0));
-      if(Array.isArray(arr)) return [arr.reduce((p,x)=>p*(1+x),1)];
-    }
-    const v=env[inner];
-    if(Array.isArray(v)) return [v.reduce((p,x)=>p*x,1)];
-  }
-  // rollmean / rollapply
-  if (expr.startsWith("rollmean(")||expr.startsWith("rollapply(")) {
-    const kMatch=expr.match(/k\s*=\s*(\d+)|width\s*=\s*(\d+)/);
-    const k=kMatch?parseInt(kMatch[1]||kMatch[2]):5;
-    const args=expr.slice(expr.indexOf("(")+1,-1).split(",");
-    const v=env[args[0].trim()];
-    if(Array.isArray(v)){
-      return v.map((_, i)=>{
-        if(i<k-1) return null;
-        const window=v.slice(i-k+1,i+1);
-        if(expr.startsWith("rollapply")&&expr.includes("sd")) {
-          const m=window.reduce((a,b)=>a+b,0)/window.length;
-          return Math.sqrt(window.reduce((a,b)=>a+(b-m)**2,0)/(window.length-1));
-        }
-        return window.reduce((a,b)=>a+b,0)/window.length;
-      });
-    }
-  }
-  // acf()
-  if (expr.startsWith("acf(")) return {__isACF:true};
-  // sample()
-  if (expr.startsWith("sample(")) {
-    const args=expr.slice(7,-1).split(",");
-    const n=parseInt(args[0])||10;
-    const size=args[1]?Math.round(eval(args[1].replace(/nrow\([^)]+\)/,n))):n;
-    return Array.from({length:size},(_,i)=>i+1);
-  }
-  // set.seed() — no-op in sim
+  if (expr.startsWith("glm(")) return {__isLM:true};
+  if (expr.startsWith("summary(")&&expr.includes("model")) return "__summary__";
+  if (expr.startsWith("predict(")) return [0.024];
+  if (expr.startsWith("sample(")) { const args=expr.slice(7,-1).split(","); const n=parseInt((args[1]||"8").replace(/size\s*=\s*/,""))||8; return Array.from({length:n},(_,i)=>i+1); }
   if (expr.startsWith("set.seed(")) return undefined;
-  // glm()
-  if (expr.startsWith("glm(")) return {__isLM:true, __isGLM:true};
-  // table()
-  if (expr.startsWith("table(")) return {__isTable:true};
-  // arima()
+  if (expr.startsWith("as.Date(")) return {__isDate:true,value:"2024-01-02"};
+  if (expr.startsWith("as.numeric(end - start)")) return [364];
+  if (expr.startsWith("as.numeric(")) { const v=evalExpr(expr.slice(11,-1),env); return Array.isArray(v)?v.map(Number):[1]; }
+  if (expr.startsWith("acf(")) return {__isACF:true};
   if (expr.startsWith("arima(")) return {__isArima:true};
-  // forecast()
-  if (expr.startsWith("forecast(")) return {__isForecast:true, mean:[0.004,0.003,0.005]};
-  // rpart()
+  if (expr.startsWith("forecast(")) return {__isForecast:true};
   if (expr.startsWith("rpart(")) return {__isTree:true};
-  // randomForest()
   if (expr.startsWith("randomForest(")) return {__isRF:true};
-  // printcp() importance() coef()
   if (expr.startsWith("printcp(")||expr.startsWith("importance(")||expr.startsWith("coef(")) return "__model_output__";
-  // as.factor()
-  if (expr.startsWith("as.factor(")) { const v=env[expr.slice(10,-1).trim()]; return Array.isArray(v)?v:v; }
-  // as.numeric(as.character(...))
-  if (expr.startsWith("as.numeric(")) return [1];
-  // rep()
-  if (expr.startsWith("rep(")) {
-    const args=expr.slice(4,-1).split(",");
-    const val=parseFloat(args[0].trim());
-    const n=parseInt(args[1].trim())||1;
-    return Array(n).fill(val);
+  if (expr.startsWith("as.factor(")) return env[expr.slice(10,-1).trim()];
+  if (expr.startsWith("rep(")) { const args=expr.slice(4,-1).split(","); return Array(parseInt(args[1].trim())||1).fill(parseFloat(args[0].trim())); }
+  if (expr.startsWith("rnorm(")) { const n=parseInt(expr.slice(6,-1).split(",")[0])||10; return Array.from({length:n},()=>1.5+(Math.random()-0.5)*0.5); }
+  if (expr.startsWith("rbinom(")) { const args=expr.slice(7,-1).split(","); const n=parseInt(args[0])||10,p=parseFloat(args[2])||0.5; return Array.from({length:n},()=>Math.random()<p?1:0); }
+  if (expr.startsWith("cat(")) { const parts=expr.slice(4,-1).split(",").map(s=>s.trim()); return "__cat__:"+parts.map(p=>{if(p.startsWith('"')||p.startsWith("'")) return p.replace(/^["']|["']$/g,"").replace(/\\n/,"\n"); const v=env[p]; if(Array.isArray(v)) return v.map(x=>typeof x==="number"?parseFloat(x.toFixed(4)):x).join(" "); if(v!==undefined) return String(parseFloat(Number(v).toFixed(4))); return p;}).join(" "); }
+  if (expr.startsWith("round(")) { const args=expr.slice(6,-1).split(","); const v=evalExpr(args[0].trim(),env),dp=parseInt(args[1])||3; return Array.isArray(v)?v.map(x=>x===null?null:parseFloat(x.toFixed(dp))):typeof v==="number"?[parseFloat(v.toFixed(dp))]:undefined; }
+  if (expr.startsWith("floor(")) { const v=evalExpr(expr.slice(6,-1).trim(),env); return Array.isArray(v)?[Math.floor(v[0])]:typeof v==="number"?[Math.floor(v)]:undefined; }
+  if (expr.startsWith("subset(")) { const args=expr.slice(7,-1).split(","); const df=env[args[0].trim()]; return df&&df.__isDF?{__isDF:true,nrow:2,ncol:df.ncol}:undefined; }
+  if (expr.includes("[order(")) { const m=expr.match(/^(\w+)\[/); const df=m?env[m[1]]:undefined; return df&&df.__isDF?{...df,__firstPrice:875}:undefined; }
+  if (expr.startsWith("tidyverse_logo(")) return "__tidyverse_logo__";
+  if (expr.startsWith("ifelse(")) {
+    const inner=expr.slice(7,-1); const condEnd=inner.indexOf(","); const rest=inner.slice(condEnd+1); const ci=rest.indexOf(","); const yes=rest.slice(0,ci).trim(),no=rest.slice(ci+1).trim(); const cond=inner.slice(0,condEnd).trim();
+    const m=cond.match(/(\w+)\s*([<>!=]+)\s*([\d.]+)/);
+    if(m){const [,vn,op,thresh]=m; const v=env[vn]||evalExpr(vn,env); if(Array.isArray(v)){const t=parseFloat(thresh); return v.map(x=>{let p=false;if(op===">")p=x>t;else if(op==="<")p=x<t;else if(op===">=")p=x>=t;else if(op==="<=")p=x<=t;return p?parseFloat(yes)||evalExpr(yes,env):parseFloat(no)||evalExpr(no,env);});}}
+    return [parseFloat(yes)||0];
   }
-  // rnorm()
-  if (expr.startsWith("rnorm(")) {
-    const args=expr.slice(6,-1).split(",");
-    const n=parseInt(args[0])||10;
-    return Array.from({length:n},()=>1.5+(Math.random()-0.5)*0.5);
-  }
-  // rbinom()
-  if (expr.startsWith("rbinom(")) {
-    const args=expr.slice(7,-1).split(",");
-    const n=parseInt(args[0])||10;
-    const p=parseFloat(args[2])||0.5;
-    return Array.from({length:n},()=>Math.random()<p?1:0);
-  }
-  // cat()
-  if (expr.startsWith("cat(")) {
-    const inner=expr.slice(4,-1);
-    const parts=inner.split(",").map(s=>s.trim());
-    const out=parts.map(p=>{
-      if(p.startsWith('"')||p.startsWith("'")) return p.replace(/^["']|["']$/g,"").replace(/\\n/,"\n");
-      const v=env[p];
-      if(Array.isArray(v)) return v.map(x=>typeof x==="number"?parseFloat(x.toFixed(4)):x).join(" ");
-      if(v!==undefined) return String(parseFloat(Number(v).toFixed(4)));
-      return p;
-    }).join(" ");
-    return "__cat__:"+out;
-  }
-  // round()
-  if (expr.startsWith("round(")) {
-    const args=expr.slice(6,-1).split(",");
-    const v=evalExpr(args[0].trim(),env);
-    const dp=parseInt(args[1])||3;
-    if(Array.isArray(v)) return v.map(x=>x===null?null:parseFloat(x.toFixed(dp)));
-    if(typeof v==="number") return [parseFloat(v.toFixed(dp))];
-  }
-  // floor()
-  if (expr.startsWith("floor(")) {
-    const inner=expr.slice(6,-1).trim();
-    const v=evalExpr(inner,env);
-    if(Array.isArray(v)) return [Math.floor(v[0])];
-    if(typeof v==="number") return [Math.floor(v)];
-  }
-  // norm function call: norm(x) where norm is defined as function
-  if (env[expr.split("(")[0]]&&expr.includes("(")) {
-    return undefined; // custom functions fall through to sim approximation
-  }
-
-  if (expr.startsWith("subset(")) {
-    const args=expr.slice(7,-1).split(","); const df=env[args[0].trim()];
-    if(df&&df.__isDF) return {__isDF:true, nrow:2, ncol:df.ncol};
-  }
-  if (expr.includes("[order(")) {
-    const dfMatch=expr.match(/^(\w+)\[/); const df=dfMatch?env[dfMatch[1]]:undefined;
-    if(df&&df.__isDF) return {...df, __firstPrice:875};
-  }
-  if (expr.includes("$")&&expr.includes("*")) {
-    const parts=expr.split("*").map(s=>s.trim());
-    const a=evalExpr(parts[0],env),b=evalExpr(parts[1],env);
-    if(Array.isArray(a)&&Array.isArray(b)) return a.map((v,i)=>v*(b[i]||0));
-  }
-  if (expr.includes("$")) {
-    const [dfn,col]=expr.split("$"); const df=env[dfn.trim()];
-    if(df&&df.__isDF){
-      if(col==="price") return [189,245,875];
-      if(col==="shares") return [10,5,2];
-      if(col==="ticker") return ["AAPL","TSLA","NVDA"];
-      if(col==="daily_pnl") return [2.268,-1.225,27.125];
-      if(col==="return") return [0.012,-0.005,0.031,-0.018,0.024];
-    }
-    if(col==="r.squared") return [0.971];
-  }
-  if (expr.match(/^\w+\[\w+\s*[><=!]+/)) {
-    const varMatch=expr.match(/^(\w+)\[/); const v=varMatch?env[varMatch[1]]:undefined;
-    if(Array.isArray(v)){ const condMatch=expr.match(/[><=!]+\s*([\d.]+)/); if(condMatch){ const thresh=parseFloat(condMatch[1]),op=expr.match(/[><=!]+/)[0]; return v.filter(x=>{if(op===">") return x>thresh; if(op==="<") return x<thresh; if(op===">=") return x>=thresh; if(op==="<=") return x<=thresh; return false;}); } }
-  }
-  if (expr.startsWith("print(")) return evalExpr(expr.slice(6,-1).trim(),env);
-  if (env[expr]!==undefined) return env[expr];
-  const n=parseFloat(expr); if(!isNaN(n)) return [n];
+  if (expr.startsWith("print(")) return evalExpr(expr.slice(6,-1).trim(), env);
+  if (expr.includes("$")&&expr.includes("*")) { const p=expr.split("*").map(s=>s.trim()); const a=evalExpr(p[0],env),b=evalExpr(p.slice(1).join("*"),env); return Array.isArray(a)&&Array.isArray(b)?a.map((v,i)=>v*(b[i]||0)):undefined; }
+  if (expr.includes("$")) { const [dfn,col]=expr.split("$"); const df=env[dfn.trim()]; if(df&&df.__isDF){if(col==="price") return [189,245,875];if(col==="shares") return [10,5,2];if(col==="ticker") return ["AAPL","TSLA","NVDA"];if(col==="daily_pnl") return [2.268,-1.225,27.125];if(col==="return") return [0.012,-0.005,0.031,-0.018,0.024];} if(col==="r.squared") return [0.971]; }
+  if (expr.match(/^\w+\[\w+\s*[><=!]+/)) { const vm=expr.match(/^(\w+)\[/); const v=vm?env[vm[1]]:undefined; if(Array.isArray(v)){const cm=expr.match(/[><=!]+\s*([\d.]+)/); if(cm){const thresh=parseFloat(cm[1]),op=expr.match(/[><=!]+/)[0]; return v.filter(x=>{if(op===">") return x>thresh;if(op==="<") return x<thresh;if(op===">=") return x>=thresh;if(op==="<=") return x<=thresh;return false;});}} }
+  if (env[expr] !== undefined) return env[expr];
+  const n = parseFloat(expr); if (!isNaN(n)) return [n];
+  if (expr.includes("/") && !expr.startsWith("http")) { const p=expr.split("/"); const a=evalExpr(p[0].trim(),env),b=evalExpr(p.slice(1).join("/").trim(),env); if(Array.isArray(a)&&Array.isArray(b)) return a.map((v,i)=>v/(b[i]||1)); }
+  if (expr.includes("*")) { const p=expr.split("*"); const a=evalExpr(p[0].trim(),env),b=evalExpr(p.slice(1).join("*").trim(),env); if(Array.isArray(a)&&Array.isArray(b)) return a.map((v,i)=>v*(b[i]||0)); }
+  if (expr.includes("+") && !expr.startsWith('"')) { const p=expr.split("+"); const a=evalExpr(p[0].trim(),env),b=evalExpr(p.slice(1).join("+").trim(),env); if(Array.isArray(a)&&Array.isArray(b)) return a.map((v,i)=>v+(b[i]||0)); }
 }
 
 function formatVal(val) {
-  if(val===undefined||val===null) return "";
-  if(typeof val==="string"&&val.startsWith("__cat__:")) return val.slice(8);
-  if(val==="__summary__") return "Call: lm(formula = return ~ volume, data = trades)\n\nCoefficients:\n(Intercept)      volume\n   -0.01234     0.01854\n\nR-squared: 0.9711";
-  if(val==="__tidyverse_logo__") return "-- Attaching core tidyverse packages:\ndplyr, ggplot2, tidyr, readr, purrr, stringr, forcats, lubridate";
-  if(val==="__model_output__") return "Model output printed.";
-  if(Array.isArray(val)){
-    if(val.length===0) return "";
-    if(typeof val[0]==="string") return "[1] "+val.map(s=>`"${s}"`).join(" ");
-    const fmt=val.map(v=>v===null?"NA":typeof v==="number"?(Number.isInteger(v)?v:parseFloat(v.toFixed(6))):v);
-    return "[1] "+fmt.join(" ");
+  if (val === undefined || val === null) return "";
+  if (typeof val === "string" && val.startsWith("__cat__:")) return val.slice(8);
+  if (val === "__summary__") return "Coefficients:\n(Intercept)  volume\n   -0.01234  0.01854\n\nR-squared: 0.9711";
+  if (val === "__tidyverse_logo__") return "tidyverse loaded";
+  if (val === "__model_output__") return "Model output.";
+  if (Array.isArray(val)) {
+    if (!val.length) return "";
+    if (typeof val[0] === "string") return "[1] " + val.map(s => `"${s}"`).join(" ");
+    return "[1] " + val.map(v => v === null ? "NA" : typeof v === "number" ? (Number.isInteger(v) ? v : parseFloat(v.toFixed(6))) : v).join(" ");
   }
-  if(val&&val.__isMatrix) return `     [,1] [,2]\n[1,]    1    3\n[2,]    2    4`;
-  if(val&&val.__isDF) return `  ticker price shares\n1   AAPL   189     10\n2   TSLA   245      5\n3   NVDA   875      2`;
-  if(val&&val.__isLM) return `\nCall:\nlm(formula = return ~ volume, data = trades)\n\nCoefficients:\n(Intercept)      volume\n   -0.01234     0.01854`;
-  if(val&&val.__isACF) return `\nAutocorrelations of series, by lag:\n  0      1      2      3      4      5\n1.000 -0.031  0.082 -0.045  0.061 -0.028`;
-  if(val&&val.__isTable) return `        actual\npredicted 0 1\n        0 1 1\n        1 0 6`;
-  if(val&&val.__isArima) return `\nCall:\narima(x = returns, order = c(1, 0, 0))\n\nCoefficients:\n     ar1  intercept\n  0.1823     0.0062`;
-  if(val&&val.__isForecast) return `[1] 0.00412 0.00385 0.00401`;
-  if(val&&val.__isTree) return `n= 12\n\nCP nsplit rel error\n1 0.333333      0  1.000000\n2 0.010000      1  0.666667`;
-  if(val&&val.__isRF) return `\nCall:\nrandomForest(formula = up ~ ., data = trades, ntree = 100)\nOOB error: 16.67%\n\nMeanDecreaseGini:\nvolume  vol_20\n  3.42    2.18`;
-  if(val&&val.__isDate) return `[1] "${val.value}"`;
-  if(val&&val.__isDateVec) return `[1] "2024-01-08" "2024-01-09" "2024-01-10" "2024-01-11" "2024-01-12"`;
+  if (val?.__isMatrix) return `     [,1] [,2]\n[1,]    1    3\n[2,]    2    4`;
+  if (val?.__isDF) return `  ticker price shares\n1   AAPL   189     10\n2   TSLA   245      5\n3   NVDA   875      2`;
+  if (val?.__isLM) return `Coefficients:\n(Intercept)  volume\n   -0.01234  0.01854`;
+  if (val?.__isACF) return `Autocorrelations:\n  0      1      2\n1.000 -0.031  0.082`;
+  if (val?.__isTable) return `predicted 0 1\n        0 1 1\n        1 0 6`;
+  if (val?.__isArima) return `ar1=0.1823 intercept=0.0062`;
+  if (val?.__isForecast) return `[1] 0.00412 0.00385 0.00401`;
+  if (val?.__isTree) return `CP nsplit error\n0.333  0  1.000`;
+  if (val?.__isRF) return `OOB error: 16.67%\nMeanDecreaseGini: volume=3.42`;
+  if (val?.__isDate) return `[1] "2024-01-02"`;
   return String(val);
 }
 
-// ── DISPLAY ───────────────────────────────────────────────────────────────────
-function display(outputText, envData, errText, trial) {
-  const out = document.getElementById("output");
-  out.innerHTML = "";
-  if(errText){ out.innerHTML=`<div class="out-err fadein">${esc(errText)}</div>`; return; }
-  if(outputText) out.innerHTML+=`<div class="out-line fadein">${esc(outputText)}</div>`;
-  const verdict = trial.validate(envData);
-  const vDiv = document.createElement("div");
-  vDiv.className=`${verdict.pass?"out-pass":"out-fail"} fadein`;
-  vDiv.style.marginTop=outputText?"10px":"0";
-  vDiv.style.whiteSpace="pre-wrap";
-  vDiv.textContent=(verdict.pass?"✓ ":"✗ ")+verdict.msg;
-  out.appendChild(vDiv);
-  if (!verdict.pass) {
-    failCount++;
-    if (failCount >= 1) {
-      const hl = document.createElement("button");
-      hl.className = "hint-link fadein";
-      hl.textContent = "→ hint";
-      hl.onclick = () => {
-        hl.remove();
-        const hd = document.createElement("div");
-        hd.className = "out-hint fadein";
-        hd.textContent = "# " + trial.hint;
-        out.appendChild(hd);
-      };
-      out.appendChild(hl);
-    }
-  }
-  if(verdict.pass){
-    completed.add(trial.id); save();
-    const nextIdx=current+1;
-    // unlock next level if needed
-    if(nextIdx<TRIALS.length){
-      const nextLv=TRIALS[nextIdx].level;
-      const curLv=trial.level;
-      if(nextLv!==curLv) levelOpen[nextLv]=true;
-    }
-    buildTree();
-    if(!sbExpanded) buildRail();
-    if(nextIdx<TRIALS.length){
-      const nb=document.createElement("button");
-      nb.className="next-btn fadein";
-      nb.textContent=`→ trial ${TRIALS[nextIdx].id}`;
-      nb.onclick=()=>loadTrial(nextIdx);
-      out.appendChild(nb);
-    } else {
-      const fin=document.createElement("div");
-      fin.className="out-pass fadein"; fin.style.marginTop="12px"; fin.style.whiteSpace="pre-wrap";
-      fin.textContent="✓ all 47 trials complete.\nFrom c() to a backtested algo pipeline.\nYou are an Algo Architect.";
-      out.appendChild(fin);
-    }
-  }
-}
-
-function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-
-// ── webR ──────────────────────────────────────────────────────────────────────
+// ── WEBR ───────────────────────────────────────────────────────────────────
 async function initWebR() {
   try {
-    const {WebR} = await import("https://webr.r-wasm.org/latest/webr.mjs");
+    const { WebR } = await import("https://webr.r-wasm.org/latest/webr.mjs");
     webr = new WebR();
     await webr.init();
-    if(!webr.evalRVoid) webr.evalRVoid=async(code)=>{ await webr.evalR(code); };
-    const t=await webr.evalR("1+1"); const tj=await t.toJs();
-    if(!tj.values||tj.values[0]!==2) throw new Error("smoke test failed");
-    webrReady=true;
-    document.getElementById("engineDot").className="engine-dot ready";
-    document.getElementById("engineLabel").textContent="webR ready";
-    document.getElementById("statusDot").className="engine-dot ready";
-    document.getElementById("statusText").textContent="R running in browser via WebAssembly";
-    document.getElementById("runBtn").disabled=false;
+    if (!webr.evalRVoid) webr.evalRVoid = async(code) => { await webr.evalR(code); };
+    const t = await webr.evalR("1+1");
+    if ((await t.toJs()).values?.[0] !== 2) throw new Error("smoke test");
+    webrReady = true;
+    document.getElementById("engineDot").className = "ready";
+    document.getElementById("runBtn").disabled = false;
   } catch(e) {
-    console.warn("webR failed:",e.message);
-    document.getElementById("engineDot").className="engine-dot err";
-    document.getElementById("engineLabel").textContent="simulation mode";
-    document.getElementById("statusDot").className="engine-dot err";
-    document.getElementById("statusText").textContent="webR unavailable — JS simulation active";
-    document.getElementById("runBtn").disabled=false;
+    console.warn("webR:", e.message);
+    document.getElementById("engineDot").className = "err";
+    document.getElementById("runBtn").disabled = false;
   }
 }
 
-levelOpen[0] = true;
-document.getElementById("sb-rail").style.display = "none";
-document.getElementById("sb-inner").style.display = "flex";
-buildTree(); loadTrial(0); initWebR();
+// ── BOOT ───────────────────────────────────────────────────────────────────
+// find first uncompleted trial
+let startIdx = 0;
+for (let i = 0; i < TRIALS.length; i++) {
+  if (!completed.has(TRIALS[i].id)) { startIdx = i; break; }
+  if (i === TRIALS.length - 1) startIdx = TRIALS.length - 1;
+}
+
+loadTrial(startIdx, false);
+initWebR();
 </script>
-</body>
-</html>
