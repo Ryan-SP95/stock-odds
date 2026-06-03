@@ -1829,7 +1829,6 @@ function evalExpr(expr, env) {
   if (expr.includes("$")) { const [dfn,col]=expr.split("$"); const df=env[dfn.trim()]; if(df&&df.__isDF){if(col==="price") return [189,245,875];if(col==="shares") return [10,5,2];if(col==="ticker") return ["AAPL","TSLA","NVDA"];if(col==="daily_pnl") return [2.268,-1.225,27.125];if(col==="return") return [0.012,-0.005,0.031,-0.018,0.024];} if(col==="r.squared") return [0.971]; }
   if (expr.match(/^\w+\[\w+\s*[><=!]+/)) { const vm=expr.match(/^(\w+)\[/); const v=vm?env[vm[1]]:undefined; if(Array.isArray(v)){const cm=expr.match(/[><=!]+\s*([\d.]+)/); if(cm){const thresh=parseFloat(cm[1]),op=expr.match(/[><=!]+/)[0]; return v.filter(x=>{if(op===">") return x>thresh;if(op==="<") return x<thresh;if(op===">=") return x>=thresh;if(op==="<=") return x<=thresh;return false;});}} }
   if (env[expr] !== undefined) return env[expr];
-  const n = parseFloat(expr); if (!isNaN(n)) return [n];
   if (expr.includes("/") && !expr.startsWith("http") && !expr.includes("[-")) {
     const slashIdx = expr.lastIndexOf("/");
     const a = evalExpr(expr.slice(0, slashIdx).trim(), env);
@@ -1841,6 +1840,7 @@ function evalExpr(expr, env) {
       if (aVal.length === bVal.length) return aVal.map((v,i) => v / (bVal[i] || 1));
     }
   }
+  const n = parseFloat(expr); if (!isNaN(n)) return [n];
   if (expr.includes("*")) { const p=expr.split("*"); const a=evalExpr(p[0].trim(),env),b=evalExpr(p.slice(1).join("*").trim(),env); if(Array.isArray(a)&&Array.isArray(b)) return a.map((v,i)=>v*(b[i]||0)); }
   if (expr.includes("+") && !expr.startsWith('"')) { const p=expr.split("+"); const a=evalExpr(p[0].trim(),env),b=evalExpr(p.slice(1).join("+").trim(),env); if(Array.isArray(a)&&Array.isArray(b)) return a.map((v,i)=>v+(b[i]||0)); }
 }
