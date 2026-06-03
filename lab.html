@@ -1830,7 +1830,17 @@ function evalExpr(expr, env) {
   if (expr.match(/^\w+\[\w+\s*[><=!]+/)) { const vm=expr.match(/^(\w+)\[/); const v=vm?env[vm[1]]:undefined; if(Array.isArray(v)){const cm=expr.match(/[><=!]+\s*([\d.]+)/); if(cm){const thresh=parseFloat(cm[1]),op=expr.match(/[><=!]+/)[0]; return v.filter(x=>{if(op===">") return x>thresh;if(op==="<") return x<thresh;if(op===">=") return x>=thresh;if(op==="<=") return x<=thresh;return false;});}} }
   if (env[expr] !== undefined) return env[expr];
   const n = parseFloat(expr); if (!isNaN(n)) return [n];
-  if (expr.includes("/") && !expr.startsWith("http")) { const p=expr.split("/"); const a=evalExpr(p[0].trim(),env),b=evalExpr(p.slice(1).join("/").trim(),env); if(Array.isArray(a)&&Array.isArray(b)) return a.map((v,i)=>v/(b[i]||1)); }
+  if (expr.includes("/") && !expr.startsWith("http") && !expr.includes("[-")) {
+    const slashIdx = expr.lastIndexOf("/");
+    const a = evalExpr(expr.slice(0, slashIdx).trim(), env);
+    const b = evalExpr(expr.slice(slashIdx + 1).trim(), env);
+    const aVal = Array.isArray(a) ? a : (a !== undefined ? [a] : null);
+    const bVal = Array.isArray(b) ? b : (b !== undefined ? [b] : null);
+    if (aVal && bVal) {
+      if (bVal.length === 1) return aVal.map(v => v / (bVal[0] || 1));
+      if (aVal.length === bVal.length) return aVal.map((v,i) => v / (bVal[i] || 1));
+    }
+  }
   if (expr.includes("*")) { const p=expr.split("*"); const a=evalExpr(p[0].trim(),env),b=evalExpr(p.slice(1).join("*").trim(),env); if(Array.isArray(a)&&Array.isArray(b)) return a.map((v,i)=>v*(b[i]||0)); }
   if (expr.includes("+") && !expr.startsWith('"')) { const p=expr.split("+"); const a=evalExpr(p[0].trim(),env),b=evalExpr(p.slice(1).join("+").trim(),env); if(Array.isArray(a)&&Array.isArray(b)) return a.map((v,i)=>v+(b[i]||0)); }
 }
